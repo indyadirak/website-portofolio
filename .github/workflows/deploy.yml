@@ -1,0 +1,50 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Workflow ini INDEPENDEN dari codeql.yml & dependency-review.yml —
+# GitHub Actions menjalankan ketiganya paralel, tidak ada penggabungan.
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ===== Build-time env =====
+      # Semua variabel project dibaca via import.meta.env dan di-INLINE saat
+      # build (PUBLIC_*: src/lib/supabase.ts; TURNSTILE: src/lib/config.ts).
+      # Jadi nilainya harus ada DI SINI (GitHub Secrets), bukan di wrangler
+      # vars/secret (yang hanya tersedia saat runtime). Workflow tetap
+      # berhasil jika kosong (fallback demo data / Turnstile nonaktif).
+      - name: Build
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.PUBLIC_TURNSTILE_SITE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+        run: npm run build
+
+      # Config lengkap (main, assets, KV binding, compatibility flags)
+      # di-generate adapter ke dist/server/wrangler.json saat build.
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy dist/server/wrangler.json
