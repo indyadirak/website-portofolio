@@ -1,0 +1,56 @@
+# GitHub Code Scanning — security workflow
+# Berjalan otomatis: tiap push/PR ke main + jadwal mingguan.
+# Hasil scan muncul di GitHub > Security > Code scanning alerts.
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1" # Senin 06:00 UTC
+
+permissions:
+  contents: read
+  security-events: write # agar CodeQL bisa upload hasil scan
+  actions: read
+
+jobs:
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # build-mode: none — cukup untuk JavaScript/TypeScript (tanpa build)
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+
+  npm-audit:
+    name: npm audit (informational)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Audit dependency tree; high/critical memicu kegagalan job.
+      # (Alerts resmi dari Dependabot tetap jadi sumber utama.)
+      - name: Audit
+        run: npm audit --audit-level=high

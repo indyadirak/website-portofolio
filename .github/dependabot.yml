@@ -1,0 +1,36 @@
+# Dependabot: pembaruan dependensi otomatis
+# (Dependabot *security updates* untuk library rentan diaktifkan di
+#  GitHub > Settings > Code security and analysis — bukan lewat file ini)
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Jakarta"
+    # Batas PR terbuka sekaligus agar tidak membanjiri repo
+    open-pull-requests-limit: 10
+    # auto = terapkan update mayor jika tidak ada konflik, else minor/patch
+    versioning-strategy: "auto"
+    # Gabungkan minor/patch otomatis? (opsional, butuh auto-merge rule)
+    # allow:
+    #   - dependency-type: "production"
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+    groups:
+      # Kelompokkan dependency yang diperbarui bareng-sama-bareng
+      astro:
+        patterns:
+          - "astro"
+          - "@astrojs/*"
+      supabase:
+        patterns:
+          - "@supabase/*"
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
