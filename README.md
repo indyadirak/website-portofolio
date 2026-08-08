@@ -10,14 +10,14 @@ Portfolio website Cyber Security yang dibangun dengan **Astro** + **Tailwind CSS
 - **Validasi upload server-side**: verifikasi magic bytes — file spoofing (ekstensi bohong) ditolak
 - **RBAC**: `admin` / `editor` / `viewer` — akses menu menyesuaikan peran
 - **MFA wajib (`aal2`)** untuk peran `admin`/`editor` — diberlakukan di RLS database, bukan hanya UI
-- **Keamanan**: CSP ketat tanpa `unsafe-inline`, security headers (Cloudflare Pages `_headers`), RLS di semua tabel
-- **SSR**: halaman admin & API di-render server-side (Astro node adapter, standalone)
+- **Keamanan**: CSP ketat tanpa `unsafe-inline`, security headers (Cloudflare Workers), RLS di semua tabel
+- **SSR**: halaman admin & API di-render server-side (Astro + Cloudflare Workers)
 
 ## Tech Stack
 
 | Area        | Teknologi                                   |
 | ----------- | ------------------------------------------- |
-| Framework   | Astro 7 (SSR, node adapter)                 |
+| Framework   | Astro 7 (SSR, Cloudflare Workers)          |
 | Styling     | Tailwind CSS v4                             |
 | Bahasa      | TypeScript (strict)                         |
 | Backend     | Supabase (Auth, Postgres, Storage)          |
@@ -28,8 +28,9 @@ Portfolio website Cyber Security yang dibangun dengan **Astro** + **Tailwind CSS
 ```
 ├── .env.example               # contoh variabel environment
 ├── astro.config.mjs
+├── wrangler.toml               # konfigurasi Cloudflare Workers (KV, deploy)
 ├── public/
-│   └── _headers               # CSP & security headers (Cloudflare Pages)
+│   └── _headers               # security headers fallback (aset statis murni; utama di middleware)
 ├── src/
 │   ├── components/
 │   │   ├── admin/             # CertificateForm, CertificateList, MfaEnrollPanel
@@ -42,9 +43,7 @@ Portfolio website Cyber Security yang dibangun dengan **Astro** + **Tailwind CSS
 │   │   └── api/               # auth/*, certificates, certificates/upload
 │   └── styles/global.css
 └── supabase/
-    ├── schema.sql             # skema awal (projects, skills, dsb.)
-    ├── rbac-mfa.sql           # profiles + certificates + RLS + trigger MFA
-    └── storage.sql            # bucket privat + RLS storage.objects
+    └── *.sql                  # skema, RLS/RBAC+MFA, storage, audit (urutan: docs/DEPLOYMENT.md §1)
 ```
 
 ## Prasyarat
@@ -63,9 +62,7 @@ cp .env.example .env
 # isi PUBLIC_SUPABASE_URL dan PUBLIC_SUPABASE_ANON_KEY
 
 # 3. Jalankan SQL di Supabase SQL Editor (urut):
-#    supabase/schema.sql
-#    supabase/rbac-mfa.sql
-#    supabase/storage.sql
+#    lihat docs/DEPLOYMENT.md §1 — schema → rbac-mfa → storage → sisanya (audit/backup)
 
 # 4. Jalankan dev server
 npm run dev
@@ -73,7 +70,7 @@ npm run dev
 
 Buka `http://localhost:4321` — halaman publik memakai demo data jika env Supabase belum diisi. `/admin` hanya berfungsi setelah Supabase dikonfigurasi.
 
-> **Catatan**: untuk upload sertifikat yang benar, file `storage.sql` **harus** dijalankan (bucket privat `certificates` + policy RLS), lalu nonaktifkan MFA enrollment saat pertama kali membuat user admin.
+> **Catatan**: user admin dibuat via Supabase Dashboard (Authentication → Users), lalu atur `role = 'admin'` di tabel `public.profiles` (lihat docs/DEPLOYMENT.md §1). MFA di-enroll pada login pertama; role `admin`/`editor` wajib `aal2`.
 
 ## Scripts
 
@@ -86,9 +83,9 @@ Buka `http://localhost:4321` — halaman publik memakai demo data jika env Supab
 
 ## Deployment
 
-- **Cloudflare Pages**: `_headers` sudah disiapkan untuk CSP & security headers. Sesuaikan adapter (`@astrojs/cloudflare`) jika ingin SSR penuh di Edge, atau gunakan output statis.
-- **VPS/Docker**: build `node` standalone (`npm run build` → jalankan `node dist/server/entry.mjs`).
-- Pastikan environment variables Supabase di-set di platform hosting.
+- **Cloudflare Workers** (SSR + static assets): push ke `main` auto-deploy via GitHub Actions (`.github/workflows/deploy.yml`), atau manual dengan `wrangler deploy`.
+- Pastikan environment variables Supabase di-set (PUBLIC_* via secrets, non-publik sebagai runtime secrets Worker).
+- Checklist lengkap (SQL, KV, secrets): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Keamanan
 

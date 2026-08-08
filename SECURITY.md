@@ -37,7 +37,7 @@ Kami akan menghapus atau meminta izin sebelum mempublikasikan detail kerentanan 
 - **CodeQL**: code scanning otomatis pada tiap push/PR ke `main` + jadwal mingguan (lihat `.github/workflows/codeql.yml`)
 - **Dependency Review**: audit perubahan dependency pada tiap PR ke `main` — PR gagal jika ada dependency baru berkerentanan level high/critical (lihat `.github/workflows/dependency-review.yml`)
 - **CODEOWNERS**: perubahan pada schema SQL, halaman admin, middleware, auth, workflow, dan `_headers` wajib di-review pemilik
-- **CSP ketat**: `public/_headers` tanpa `unsafe-inline` untuk script/style
+- **CSP ketat**: security headers diterapkan di middleware (runtime), tanpa `unsafe-inline` untuk script/style; `public/_headers` hanya fallback aset statis
 - **MFA wajib** untuk role admin/editor (`aal2`) via Supabase
 - **RBAC**: RLS di Supabase sebagai penegak utama izin data
 - **Validasi upload server-side**: magic bytes + limit 5 MB
