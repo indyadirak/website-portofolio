@@ -35,6 +35,26 @@ const xDefaultUrl = new URL(getRelativeLocaleUrl("id", rest), siteConfig.url);
 const ogLocale = locale === "en" ? "en_US" : "id_ID";
 const ogAlternateLocale = locale === "en" ? "id_ID" : "en_US";
 const ogImageUrl = new URL(image, siteConfig.url);
+
+// ===== JSON-LD Structured Data (Schema.org Person) — locale-aware =====
+const personJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "@id": `${siteConfig.url}/#person`,
+  name: siteConfig.author.name,
+  jobTitle: t.hero.title,
+  description: t.meta.home,
+  url: siteConfig.url,
+  inLanguage: locale,
+  sameAs: [
+    siteConfig.contact.linkedinUrl,
+    siteConfig.contact.githubUrl,
+  ].filter(Boolean),
+  ...(siteConfig.author.alumniOf
+    ? { alumniOf: { "@type": "CollegeOrUniversity", name: siteConfig.author.alumniOf } }
+    : {}),
+  knowsAbout: t.about.knowsAbout,
+};
 ---
 
 <!doctype html>
@@ -66,6 +86,12 @@ const ogImageUrl = new URL(image, siteConfig.url);
     <meta name="twitter:image" content={ogImageUrl} />
 
     <title>{pageTitle}</title>
+
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(personJsonLd)}
+    ></script>
   </head>
   <body class="min-h-screen flex flex-col bg-cyber-bg">
     <Navbar />

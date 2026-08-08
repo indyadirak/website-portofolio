@@ -91,6 +91,14 @@ export const id: Dictionary = {
     availabilityLabel: "availability",
     openToWork: "open-to-work",
     notAvailable: "not-available",
+    knowsAbout: [
+      "Network Defense",
+      "IT Support",
+      "Network Security",
+      "Penetration Testing",
+      "Linux Administration",
+      "Incident Response",
+    ],
   },
   contact: {
     eyebrow: "$ nc -lvp 443",

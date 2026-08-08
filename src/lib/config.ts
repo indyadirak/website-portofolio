@@ -17,6 +17,8 @@ export const siteConfig = {
   author: {
     name: "Your Name",
     role: "Cyber Security Specialist",
+    /** Institusi pendidikan (JSON-LD alumniOf). Kosongkan ("") untuk skip. */
+    alumniOf: "",
   },
 
   contact: {

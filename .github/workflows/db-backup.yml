@@ -1,0 +1,51 @@
+name: Database Backup
+
+on:
+  schedule:
+    # Minggu 02:00 UTC
+    - cron: "0 2 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install PostgreSQL client & GPG
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client gpg
+
+      # Hanya skema public (tabel aplikasi: projects, skills, contact_messages,
+      # certificates, profiles, login_attempts). Skema auth MILIK SUPABASE
+      # (users, hashed passwords) TIDAK ikut di-dump — sudah otomatis dikelola
+      # dan di-backup oleh infrastruktur Supabase sendiri.
+      - name: Dump public schema
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          pg_dump "$SUPABASE_DB_URL" \
+            --schema=public \
+            --no-owner --no-privileges \
+            -f backup.sql
+
+      # Enkripsi SIMETRIS (AES-256): file .sql mentah tidak pernah
+      # disimpan sebagai artifact. Passphrase di GitHub Secret terpisah.
+      - name: Encrypt dump
+        env:
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          gpg --batch --yes --symmetric --cipher-algo AES256 \
+            --passphrase "$BACKUP_ENCRYPTION_KEY" \
+            -o backup.sql.gpg backup.sql
+          rm -f backup.sql
+
+      # Retention 30 hari (bukan default 90) — membatasi backup lama tersimpan.
+      - name: Upload encrypted artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup.sql.gpg
+          retention-days: 30

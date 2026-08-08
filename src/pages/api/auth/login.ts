@@ -1,6 +1,8 @@
 import type { APIContext } from "astro";
 import { getSupabaseFromLocals, json } from "../../../lib/api";
 import { getUserProfile, resolveMfaStatus, canManageCertificates } from "../../../lib/auth";
+import { loginRateLimiter } from "../../../lib/rateLimit";
+import { recordLoginAttempt } from "../../../lib/audit";
 
 export const prerender = false;
 
@@ -22,6 +24,19 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "supabase_not_configured" }, 503);
   }
 
+  // ===== Proteksi rate limit (SATU mekanisme untuk proteksi + logger) =====
+  // Cek SEBELUM membaca body & sebelum autentikasi. Saat diblokir, permintaan
+  // ditolak TANPA dicatat: dengan begitu logger hanya pernah mencatat maksimal
+  // `max` percobaan per IP per window (bounded), bukan satu baris per request.
+  const ip =
+    request.headers.get("cf-connecting-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    undefined;
+  const userAgent = request.headers.get("user-agent");
+  if (!loginRateLimiter.isAllowed(ip ?? "unknown")) {
+    return json({ ok: false, error: "too_many_attempts" }, 429);
+  }
+
   let body: LoginBody;
   try {
     body = (await request.json()) as LoginBody;
@@ -39,8 +54,11 @@ export async function POST({ request, locals }: APIContext) {
   const { data, error } = await locals.supabase.auth.signInWithPassword({ email, password });
 
   if (error || !data.session || !data.user) {
+    await recordLoginAttempt(locals.supabase, { email, ip, userAgent, status: "failed" });
     return json({ ok: false, error: "kredensial_salah" }, 401);
   }
+
+  await recordLoginAttempt(locals.supabase, { email, ip, userAgent, status: "success" });
 
   // Simpan sesi awal (aal1) ke cookie — sesi belum "penuh" jika ada MFA.
   await locals.supabase.auth.setSession(data.session);

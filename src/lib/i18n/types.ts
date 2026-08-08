@@ -67,6 +67,7 @@ export interface Dictionary {
     availabilityLabel: string;
     openToWork: string;
     notAvailable: string;
+    knowsAbout: string[];
   };
   contact: {
     eyebrow: string;
