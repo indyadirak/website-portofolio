@@ -1,5 +1,7 @@
 ---
 import "../styles/global.css";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getDictionary, locales, localeFromPathname, type Locale } from "../lib/i18n";
 import { siteConfig } from "../lib/config";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
@@ -7,23 +9,61 @@ import Footer from "../components/Footer.astro";
 export interface Props {
   title: string;
   description?: string;
+  /** Path og:image relatif public/ (default: /og-image.png — sediakan manual). */
+  image?: string;
 }
 
-const { title, description = siteConfig.description } = Astro.props;
+const { title, description, image = "/og-image.png" } = Astro.props;
+
+const pathname = Astro.url.pathname;
+const locale: Locale = localeFromPathname(pathname) ?? "id";
+const t = getDictionary(locale);
+
 const pageTitle = title === siteConfig.name ? title : `${title} — ${siteConfig.name}`;
+
+// Path relatif di dalam prefix bahasa: "/en/projects/" -> "projects"
+const rest = pathname.replace(/^\/(id|en)\//, "").replace(/\/+$/, "");
+
+// ===== SEO: canonical + hreflang (setiap locale + x-default) =====
+const canonical = new URL(getRelativeLocaleUrl(locale, rest), siteConfig.url);
+const hreflangLinks = locales
+  .filter((l) => l !== locale)
+  .map((l) => ({ locale: l, url: new URL(getRelativeLocaleUrl(l, rest), siteConfig.url) }));
+const xDefaultUrl = new URL(getRelativeLocaleUrl("id", rest), siteConfig.url);
+
+// ===== Open Graph locale-aware =====
+const ogLocale = locale === "en" ? "en_US" : "id_ID";
+const ogAlternateLocale = locale === "en" ? "id_ID" : "en_US";
+const ogImageUrl = new URL(image, siteConfig.url);
 ---
 
 <!doctype html>
-<html lang="id" class="scroll-smooth">
+<html lang={locale} class="scroll-smooth">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="description" content={description} />
-    <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
+    <meta name="description" content={description ?? t.meta.home} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <link rel="canonical" href={canonical} />
+    {hreflangLinks.map(({ locale: l, url }) => (
+      <link rel="alternate" hreflang={l} href={url} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={xDefaultUrl} />
+
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description ?? t.meta.home} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={ogAlternateLocale} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description ?? t.meta.home} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
     <title>{pageTitle}</title>
   </head>
   <body class="min-h-screen flex flex-col bg-cyber-bg">

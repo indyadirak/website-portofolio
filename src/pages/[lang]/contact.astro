@@ -1,0 +1,45 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import ContactForm from "../../components/ContactForm.astro";
+import EmailLink from "../../components/EmailLink.astro";
+import { getDictionary, getLocaleStaticPaths, localeFromPathname } from "../../lib/i18n";
+import { siteConfig } from "../../lib/config";
+
+export const prerender = true;
+export const getStaticPaths = getLocaleStaticPaths;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+---
+
+<BaseLayout
+  title={t.contact.title}
+  description={t.meta.contact}
+>
+  <div class="mx-auto max-w-3xl px-6 py-16">
+    <SectionHeading
+      eyebrow={t.contact.eyebrow}
+      title={t.contact.title}
+      description={t.contact.description}
+    />
+
+    <div class="rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+      <ContactForm />
+    </div>
+
+    <div class="mt-6 rounded border border-cyber-border bg-cyber-card p-6">
+      <p class="font-mono text-sm text-cyber-accent">{t.contact.directEmailTitle}</p>
+      <p class="mt-3 font-mono text-sm text-slate-300">
+        <EmailLink /> <span class="text-cyber-muted">— {t.contact.orVia} </span>
+        <a href={siteConfig.contact.linkedinUrl} target="_blank" rel="noopener noreferrer" class="text-cyber-accent hover:underline">
+          LinkedIn
+        </a>
+      </p>
+    </div>
+
+    <p class="mt-6 font-mono text-xs text-cyber-muted">
+      $ note: {t.contact.note}
+    </p>
+  </div>
+</BaseLayout>

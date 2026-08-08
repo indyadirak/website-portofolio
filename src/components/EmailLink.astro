@@ -1,0 +1,32 @@
+---
+import { siteConfig } from "../lib/config";
+import { reverseEmail } from "../lib/email";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+// Email TIDAK tertulis polos di HTML — dipecah & dirender client-side.
+const reversed = reverseEmail(siteConfig.contact.email);
+const [user, domain] = reversed.split("@");
+---
+
+<a
+  href="#"
+  data-email-user={user}
+  data-email-domain={domain}
+  class="text-cyber-primary underline-offset-4 hover:underline"
+>
+  [ {t.contact.revealEmail} ]
+</a>
+
+<script>
+  document.querySelectorAll("[data-email-user]").forEach((el) => {
+    const email = `${el.getAttribute("data-email-user")}@${el.getAttribute("data-email-domain")}`
+      .split("")
+      .reverse()
+      .join("");
+    el.setAttribute("href", `mailto:${email}`);
+    el.textContent = email;
+  });
+</script>

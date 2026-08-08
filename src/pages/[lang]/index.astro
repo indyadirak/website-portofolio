@@ -1,0 +1,48 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Hero from "../../components/Hero.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import ProjectGrid from "../../components/ProjectGrid.astro";
+import SkillGrid from "../../components/SkillGrid.astro";
+import { getProjects } from "../../lib/data/projects";
+import { getSkills } from "../../lib/data/skills";
+import { getDictionary, getLocaleStaticPaths, localeFromPathname } from "../../lib/i18n";
+import { siteConfig } from "../../lib/config";
+import { getRelativeLocaleUrl } from "astro:i18n";
+
+export const prerender = true;
+export const getStaticPaths = getLocaleStaticPaths;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const featuredProjects = await getProjects({ featuredOnly: true });
+const skills = await getSkills();
+---
+
+<BaseLayout title={siteConfig.name} description={t.meta.home}>
+  <Hero />
+
+  <section id="projects" class="mx-auto max-w-6xl px-6 py-16">
+    <SectionHeading
+      eyebrow={t.home.featuredEyebrow}
+      title={t.home.featuredTitle}
+      description={t.home.featuredDescription}
+    />
+    <ProjectGrid projects={featuredProjects} />
+    <div class="mt-8">
+      <a href={getRelativeLocaleUrl(locale, "projects")} class="font-mono text-sm text-cyber-primary transition-opacity hover:opacity-80">
+        {t.home.viewAllProjects}
+      </a>
+    </div>
+  </section>
+
+  <section id="skills" class="mx-auto max-w-6xl px-6 py-16">
+    <SectionHeading
+      eyebrow={t.home.skillsEyebrow}
+      title={t.home.skillsTitle}
+      description={t.home.skillsDescription}
+    />
+    <SkillGrid skills={skills} />
+  </section>
+</BaseLayout>

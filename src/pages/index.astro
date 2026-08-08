@@ -1,42 +1,8 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
-import Hero from "../components/Hero.astro";
-import SectionHeading from "../components/SectionHeading.astro";
-import ProjectGrid from "../components/ProjectGrid.astro";
-import SkillGrid from "../components/SkillGrid.astro";
-import { getProjects } from "../lib/data/projects";
-import { getSkills } from "../lib/data/skills";
-import { siteConfig } from "../lib/config";
+// Halaman root: redirect "/" -> "/id/".
+// SSR (bukan prerender) agar menghasilkan HTTP 302 murni, bukan halaman
+// HTML dengan meta-refresh (hasil default Astro.redirect di static page).
+export const prerender = false;
 
-export const prerender = true;
-
-const featuredProjects = await getProjects({ featuredOnly: true });
-const skills = await getSkills();
+return Astro.redirect("/id/");
 ---
-
-<BaseLayout title={siteConfig.name}>
-  <Hero />
-
-  <section id="projects" class="mx-auto max-w-6xl px-6 py-16">
-    <SectionHeading
-      eyebrow="$ ls ./projects"
-      title="Featured Projects"
-      description="Seleksi project pilihan — diambil langsung dari tabel projects di Supabase."
-    />
-    <ProjectGrid projects={featuredProjects} />
-    <div class="mt-8">
-      <a href="/projects" class="font-mono text-sm text-cyber-primary transition-opacity hover:opacity-80">
-        [ view_all_projects → ]
-      </a>
-    </div>
-  </section>
-
-  <section id="skills" class="mx-auto max-w-6xl px-6 py-16">
-    <SectionHeading
-      eyebrow="$ cat ./skills"
-      title="Skills & Expertise"
-      description="Skill yang dikelola secara dinamis dari tabel skills di Supabase."
-    />
-    <SkillGrid skills={skills} />
-  </section>
-</BaseLayout>

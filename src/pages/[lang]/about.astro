@@ -1,0 +1,72 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import EmailLink from "../../components/EmailLink.astro";
+import { getDictionary, getLocaleStaticPaths, localeFromPathname } from "../../lib/i18n";
+import { siteConfig } from "../../lib/config";
+
+export const prerender = true;
+export const getStaticPaths = getLocaleStaticPaths;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const { author, contact } = siteConfig;
+const available = contact.availabilityStatus === "open-to-work";
+---
+
+<BaseLayout title={t.about.title} description={t.meta.about}>
+  <div class="mx-auto max-w-3xl px-6 py-16">
+    <SectionHeading eyebrow={t.about.eyebrow} title={t.about.title} />
+
+    <div class="space-y-6 leading-relaxed text-slate-300">
+      <p>
+        <strong class="text-cyber-primary">{author.name}</strong> —{" "}
+        {t.about.paragraphs[0]}
+      </p>
+      <p>{t.about.paragraphs[1]}</p>
+    </div>
+
+    <div class="mt-12 grid gap-6 sm:grid-cols-2">
+      <div class="rounded border border-cyber-border bg-cyber-card p-6">
+        <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+          {t.about.specializationsTitle}
+        </h2>
+        <ul class="mt-4 space-y-2 font-mono text-sm text-slate-300">
+          {t.about.specializations.map((item, index) => (
+            <li class={index === 0 ? "text-cyber-primary" : ""}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div class="rounded border border-cyber-border bg-cyber-card p-6">
+        <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+          {t.about.contactTitle}
+        </h2>
+        <ul class="mt-4 space-y-2 font-mono text-sm text-slate-300">
+          <li>
+            {t.about.emailLabel}: <EmailLink />
+          </li>
+          <li>
+            {t.about.githubLabel}:{" "}
+            <a href={contact.githubUrl} target="_blank" rel="noopener noreferrer" class="text-cyber-primary hover:underline">
+              {contact.githubUrl.replace(/^https?:\/\/(www\.)?/, "")}
+            </a>
+          </li>
+          <li>
+            {t.about.linkedinLabel}:{" "}
+            <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer" class="text-cyber-primary hover:underline">
+              {contact.linkedinUrl.replace(/^https?:\/\/(www\.)?/, "")}
+            </a>
+          </li>
+          <li class="pt-2">
+            {t.about.availabilityLabel}:{" "}
+            <span class={available ? "text-cyber-primary" : "text-cyber-danger"}>
+              {available ? t.about.openToWork : t.about.notAvailable}
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

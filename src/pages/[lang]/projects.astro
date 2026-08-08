@@ -1,0 +1,26 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import ProjectGrid from "../../components/ProjectGrid.astro";
+import { getProjects } from "../../lib/data/projects";
+import { getDictionary, getLocaleStaticPaths, localeFromPathname } from "../../lib/i18n";
+
+export const prerender = true;
+export const getStaticPaths = getLocaleStaticPaths;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const projects = await getProjects();
+---
+
+<BaseLayout title={t.projects.title} description={t.meta.projects}>
+  <div class="mx-auto max-w-6xl px-6 py-16">
+    <SectionHeading
+      eyebrow={t.projects.eyebrow}
+      title={t.projects.title}
+      description={t.projects.description}
+    />
+    <ProjectGrid projects={projects} />
+  </div>
+</BaseLayout>

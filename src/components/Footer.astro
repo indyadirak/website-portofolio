@@ -1,22 +1,23 @@
 ---
+import { getDictionary, localeFromPathname } from "../lib/i18n";
 import { siteConfig } from "../lib/config";
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
 ---
 
 <footer class="border-t border-cyber-border bg-cyber-panel/50">
   <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 md:flex-row">
     <p class="font-mono text-xs text-cyber-muted">
-      © {new Date().getFullYear()} {siteConfig.author.name}. All rights reserved.
+      © {new Date().getFullYear()} {siteConfig.author.name}. {t.footer.rights}
     </p>
 
     <div class="flex items-center gap-6 font-mono text-xs">
-      <a href={siteConfig.socials.github} target="_blank" rel="noopener noreferrer" class="text-cyber-muted transition-colors hover:text-cyber-primary">
-        GitHub
+      <a href={siteConfig.contact.githubUrl} target="_blank" rel="noopener noreferrer" class="text-cyber-muted transition-colors hover:text-cyber-primary">
+        {t.footer.github}
       </a>
-      <a href={siteConfig.socials.linkedin} target="_blank" rel="noopener noreferrer" class="text-cyber-muted transition-colors hover:text-cyber-primary">
-        LinkedIn
-      </a>
-      <a href={siteConfig.socials.twitter} target="_blank" rel="noopener noreferrer" class="text-cyber-muted transition-colors hover:text-cyber-primary">
-        X / Twitter
+      <a href={siteConfig.contact.linkedinUrl} target="_blank" rel="noopener noreferrer" class="text-cyber-muted transition-colors hover:text-cyber-primary">
+        {t.footer.linkedin}
       </a>
     </div>
   </div>

@@ -24,6 +24,13 @@ const { data: certificates } = await supabase
   .select("*")
   .order("issue_date", { ascending: false });
 
+// ===== Pesan kontak masuk (SELECT authenticated — viewer ikut bisa baca) =====
+const { data: messages } = await supabase
+  .from("contact_messages")
+  .select("*")
+  .order("created_at", { ascending: false })
+  .limit(50);
+
 const role = profile?.role ?? "viewer";
 const canWrite = canManageCertificates(profile); // admin | editor
 const isAdmin = canDeleteCertificates(profile); // admin saja
@@ -89,6 +96,40 @@ const isAdmin = canDeleteCertificates(profile); // admin saja
           <p class="mt-6 rounded border border-cyber-border bg-cyber-card p-4 font-mono text-xs text-cyber-muted">
             $ note: role Anda (viewer) hanya memiliki akses baca — tombol edit/delete tidak dirender.
             Hubungi admin untuk upgrade role atau daftarkan MFA.
+          </p>
+        )
+      }
+    </section>
+
+    <!-- ===== PESAN KONTAK MASUK (baca: semua role) ===== -->
+    <section class="mt-10">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-mono text-lg font-bold text-white">Contact Messages</h2>
+        <span class="font-mono text-xs text-cyber-muted">
+          total: {messages?.length ?? 0}
+        </span>
+      </div>
+
+      {
+        (messages ?? []).length > 0 ? (
+          <div class="space-y-4">
+            {messages?.map((msg) => (
+              <div class="rounded border border-cyber-border bg-cyber-card p-5">
+                <div class="flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+                  <p class="text-cyber-primary">{msg.name} <span class="text-cyber-muted">&lt;{msg.email}&gt;</span></p>
+                  <p class="text-cyber-muted">
+                    {new Date(msg.created_at).toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <p class="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+                  {msg.message}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p class="rounded border border-cyber-border bg-cyber-card p-6 font-mono text-xs text-cyber-muted">
+            $ echo "belum ada pesan masuk — form kontak di halaman /id/contact & /en/contact menyimpan ke tabel contact_messages."
           </p>
         )
       }

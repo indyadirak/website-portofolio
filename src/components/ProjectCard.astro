@@ -1,11 +1,16 @@
 ---
+import { getRelativeLocaleUrl } from "astro:i18n";
 import type { Project } from "../lib/types";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
 
 interface Props {
   project: Project;
 }
 
 const { project } = Astro.props;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
 
 const statusColor: Record<Project["status"], string> = {
   active: "text-cyber-primary border-cyber-primary/50",
@@ -37,10 +42,10 @@ const statusColor: Record<Project["status"], string> = {
 
   <div class="mt-6 flex items-center gap-4 font-mono text-xs">
     <a
-      href={`/projects/${project.slug}`}
+      href={getRelativeLocaleUrl(locale, `projects/${project.slug}`)}
       class="text-cyber-primary transition-opacity hover:opacity-80"
     >
-      [ details ]
+      {t.projects.details}
     </a>
     {project.repoUrl && (
       <a
@@ -49,7 +54,7 @@ const statusColor: Record<Project["status"], string> = {
         rel="noopener noreferrer"
         class="text-cyber-muted transition-colors hover:text-cyber-accent"
       >
-        [ repo ]
+        {t.projects.repo}
       </a>
     )}
     {project.liveUrl && (
@@ -59,7 +64,7 @@ const statusColor: Record<Project["status"], string> = {
         rel="noopener noreferrer"
         class="text-cyber-muted transition-colors hover:text-cyber-accent"
       >
-        [ live ]
+        {t.projects.live}
       </a>
     )}
   </div>

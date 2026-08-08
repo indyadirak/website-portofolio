@@ -63,4 +63,17 @@
   [data-meter-width="100"] {
     width: 100%;
   }
+
+  /* Honeypot anti-bot: tersembunyi off-screen (bukan display:none),
+     supaya bot yang men-scan DOM/HTML tetap melihatnya sebagai field asli. */
+  .hp-trap {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0.01;
+    pointer-events: none;
+  }
 }

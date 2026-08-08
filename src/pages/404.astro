@@ -1,0 +1,25 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+import { siteConfig } from "../lib/config";
+
+export const prerender = true;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+---
+
+<BaseLayout title={`404 — ${siteConfig.name}`}>
+  <div class="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center px-6 py-24 text-center">
+    <p class="font-mono text-6xl font-bold text-cyber-primary glow-text">404</p>
+    <h1 class="mt-6 font-mono text-2xl font-bold text-white">{t.notFound.title}</h1>
+    <p class="mt-4 max-w-md text-cyber-muted">{t.notFound.message}</p>
+    <a
+      href={getRelativeLocaleUrl(locale, "")}
+      class="mt-10 rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-3 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+    >
+      {t.notFound.backHome}
+    </a>
+  </div>
+</BaseLayout>

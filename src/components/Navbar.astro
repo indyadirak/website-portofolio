@@ -1,17 +1,32 @@
 ---
-import { siteConfig } from "../lib/config";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+import { siteConfig, cvUrl } from "../lib/config";
+import LanguageSwitcher from "./LanguageSwitcher.astro";
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const homeHref = getRelativeLocaleUrl(locale, "");
+const navLinks = [
+  { label: t.nav.home, href: homeHref },
+  { label: t.nav.projects, href: getRelativeLocaleUrl(locale, "projects") },
+  { label: t.nav.about, href: getRelativeLocaleUrl(locale, "about") },
+  { label: t.nav.contact, href: getRelativeLocaleUrl(locale, "contact") },
+];
+const cvHref = cvUrl(locale);
 ---
 
 <header class="sticky top-0 z-50 border-b border-cyber-border bg-cyber-bg/80 backdrop-blur-md">
   <nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-    <a href="/" class="font-mono text-lg font-bold tracking-tight text-cyber-primary glow-text">
+    <a href={homeHref} class="font-mono text-lg font-bold tracking-tight text-cyber-primary glow-text">
       {siteConfig.name}
       <span class="text-cyber-accent">_</span>
     </a>
 
-    <div class="hidden items-center gap-8 md:flex">
+    <div class="hidden items-center gap-6 md:flex">
       {
-        siteConfig.navLinks.map((link) => (
+        navLinks.map((link) => (
           <a
             href={link.href}
             class="font-mono text-sm text-slate-400 transition-colors hover:text-cyber-primary"
@@ -20,16 +35,25 @@ import { siteConfig } from "../lib/config";
           </a>
         ))
       }
+      <a
+        href={cvHref}
+        download
+        class="font-mono text-sm text-cyber-primary transition-opacity hover:opacity-80"
+      >
+        [{t.nav.downloadCv}]
+      </a>
+      <LanguageSwitcher />
     </div>
 
-    <div class="md:hidden">
+    <div class="flex items-center gap-3 md:hidden">
+      <LanguageSwitcher />
       <details class="relative">
         <summary class="cursor-pointer list-none font-mono text-sm text-cyber-primary">
-          [menu]
+          [{t.nav.menu}]
         </summary>
         <div class="absolute right-0 mt-3 flex w-48 flex-col gap-1 rounded border border-cyber-border bg-cyber-panel p-3">
           {
-            siteConfig.navLinks.map((link) => (
+            navLinks.map((link) => (
               <a
                 href={link.href}
                 class="rounded px-3 py-2 font-mono text-sm text-slate-300 transition-colors hover:bg-cyber-card hover:text-cyber-primary"
@@ -38,6 +62,13 @@ import { siteConfig } from "../lib/config";
               </a>
             ))
           }
+          <a
+            href={cvHref}
+            download
+            class="rounded px-3 py-2 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-card"
+          >
+            [{t.nav.downloadCv}]
+          </a>
         </div>
       </details>
     </div>

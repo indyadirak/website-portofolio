@@ -49,13 +49,13 @@ create policy "skills_public_read" on public.skills
 
 -- ------------------------------------------------------------------
 -- Tabel: contact_messages
--- Public hanya boleh INSERT (bukan SELECT), untuk mencegah data bocor.
+-- Public hanya boleh INSERT (bukan SELECT) — data hanya terbaca oleh
+-- user terautentikasi (admin/editor/viewer) via dashboard.
 -- ------------------------------------------------------------------
 create table if not exists public.contact_messages (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
   email      text not null,
-  subject    text not null,
   message    text not null,
   created_at timestamptz not null default now()
 );
@@ -66,6 +66,7 @@ create policy "contact_messages_public_insert" on public.contact_messages
   for insert to anon, authenticated
   with check (true);
 
--- Hanya admin (melalui dashboard) yang boleh membaca pesan
-create policy "contact_messages_admin_select" on public.contact_messages
-  for select using (auth.role() = 'authenticated');
+-- Dibaca oleh semua role login (dashboard admin): viewer, editor, admin.
+create policy "contact_messages_auth_select" on public.contact_messages
+  for select to authenticated
+  using (true);

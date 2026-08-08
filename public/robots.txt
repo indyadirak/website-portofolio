@@ -1,0 +1,14 @@
+# website-portofolio — robots.txt
+# Struktur URL dua bahasa: /id/ (Indonesia, default) & /en/ (Inggris)
+
+User-agent: *
+Allow: /
+
+# Area admin & API tidak boleh diindeks
+Disallow: /admin
+Disallow: /api
+Disallow: /_astro/
+
+# Jalur bahasa eksplisit (kanonik)
+Allow: /id/
+Allow: /en/
