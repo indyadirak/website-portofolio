@@ -17,6 +17,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # GUARD: RATE_LIMIT_KV id wajib ASLI sebelum deploy.
+      # Dengan id placeholder (00000000-...), kv.get() selalu null —
+      # rate limiter tampak jalan tapi TIDAK PERNAH membatasi (silent
+      # inert, tanpa tanda kegagalan). Blok deploy sampai id diganti:
+      #   npx wrangler kv namespace create RATE_LIMIT_KV
+      # lalu update id di wrangler.toml.
+      - name: Guard KV namespace id (anti silent-inert)
+        run: |
+          if grep -q "00000000-0000-0000-0000-000000000000" wrangler.toml; then
+            echo "::error::RATE_LIMIT_KV masih pakai id PLACEHOLDER di wrangler.toml. Jalankan 'npx wrangler kv namespace create RATE_LIMIT_KV', ganti id-nya, lalu deploy ulang. Rate limiting login & backup-config TIDAK AKTIF dengan id dummy."
+            exit 1
+          fi
+          echo "KV namespace id OK"
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:

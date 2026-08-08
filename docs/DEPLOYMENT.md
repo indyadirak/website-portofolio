@@ -43,7 +43,8 @@ Versi infrastruktur saat ini:
   ```
   npx wrangler kv namespace create RATE_LIMIT_KV
   ```
-  lalu ganti `id` di `wrangler.toml` dengan id hasil perintah
+  lalu ganti `id` di `wrangler.toml` dengan id hasil perintah.
+  **Guard otomatis**: deploy.yml kini memblokir deploy (job gagal dengan pesan jelas) selama id placeholder masih ada — agar kasus "silent inert" (rate limiter tampak normal tapi tidak pernah membatasi) tidak pernah terlewat.
 - [ ] Buat API token dengan permission minimal: **Workers Scripts: Edit**, **KV: Edit**, **Account Settings: Read** → simpan sebagai `CLOUDFLARE_API_TOKEN`; `CLOUDFLARE_ACCOUNT_ID` dari dashboard
 - [ ] (Opsional) Custom domain: Workers → worker → Settings → Triggers → Custom Domains
 
