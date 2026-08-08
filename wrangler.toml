@@ -1,14 +1,15 @@
 # =====================================================================
 # Wrangler config — Cloudflare WORKERS (Static Assets) + local dev bindings
 #
-# CATATAN ENV VARIABLES: semua variabel project saat ini dibaca via
-# `import.meta.env` dan di-inline SAAT BUILD (lihat .github/workflows/
-# deploy.yml). Karena itu TIDAK ada [vars] / secret runtime di file ini.
-# Bila nanti menambah variabel runtime:
-#   - non-rahasia  -> tambah blok [vars] di sini
-#   - rahasia      -> `npx wrangler secret put <NAMA>` (dashboard: Settings
-#                     > Variables and Secrets) lalu baca via env.<NAMA>
-#                     (modul cloudflare:workers) di kode.
+# CATATAN ENV VARIABLES (klasifikasi):
+#   - BUILD-TIME (inline via import.meta.env, disuntikkan di
+#     .github/workflows/deploy.yml): PUBLIC_SUPABASE_URL,
+#     PUBLIC_SUPABASE_ANON_KEY, PUBLIC_TURNSTILE_SITE_KEY.
+#   - RUNTIME SECRET (`npx wrangler secret put TURNSTILE_SECRET_KEY`,
+#     dibaca via env.TURNSTILE_SECRET_KEY): TURNSTILE_SECRET_KEY —
+#     sengaja TIDAK di-bake ke bundle, rotasi tanpa rebuild.
+#   - [vars] (runtime, non-rahasia): belum ada — tambahkan di sini bila
+#     nanti ada variabel non-rahasia yang dibaca via env.* di kode.
 #
 # CATATAN VERSI: @astrojs/cloudflare v13+ TIDAK lagi mendukung Cloudflare
 # Pages. Deploy target resmi adalah Cloudflare Workers (Static Assets):

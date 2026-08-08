@@ -1,4 +1,5 @@
 import type { Locale } from "./i18n";
+import { env } from "cloudflare:workers";
 
 /**
  * Konfigurasi terpusat situs — SEMUA info identitas & kontak diubah di sini,
@@ -52,14 +53,24 @@ export function cvUrl(locale: Locale): string {
 
 /**
  * Cloudflare Turnstile (anti-bot form kontak).
- * - siteKey  : publik, dirender di widget (aman untuk frontend)
- * - secretKey: server-only, dipakai verifikasi token di /api/contact
- * Jika keduanya kosong, Turnstile dinonaktifkan (mode dev) dan
- * form/API berjalan tanpa CAPTCHA.
+ * - siteKey  : publik, dirender di widget (aman untuk frontend, boleh
+ *              ter-inline saat build)
+ * - secretKey: server-only — dibaca dari RUNTIME (wrangler secret put),
+ *              TIDAK pernah ikut di-bake ke bundle build (mencegah bocor
+ *              lewat build artifact / log CI, dan rotasi cukup update
+ *              secret tanpa rebuild). Dev lokal: fallback import.meta.env
+ *              (.env) agar `npm run dev` tetap jalan tanpa binding.
+ * Jika siteKey kosong, Turnstile dinonaktifkan (mode dev) dan form/API
+ * berjalan tanpa CAPTCHA.
  */
 export const turnstile = {
   siteKey: (import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as string | undefined) ?? "",
-  secretKey: (import.meta.env.TURNSTILE_SECRET_KEY as string | undefined) ?? "",
 };
 
-export const isTurnstileEnabled = Boolean(turnstile.siteKey && turnstile.secretKey);
+export function getTurnstileSecretKey(): string {
+  if (env.TURNSTILE_SECRET_KEY) return env.TURNSTILE_SECRET_KEY;
+  if (import.meta.env.DEV) {
+    return (import.meta.env.TURNSTILE_SECRET_KEY as string | undefined) ?? "";
+  }
+  return "";
+}

@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { getSupabase } from "../../lib/supabase";
-import { isTurnstileEnabled, turnstile } from "../../lib/config";
+import { turnstile, getTurnstileSecretKey } from "../../lib/config";
 import { contactRateLimiter } from "../../lib/rateLimit";
 
 /**
@@ -28,14 +28,25 @@ function clientIp(request: Request): string {
 
 /**
  * Verifikasi token Turnstile via siteverify Cloudflare.
- * Return true bila Turnstile tidak dikonfigurasi (mode dev) ATAU
- * token valid. Token wajib ada & valid saat Turnstile aktif.
+ * Return true bila Turnstile tidak dikonfigurasi (siteKey kosong — mode
+ * dev) ATAU token valid. Token wajib ada & valid saat Turnstile aktif.
+ * FAIL CLOSED bila widget tampil tapi secret runtime hilang (misconfig):
+ * tolak daripada membiarkan submit lolos tanpa verifikasi.
  */
 async function verifyTurnstile(token: string | null): Promise<boolean> {
-  if (!isTurnstileEnabled) return true;
+  if (!turnstile.siteKey) return true;
+
+  const secret = getTurnstileSecretKey();
+  if (!secret) {
+    console.error(
+      "[api/contact] TURNSTILE_SECRET_KEY tidak tersedia di runtime — " +
+        "set via `npx wrangler secret put TURNSTILE_SECRET_KEY`."
+    );
+    return false;
+  }
   if (!token) return false;
 
-  const form = new URLSearchParams({ secret: turnstile.secretKey, response: token });
+  const form = new URLSearchParams({ secret, response: token });
   const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
     method: "POST",
     body: form,

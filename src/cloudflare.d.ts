@@ -16,8 +16,14 @@ interface KvNamespaceLike {
 }
 
 interface Env {
-  /** KV namespace untuk rate limiting (lihat wrangler.toml / dashboard Pages). */
+  /** KV namespace untuk rate limiting (lihat wrangler.toml / dashboard). */
   RATE_LIMIT_KV: KvNamespaceLike;
+  /**
+   * Secret runtime Turnstile — `npx wrangler secret put TURNSTILE_SECRET_KEY`.
+   * Optional karena belum tentu ter-set (misal sebelum deploy pertama);
+   * TIDAK di-bake ke bundle build (lihat src/lib/config.ts).
+   */
+  TURNSTILE_SECRET_KEY?: string;
 }
 
 declare module "cloudflare:workers" {
