@@ -23,6 +23,27 @@ export const LOGIN_LIMITS = {
 
 const WINDOW_SEC = Math.max(1, Math.ceil(LOGIN_LIMITS.WINDOW_MS / 1000));
 
+/**
+ * =====================================================================
+ * KONSTANTA KEAMANAN ENDPOINT /api/backup-config (GitHub Actions).
+ * Endpoint ini me-return kredensial backup terdekripsi — dilindungi
+ * setara login (fail-closed), TAPI lebih ketat per-IP.
+ * =====================================================================
+ */
+export const BACKUP_CONFIG_LIMITS = {
+  /** Maks percobaan gagal (Bearer token salah) per-IP per window. */
+  IP_MAX_FAILURES: 5,
+  /** Jendela hitung (10 menit, sama dengan login). */
+  WINDOW_MS: 10 * 60 * 1000,
+  /** Buffer TTL key agar window sempat terbaca saat mau kedaluwarsa. */
+  TTL_BUFFER_SEC: 60,
+} as const;
+
+const BACKUP_CONFIG_WINDOW_SEC = Math.max(
+  1,
+  Math.ceil(BACKUP_CONFIG_LIMITS.WINDOW_MS / 1000)
+);
+
 /** Durasi lockout level ke-n (progresif, capped di LOCKOUT_MAX_MS). */
 function lockoutDurationMs(level: number): number {
   const d = LOGIN_LIMITS.LOCKOUT_BASE_MS * 2 ** (level - 1);
@@ -34,11 +55,13 @@ function lockoutDurationMs(level: number): number {
 //   ratelimit:loginip:<ip>                    counter percobaan login per-IP (10x/10m)
 //   ratelimit:loginc:<ip>:<email>             counter percobaan login per-IP+email (3x/10m)
 //   ratelimit:lockout:<ip>:<email>            state lockout progresif {level, until}
+//   ratelimit:backupcfg:<ip>                  counter token salah /api/backup-config (5x/10m)
 const KEY = {
   contact: "ratelimit:contact:",
   loginIp: "ratelimit:loginip:",
   loginCred: "ratelimit:loginc:",
   loginLockout: "ratelimit:lockout:",
+  backupConfig: "ratelimit:backupcfg:",
 } as const;
 
 interface Entry {
@@ -70,8 +93,12 @@ function parseLockout(raw: string | null): LockoutEntry | null {
 }
 
 /** `true` bila window entry masih berlaku (bukan expired). */
-function inWindow(entry: { windowStart: number }, now: number): boolean {
-  return now - entry.windowStart < LOGIN_LIMITS.WINDOW_MS;
+function inWindow(
+  entry: { windowStart: number },
+  now: number,
+  windowMs = LOGIN_LIMITS.WINDOW_MS
+): boolean {
+  return now - entry.windowStart < windowMs;
 }
 
 /**
@@ -279,6 +306,121 @@ export const loginAttemptGuard = {
       await kv.delete(KEY.loginLockout + `${ip}:${email}`);
     } catch (err) {
       console.error("[login-guard] KV delete gagal saat recordSuccess:", err);
+    }
+  },
+};
+
+// =====================================================================
+// BACKUP-CONFIG GUARD — proteksi endpoint /api/backup-config (GitHub
+// Actions) yang me-return kredensial backup TERDEKRIPSI.
+//   * Hanya menghitung percobaan GAGAL (Bearer token salah) per-IP
+//     (BACKUP_CONFIG_LIMITS.IP_MAX_FAILURES per window).
+//   * Sukses (token benar) MERESET counter — alur workflow normal sekali
+//     seminggu tidak akan pernah terblokir.
+//   * FAIL-CLOSED: kalau KV tidak tersedia/gagal saat CHECK, request
+//     DITOLAK (reason "kv_unavailable" -> endpoint balas 503) — jangan
+//     pernah memproses endpoint tanpa proteksi.
+//     (Fallback in-memory hanya aktif di dev — tidak pernah di produksi.)
+// =====================================================================
+export type BackupConfigBlockedReason = "rate_limited" | "kv_unavailable";
+
+export interface BackupConfigRateDecision {
+  allowed: boolean;
+  reason?: BackupConfigBlockedReason;
+  retryAfterSec?: number;
+}
+
+export const backupConfigAttemptGuard = {
+  // Fallback dev-only in-memory (perilaku identik dengan KV path).
+  _dev: new Map<string, Entry>(),
+
+  async check(ip: string): Promise<BackupConfigRateDecision> {
+    const kv = env.RATE_LIMIT_KV;
+    const now = Date.now();
+    const storageKey = KEY.backupConfig + ip;
+    const windowMs = BACKUP_CONFIG_LIMITS.WINDOW_MS;
+
+    if (!kv) {
+      if (!import.meta.env.DEV) {
+        console.error(
+          "[backupcfg-guard] RATE_LIMIT_KV tidak tersedia — FAIL CLOSED: request ditolak."
+        );
+        return { allowed: false, reason: "kv_unavailable" };
+      }
+      const entry = this._dev.get(storageKey);
+      if (entry && inWindow(entry, now, windowMs) && entry.count >= BACKUP_CONFIG_LIMITS.IP_MAX_FAILURES) {
+        return {
+          allowed: false,
+          reason: "rate_limited",
+          retryAfterSec: Math.ceil((entry.windowStart + windowMs - now) / 1000),
+        };
+      }
+      return { allowed: true };
+    }
+
+    try {
+      const entry = parseEntry(await kv.get(storageKey));
+      if (entry && inWindow(entry, now, windowMs) && entry.count >= BACKUP_CONFIG_LIMITS.IP_MAX_FAILURES) {
+        return {
+          allowed: false,
+          reason: "rate_limited",
+          retryAfterSec: Math.ceil((entry.windowStart + windowMs - now) / 1000),
+        };
+      }
+      return { allowed: true };
+    } catch (err) {
+      console.error("[backupcfg-guard] KV read gagal — FAIL CLOSED:", err);
+      return { allowed: false, reason: "kv_unavailable" };
+    }
+  },
+
+  /** Panggil SETELAH token terbukti salah — increment counter per-IP. */
+  async recordFailure(ip: string): Promise<void> {
+    const kv = env.RATE_LIMIT_KV;
+    const now = Date.now();
+    const storageKey = KEY.backupConfig + ip;
+    const windowMs = BACKUP_CONFIG_LIMITS.WINDOW_MS;
+
+    if (!kv) {
+      if (import.meta.env.DEV) {
+        const entry = this._dev.get(storageKey);
+        this._dev.set(
+          storageKey,
+          entry && inWindow(entry, now, windowMs)
+            ? { count: entry.count + 1, windowStart: entry.windowStart }
+            : { count: 1, windowStart: now }
+        );
+      }
+      return;
+    }
+
+    try {
+      const entry = parseEntry(await kv.get(storageKey));
+      const next = entry && inWindow(entry, now, windowMs)
+        ? { count: entry.count + 1, windowStart: entry.windowStart }
+        : { count: 1, windowStart: now };
+      await kv.put(storageKey, JSON.stringify(next), {
+        expirationTtl: BACKUP_CONFIG_WINDOW_SEC + BACKUP_CONFIG_LIMITS.TTL_BUFFER_SEC,
+      });
+    } catch (err) {
+      console.error("[backupcfg-guard] KV write gagal saat recordFailure:", err);
+    }
+  },
+
+  /** Panggil SETELAH token terbukti benar — reset counter per-IP. */
+  async recordSuccess(ip: string): Promise<void> {
+    const kv = env.RATE_LIMIT_KV;
+    const storageKey = KEY.backupConfig + ip;
+
+    if (!kv) {
+      if (import.meta.env.DEV) this._dev.delete(storageKey);
+      return;
+    }
+
+    try {
+      await kv.delete(storageKey);
+    } catch (err) {
+      console.error("[backupcfg-guard] KV delete gagal saat recordSuccess:", err);
     }
   },
 };
