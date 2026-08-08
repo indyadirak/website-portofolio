@@ -13,6 +13,7 @@ interface KvNamespaceLike {
     value: string,
     options?: { expirationTtl?: number }
   ): Promise<void>;
+  delete(key: string): Promise<void>;
 }
 
 interface Env {

@@ -1,12 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { LoginBlockedReason } from "./rateLimit";
 
-export type LoginAttemptStatus = "success" | "failed";
+export type LoginAttemptStatus = "success" | "failed" | "blocked";
 
 export interface LoginAttempt {
-  email: string;
+  /** Kredensial yang dicoba — NULL untuk baris blocked (privacy: jangan
+   *  simpan detail kredensial percobaan yang ditolak rate limiter). */
+  email: string | null;
   ip?: string | null;
   userAgent?: string | null;
   status: LoginAttemptStatus;
+  /** Diisi saat status = "blocked": "lockout" | "kv_unavailable". */
+  blockedReason?: LoginBlockedReason | null;
 }
 
 /**
@@ -14,13 +19,12 @@ export interface LoginAttempt {
  * DEFINER (lihat supabase/login-attempts.sql). Fail-silent: error pencatatan
  * TIDAK pernah menggagalkan/mengubah hasil login.
  *
- * Dipanggil HANYA di dalam alur yang sudah lolos loginRateLimiter — jadi
- * volume maksimal = limit rate (5 percobaan/IP/10 menit), tidak bisa
- * dibanjiri jalur pencatatan ini.
+ * Dipanggil di dalam alur yang sudah lolos loginAttemptGuard — jadi volume
+ * maksimal = limit rate (bounded), tidak bisa dibanjiri jalur pencatatan.
  */
 export async function recordLoginAttempt(
   supabase: SupabaseClient,
-  { email, ip, userAgent, status }: LoginAttempt
+  { email, ip, userAgent, status, blockedReason }: LoginAttempt
 ): Promise<void> {
   try {
     await supabase.rpc("record_login_attempt", {
@@ -28,6 +32,7 @@ export async function recordLoginAttempt(
       p_ip: ip ?? null,
       p_user_agent: userAgent ? userAgent.slice(0, 500) : null,
       p_status: status,
+      p_blocked_reason: blockedReason ?? null,
     });
   } catch (err) {
     console.error("login_attempt log gagal:", err);

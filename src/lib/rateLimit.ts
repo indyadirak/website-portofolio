@@ -1,41 +1,93 @@
 import { env } from "cloudflare:workers";
 
 /**
- * Rate limiter berbasis Cloudflare KV (Workers KV) — edge-consistent untuk
- * deployment Cloudflare Pages/Workers, dipakai BERSAMA oleh proteksi login
- * dan logger percobaan login (satu instance = satu mekanisme).
- *
- * Storage: satu key KV per identifier (`ratelimit:<layanan>:<identifier>`),
- * berisi JSON { count, windowStart }, dengan TTL bawaan KV (expirationTtl)
- * sebesar jendela limit. Setiap penulisan menyegarkan TTL (window bergeser).
- *
- * CATATAN KV:
- * - Read-after-write konsisten di lokasi edge yang sama — cukup untuk
- *   burst rate limiting single-tenant skala ini. Increment read-modify-write
- *   tidak atomik antar edge; bila butuh penegakan sangat ketat, gunakan
- *   Durable Object sebagai gantinya.
+ * =====================================================================
+ * KONSTANTA KEAMANAN LOGIN — ubah semua angka di sini, jangan di tempat lain.
+ * =====================================================================
  */
+export const LOGIN_LIMITS = {
+  /** Batas percobaan per-IP MURNI per window (anti enumerasi email). */
+  IP_MAX_FAILURES: 10,
+  /** Batas percobaan per kombinasi IP+email per window. */
+  CRED_MAX_FAILURES: 3,
+  /** Jendela hitung percobaan (di bawah). */
+  WINDOW_MS: 10 * 60 * 1000,
+  /** Durasi lockout level 1 (setelah CRED_MAX_FAILURES gagal). */
+  LOCKOUT_BASE_MS: 15 * 60 * 1000,
+  /** Durasi lockout maksimum (progresif: 15m -> 30m -> 60m -> ... ). */
+  LOCKOUT_MAX_MS: 4 * 60 * 60 * 1000,
+  /** Buffer TTL key lockout di atas durasinya (menyimpan level untuk
+   *  hitungan lockout berikutnya setelah cooldown berakhir). */
+  LOCKOUT_TTL_BUFFER_SEC: 10 * 60,
+} as const;
 
-export interface RateLimiterOptions {
-  /** Maksimal request yang diizinkan dalam window. */
-  max: number;
-  /** Panjang window dalam milidetik. */
-  windowMs: number;
-  /** Prefix key KV, mis. "ratelimit:login:" — memisahkan identifier per layanan. */
-  keyPrefix: string;
+const WINDOW_SEC = Math.max(1, Math.ceil(LOGIN_LIMITS.WINDOW_MS / 1000));
+
+/** Durasi lockout level ke-n (progresif, capped di LOCKOUT_MAX_MS). */
+function lockoutDurationMs(level: number): number {
+  const d = LOGIN_LIMITS.LOCKOUT_BASE_MS * 2 ** (level - 1);
+  return Math.min(d, LOGIN_LIMITS.LOCKOUT_MAX_MS);
 }
+
+// ===== Skema key KV =====
+//   ratelimit:contact:<ip>                    counter submission kontak (3x/10m)
+//   ratelimit:loginip:<ip>                    counter percobaan login per-IP (10x/10m)
+//   ratelimit:loginc:<ip>:<email>             counter percobaan login per-IP+email (3x/10m)
+//   ratelimit:lockout:<ip>:<email>            state lockout progresif {level, until}
+const KEY = {
+  contact: "ratelimit:contact:",
+  loginIp: "ratelimit:loginip:",
+  loginCred: "ratelimit:loginc:",
+  loginLockout: "ratelimit:lockout:",
+} as const;
 
 interface Entry {
   count: number;
   windowStart: number;
 }
 
-export function createRateLimiter({ max, windowMs, keyPrefix }: RateLimiterOptions) {
+interface LockoutEntry {
+  level: number;
+  until: number;
+}
+
+function parseEntry(raw: string | null): Entry | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as Entry;
+  } catch {
+    return null;
+  }
+}
+
+function parseLockout(raw: string | null): LockoutEntry | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as LockoutEntry;
+  } catch {
+    return null;
+  }
+}
+
+/** `true` bila window entry masih berlaku (bukan expired). */
+function inWindow(entry: { windowStart: number }, now: number): boolean {
+  return now - entry.windowStart < LOGIN_LIMITS.WINDOW_MS;
+}
+
+/**
+ * =====================================================================
+ * Rate limiter sederhana (digunakan OLEH KONTAK — jangan dipakai login).
+ * Fail-OPEN: kalau binding KV hilang, izinkan (dampak hanya spam form).
+ * =====================================================================
+ */
+export function createRateLimiter({ max, windowMs, keyPrefix }: {
+  max: number;
+  windowMs: number;
+  keyPrefix: string;
+}) {
   const windowSec = Math.max(1, Math.ceil(windowMs / 1000));
 
   // Fallback IN-MEMORY — HANYA untuk local dev (npm run dev) tanpa binding.
-  // Kunci: `import.meta.env.DEV` diganti literal `false` saat build produksi,
-  // jadi branch ini ter-dead-code-eliminate dan TIDAK PERNAH aktif di Pages.
   const devMap = new Map<string, Entry>();
 
   /** `true` bila request boleh lanjut; `false` bila harus ditolak (429). */
@@ -46,16 +98,12 @@ export function createRateLimiter({ max, windowMs, keyPrefix }: RateLimiterOptio
 
     if (!kv) {
       if (!import.meta.env.DEV) {
-        // Misconfig production (binding tidak terpasang) — bunyikan alarm,
-        // jangan diam-diam memblokir seluruh login. Fail-open + log keras.
         console.error(
           "[rate-limit] Binding KV RATE_LIMIT_KV tidak ditemukan di production — " +
-            "rate limiting TIDAK aktif! Cek Settings > Functions > KV namespace bindings."
+            "rate limiting kontak TIDAK aktif (fail-open)."
         );
         return true;
       }
-
-      // Dev-only fallback (in-memory): behavior identik dengan KV path.
       const entry = devMap.get(storageKey);
       if (!entry || now - entry.windowStart >= windowMs) {
         devMap.set(storageKey, { count: 1, windowStart: now });
@@ -66,17 +114,7 @@ export function createRateLimiter({ max, windowMs, keyPrefix }: RateLimiterOptio
       return true;
     }
 
-    // ===== Path produksi: Workers KV =====
-    let entry: Entry | null = null;
-    const raw = await kv.get(storageKey);
-    if (raw) {
-      try {
-        entry = JSON.parse(raw) as Entry;
-      } catch {
-        entry = null;
-      }
-    }
-
+    let entry = parseEntry(await kv.get(storageKey));
     if (!entry || now - entry.windowStart >= windowMs) {
       await kv.put(storageKey, JSON.stringify({ count: 1, windowStart: now }), {
         expirationTtl: windowSec,
@@ -93,21 +131,209 @@ export function createRateLimiter({ max, windowMs, keyPrefix }: RateLimiterOptio
 }
 
 /**
- * Login: maks 5 percobaan / IP / 10 menit (TTL 600s).
- * Logger percobaan login berada DI DALAM alur yang sama setelah cek ini,
- * sehingga volume log terbatas (bounded) — tidak bisa dibanjiri terpisah.
- */
-export const loginRateLimiter = createRateLimiter({
-  keyPrefix: "ratelimit:login:",
-  max: 5,
-  windowMs: 10 * 60 * 1000,
-});
-
-/**
- * Contact: maks 3 submission / IP / 10 menit (TTL 600s).
+ * Contact: maks 3 submission / IP / 10 menit (TTL 600s). FAIL-OPEN.
  */
 export const contactRateLimiter = createRateLimiter({
-  keyPrefix: "ratelimit:contact:",
+  keyPrefix: KEY.contact,
   max: 3,
-  windowMs: 10 * 60 * 1000,
+  windowMs: LOGIN_LIMITS.WINDOW_MS,
 });
+
+// =====================================================================
+// LOGIN GUARD — proteksi brute-force login admin.
+//   * Lapisan 1: per-IP murni (LOGIN_LIMITS.IP_MAX_FAILURES per window)
+//   * Lapisan 2: per kombinasi IP+email (CRED_MAX_FAILURES) -> LOCKOUT
+//     progresif (15m -> 30m -> 60m -> ... maks 4 jam)
+//   * FAIL-CLOSED: kalau KV tidak tersedia/gagal diakses saat CHECK,
+//     login DITOLAK (reason "kv_unavailable" -> endpoint balas 503).
+//     (Fallback in-memory hanya aktif di dev agar `npm run dev` tetap
+//     bisa dipakai tanpa binding — tidak pernah di build produksi.)
+// =====================================================================
+export type LoginBlockedReason = "lockout" | "kv_unavailable";
+
+export interface LoginRateDecision {
+  allowed: boolean;
+  /** Alasan penolakan saat !allowed. */
+  reason?: LoginBlockedReason;
+  /** Estimasi detik hingga boleh mencoba lagi (hanya saat lockout). */
+  retryAfterSec?: number;
+}
+
+export const loginAttemptGuard = {
+  async check(ip: string, email: string): Promise<LoginRateDecision> {
+    const kv = env.RATE_LIMIT_KV;
+    const now = Date.now();
+
+    if (!kv) {
+      if (!import.meta.env.DEV) {
+        console.error(
+          "[login-guard] RATE_LIMIT_KV tidak tersedia — FAIL CLOSED: login ditolak."
+        );
+        return { allowed: false, reason: "kv_unavailable" };
+      }
+      // Dev-only in-memory (perilaku identik dengan KV path).
+      return devGuard.check(ip, email);
+    }
+
+    try {
+      // ===== Lapisan 1: per-IP =====
+      const ipEntry = parseEntry(await kv.get(KEY.loginIp + ip));
+      if (ipEntry && inWindow(ipEntry, now) && ipEntry.count >= LOGIN_LIMITS.IP_MAX_FAILURES) {
+        return {
+          allowed: false,
+          reason: "lockout",
+          retryAfterSec: Math.ceil((ipEntry.windowStart + LOGIN_LIMITS.WINDOW_MS - now) / 1000),
+        };
+      }
+
+      // ===== Lapisan 2a: lockout aktif untuk IP+email =====
+      const lockKey = KEY.loginLockout + `${ip}:${email}`;
+      const lock = parseLockout(await kv.get(lockKey));
+      if (lock && lock.until > now) {
+        return {
+          allowed: false,
+          reason: "lockout",
+          retryAfterSec: Math.ceil((lock.until - now) / 1000),
+        };
+      }
+
+      // ===== Lapisan 2b: counter IP+email (defensif — normalnya lockout
+      // sudah aktif sebelum counter menyentuh batas). =====
+      const credEntry = parseEntry(await kv.get(KEY.loginCred + `${ip}:${email}`));
+      if (credEntry && inWindow(credEntry, now) && credEntry.count >= LOGIN_LIMITS.CRED_MAX_FAILURES) {
+        return {
+          allowed: false,
+          reason: "lockout",
+          retryAfterSec: Math.ceil((credEntry.windowStart + LOGIN_LIMITS.WINDOW_MS - now) / 1000),
+        };
+      }
+
+      return { allowed: true };
+    } catch (err) {
+      // KV read error — fail closed: tolak daripada memproses tanpa proteksi.
+      console.error("[login-guard] KV read gagal — FAIL CLOSED:", err);
+      return { allowed: false, reason: "kv_unavailable" };
+    }
+  },
+
+  /** Panggil SETELAH signInWithPassword gagal (kredensial salah). */
+  async recordFailure(ip: string, email: string): Promise<void> {
+    const kv = env.RATE_LIMIT_KV;
+    const now = Date.now();
+
+    if (!kv) {
+      if (import.meta.env.DEV) return devGuard.recordFailure(ip, email);
+      return;
+    }
+
+    try {
+      // ===== Lapisan 1: increment per-IP =====
+      const ipKey = KEY.loginIp + ip;
+      const ipEntry = parseEntry(await kv.get(ipKey));
+      const nextIp = ipEntry && inWindow(ipEntry, now)
+        ? { count: ipEntry.count + 1, windowStart: ipEntry.windowStart }
+        : { count: 1, windowStart: now };
+      await kv.put(ipKey, JSON.stringify(nextIp), { expirationTtl: WINDOW_SEC });
+
+      // ===== Lapisan 2: increment IP+email + aktivasi lockout progresif =====
+      const credKey = KEY.loginCred + `${ip}:${email}`;
+      const lockKey = KEY.loginLockout + `${ip}:${email}`;
+      const credEntry = parseEntry(await kv.get(credKey));
+      const nextCred = credEntry && inWindow(credEntry, now)
+        ? { count: credEntry.count + 1, windowStart: credEntry.windowStart }
+        : { count: 1, windowStart: now };
+
+      if (nextCred.count >= LOGIN_LIMITS.CRED_MAX_FAILURES) {
+        // Lockout sebelumnya pasti sudah expired (kalau aktif, check() tadi
+        // menolak sebelum sampai ke sini) -> level dinaikkan = progresif.
+        const prevLock = parseLockout(await kv.get(lockKey));
+        const level = prevLock ? prevLock.level + 1 : 1;
+        const durationMs = lockoutDurationMs(level);
+        const until = now + durationMs;
+
+        await kv.put(lockKey, JSON.stringify({ level, until }), {
+          expirationTtl: Math.ceil(durationMs / 1000) + LOGIN_LIMITS.LOCKOUT_TTL_BUFFER_SEC,
+        });
+        // Reset counter: window hitung dimulai ulang setelah cooldown.
+        await kv.put(credKey, JSON.stringify({ count: 0, windowStart: now }), {
+          expirationTtl: WINDOW_SEC,
+        });
+      } else {
+        await kv.put(credKey, JSON.stringify(nextCred), { expirationTtl: WINDOW_SEC });
+      }
+    } catch (err) {
+      // Percobaan sudah diproses (login gagal) — state limiter gagal dicatat.
+      console.error("[login-guard] KV write gagal saat recordFailure:", err);
+    }
+  },
+
+  /** Panggil SETELAH login berhasil — reset counter & lockout IP+email. */
+  async recordSuccess(ip: string, email: string): Promise<void> {
+    const kv = env.RATE_LIMIT_KV;
+    if (!kv) {
+      if (import.meta.env.DEV) return devGuard.recordSuccess(ip, email);
+      return;
+    }
+    try {
+      await kv.delete(KEY.loginCred + `${ip}:${email}`);
+      await kv.delete(KEY.loginLockout + `${ip}:${email}`);
+    } catch (err) {
+      console.error("[login-guard] KV delete gagal saat recordSuccess:", err);
+    }
+  },
+};
+
+// ===== Fallback dev-only in-memory (identik behavior, tanpa KV) =====
+const devGuard = (() => {
+  const credMap = new Map<string, Entry>();
+  const ipMap = new Map<string, Entry>();
+  const lockMap = new Map<string, LockoutEntry>();
+
+  return {
+    async check(ip: string, email: string): Promise<LoginRateDecision> {
+      const now = Date.now();
+      const ipEntry = ipMap.get(KEY.loginIp + ip);
+      if (ipEntry && inWindow(ipEntry, now) && ipEntry.count >= LOGIN_LIMITS.IP_MAX_FAILURES) {
+        return { allowed: false, reason: "lockout", retryAfterSec: Math.ceil((ipEntry.windowStart + LOGIN_LIMITS.WINDOW_MS - now) / 1000) };
+      }
+      const lock = lockMap.get(KEY.loginLockout + `${ip}:${email}`);
+      if (lock && lock.until > now) {
+        return { allowed: false, reason: "lockout", retryAfterSec: Math.ceil((lock.until - now) / 1000) };
+      }
+      const credEntry = credMap.get(KEY.loginCred + `${ip}:${email}`);
+      if (credEntry && inWindow(credEntry, now) && credEntry.count >= LOGIN_LIMITS.CRED_MAX_FAILURES) {
+        return { allowed: false, reason: "lockout", retryAfterSec: Math.ceil((credEntry.windowStart + LOGIN_LIMITS.WINDOW_MS - now) / 1000) };
+      }
+      return { allowed: true };
+    },
+    async recordFailure(ip: string, email: string): Promise<void> {
+      const now = Date.now();
+      const ipKey = KEY.loginIp + ip;
+      const ipEntry = ipMap.get(ipKey);
+      ipMap.set(ipKey, ipEntry && inWindow(ipEntry, now)
+        ? { count: ipEntry.count + 1, windowStart: ipEntry.windowStart }
+        : { count: 1, windowStart: now });
+
+      const credKey = KEY.loginCred + `${ip}:${email}`;
+      const lockKey = KEY.loginLockout + `${ip}:${email}`;
+      const credEntry = credMap.get(credKey);
+      const nextCred = credEntry && inWindow(credEntry, now)
+        ? { count: credEntry.count + 1, windowStart: credEntry.windowStart }
+        : { count: 1, windowStart: now };
+
+      if (nextCred.count >= LOGIN_LIMITS.CRED_MAX_FAILURES) {
+        const prevLock = lockMap.get(lockKey);
+        const level = prevLock ? prevLock.level + 1 : 1;
+        const until = now + lockoutDurationMs(level);
+        lockMap.set(lockKey, { level, until });
+        credMap.set(credKey, { count: 0, windowStart: now });
+      } else {
+        credMap.set(credKey, nextCred);
+      }
+    },
+    async recordSuccess(ip: string, email: string): Promise<void> {
+      credMap.delete(KEY.loginCred + `${ip}:${email}`);
+      lockMap.delete(KEY.loginLockout + `${ip}:${email}`);
+    },
+  };
+})();

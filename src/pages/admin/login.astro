@@ -140,7 +140,15 @@ const errorParam = Astro.url.searchParams.get("error");
     loginBtn.disabled = false;
 
     if (!res.ok || !data.ok) {
-      showStatus(data.error ?? "login gagal");
+      // Pesan GENERIK untuk penolakan rate limiter — tidak membocorkan
+      // apakah email terdaftar atau tidak (anti enumerasi akun).
+      const generic = {
+        too_many_attempts: "Terlalu banyak percobaan. Coba lagi dalam beberapa menit.",
+        service_unavailable: "Layanan sementara tidak tersedia, coba lagi nanti.",
+      };
+      showStatus(
+        (generic as Record<string, string | undefined>)[data.error] ?? data.error ?? "login gagal"
+      );
       return;
     }
 

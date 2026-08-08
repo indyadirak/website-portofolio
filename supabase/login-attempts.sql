@@ -4,12 +4,16 @@
 
 -- ===================== 1. TABEL =====================
 create table if not exists public.login_attempts (
-  id           uuid primary key default gen_random_uuid(),
-  email        text,
-  ip_address   text,
-  user_agent   text,
-  status       text not null check (status in ('success', 'failed')),
-  attempted_at timestamptz not null default now()
+  id             uuid primary key default gen_random_uuid(),
+  email          text,
+  ip_address     text,
+  user_agent     text,
+  -- 'blocked' = ditolak rate limiter/lockout/KV-unavailable (email NULL,
+  -- kredensial TIDAK disimpan untuk baris ini — privacy).
+  status         text not null check (status in ('success', 'failed', 'blocked')),
+  -- Alasan penolakan untuk status 'blocked': 'lockout' | 'kv_unavailable'.
+  blocked_reason text check (blocked_reason in ('lockout', 'kv_unavailable')),
+  attempted_at   timestamptz not null default now()
 );
 
 create index if not exists login_attempts_attempted_at_idx
@@ -39,13 +43,16 @@ grant select on public.login_attempts to authenticated;
 
 -- ===================== 3. FUNGSI PENCATAT =====================
 -- anon bisa memanggil fungsi ini (melalui supabase.rpc) untuk MENULIS,
--- tapi tidak bisa membaca/menghapus — parameter dibatasi 4 kolom saja,
--- jadi tidak ada kebocoran data.
+-- tapi tidak bisa membaca/menghapus — parameter dibatasi, jadi tidak ada
+-- kebocoran data. Signature baru (5 param) menggantikan versi 4 param.
+drop function if exists public.record_login_attempt(text, text, text, text);
+
 create or replace function public.record_login_attempt(
-  p_email      text,
-  p_ip         text,
-  p_user_agent text,
-  p_status     text
+  p_email           text,
+  p_ip              text,
+  p_user_agent      text,
+  p_status          text,
+  p_blocked_reason  text default null
 )
 returns void
 language plpgsql
@@ -53,8 +60,8 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.login_attempts (email, ip_address, user_agent, status)
-  values (p_email, p_ip, p_user_agent, p_status);
+  insert into public.login_attempts (email, ip_address, user_agent, status, blocked_reason)
+  values (p_email, p_ip, p_user_agent, p_status, p_blocked_reason);
 
   -- Cleanup otomatis: hapus baris lebih dari 90 hari (murah, 1x per login).
   delete from public.login_attempts
@@ -62,9 +69,9 @@ begin
 end;
 $$;
 
-revoke all on function public.record_login_attempt(text, text, text, text)
+revoke all on function public.record_login_attempt(text, text, text, text, text)
   from public;
-grant execute on function public.record_login_attempt(text, text, text, text)
+grant execute on function public.record_login_attempt(text, text, text, text, text)
   to anon, authenticated;
 
 -- ===================== 4. CLEANUP =====================
