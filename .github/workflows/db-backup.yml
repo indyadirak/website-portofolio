@@ -16,13 +16,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Pin runtime Node (Node 20 default deprecated oleh GitHub; runner
-      # sekarang default Node 24). 22 = sama dengan deploy.yml & engines
-      # package.json — deterministik, silakan update semua di satu tempat.
+      # Pin runtime Node secara EKSPLISIT (runner default bergeser — Node 20
+      # deprecated, default sekarang Node 24). Dipakai: npm install googleapis
+      # + script gdrive-backup.mjs. Sama dengan deploy.yml.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install PostgreSQL client & GPG
         run: |
