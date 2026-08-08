@@ -33,7 +33,7 @@ export async function POST({ request, locals }: APIContext) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     undefined;
   const userAgent = request.headers.get("user-agent");
-  if (!loginRateLimiter.isAllowed(ip ?? "unknown")) {
+  if (!(await loginRateLimiter.isAllowed(ip ?? "unknown"))) {
     return json({ ok: false, error: "too_many_attempts" }, 429);
   }
 

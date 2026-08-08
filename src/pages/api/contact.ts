@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { getSupabase } from "../../lib/supabase";
 import { isTurnstileEnabled, turnstile } from "../../lib/config";
+import { contactRateLimiter } from "../../lib/rateLimit";
 
 /**
  * Endpoint kontak publik: /api/contact
@@ -8,24 +9,21 @@ import { isTurnstileEnabled, turnstile } from "../../lib/config";
  * - Honeypot "website": bot yang mengisinya dibalas sukses palsu (200)
  *   tanpa INSERT — tidak membocorkan bahwa deteksi terjadi.
  * - Turnstile (Cloudflare): wajib token valid bila dikonfigurasi.
- * - Rate limiting sederhana in-memory: maks 3 submission / IP / 10 menit.
- *   CATATAN: state in-memory tidak persisten antar instance/edge — lihat
- *   catatan deployment di akhir file.
+ * - Rate limiting Cloudflare KV (edge-consistent): maks 3 submission /
+ *   IP / 10 menit — lihat contactRateLimiter di src/lib/rateLimit.ts.
  */
-
-const RATE_LIMIT_MAX = 3;
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const rateMap = new Map<string, { count: number; windowStart: number }>();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-function clientIp(request: Request, astroClientAddress: string | undefined): string {
-  // Prioritas: header Cloudflare, lalu X-Forwarded-For, lalu clientAddress Astro.
+function clientIp(request: Request): string {
+  // Prioritas: header Cloudflare (cf-connecting-ip), lalu X-Forwarded-For.
+  // CATATAN: Astro.clientAddress TIDAK tersedia di @astrojs/cloudflare —
+  // adapter menyediakan cf-connecting-ip yang otomatis di-set oleh edge.
   const cf = request.headers.get("cf-connecting-ip");
   if (cf) return cf;
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
-  return astroClientAddress ?? "unknown";
+  return "unknown";
 }
 
 /**
@@ -55,28 +53,8 @@ function json(body: Record<string, unknown>, status = 200): Response {
   });
 }
 
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateMap.get(ip);
-
-  // Pembersihan berkala agar map tidak membengkak.
-  if (rateMap.size > 1000) {
-    for (const [key, value] of rateMap) {
-      if (now - value.windowStart >= RATE_LIMIT_WINDOW_MS) rateMap.delete(key);
-    }
-  }
-
-  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
-    rateMap.set(ip, { count: 1, windowStart: now });
-    return false;
-  }
-  if (entry.count >= RATE_LIMIT_MAX) return true;
-  entry.count += 1;
-  return false;
-}
-
-export const POST: APIRoute = async ({ request, clientAddress }) => {
-  const ip = clientIp(request, clientAddress);
+export const POST: APIRoute = async ({ request }) => {
+  const ip = clientIp(request);
 
   let body: Record<string, unknown>;
   try {
@@ -114,8 +92,9 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     return json({ ok: false, error: "captcha_failed" }, 400);
   }
 
-  // ===== Rate limit =====
-  if (isRateLimited(ip)) {
+  // ===== Rate limit (Cloudflare KV — 3 / IP / 10 menit) =====
+  // Urutan dipertahankan: honeypot & validasi & Turnstile tetap SEBELUM ini.
+  if (!(await contactRateLimiter.isAllowed(ip))) {
     return json({ ok: false, error: "too_many_requests" }, 429);
   }
 
@@ -135,14 +114,3 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 };
 
 export const GET: APIRoute = () => json({ ok: false, error: "method_not_allowed" }, 405);
-
-/**
- * CATATAN DEPLOYMENT (rate limiting in-memory):
- * - Node standalone: persisten per-instance process — cukup untuk 1 proses.
- * - Cloudflare Pages/Workers: setiap request bisa dilayani instance edge yang
- *   BERBEDA dan tidak saling berbagi state Map. Artinya: batas 3/10 menit
- *   diterapkan per-instance, bukan per-IP global — attacker bisa
- *   melempar lebih banyak request dengan mengeksploitasi multi-instance.
- *   Solusi produksi: KV (Cloudflare KV/R2 + counter), Redis, atau
- *   upstash ratelimit. Alternatif tanpa infra: verifikasi turnstile/CAPTCHA.
- */

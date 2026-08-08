@@ -1,0 +1,35 @@
+# =====================================================================
+# Wrangler config — Cloudflare WORKERS (Static Assets) + local dev bindings
+#
+# CATATAN VERSI: @astrojs/cloudflare v13+ TIDAK lagi mendukung Cloudflare
+# Pages. Deploy target resmi adalah Cloudflare Workers (Static Assets):
+#   npx astro build
+#   npx wrangler deploy dist/server/wrangler.json
+# (config lengkap worker + assets di-generate adapter ke dist/server/)
+#
+# File ini dipakai saat `astro dev` (vite plugin membaca binding dari sini,
+# miniflare menyediakan KV lokal) dan sebagai sumber binding saat deploy
+# CLI. Bila deploy lewat dashboard, binding diset di:
+#   Workers & Pages > <nama worker> > Settings > Bindings > KV namespace.
+# =====================================================================
+
+name = "website-portofolio"
+compatibility_date = "2026-08-01"
+
+# qrcode/pngjs (QR TOTP MFA enrollment) memakai modul Node.js
+# (fs, stream, zlib, util, buffer, assert) di runtime server.
+compatibility_flags = ["nodejs_compat"]
+
+# ===== KV namespace untuk rate limiting =====
+# Buat namespace produksi:
+#   npx wrangler kv namespace create RATE_LIMIT_KV
+# lalu ganti `id` di bawah dengan id yang ditampilkan perintah tersebut
+# (atau id dari dashboard: Workers & Pages > KV > RATE_LIMIT_KV).
+# Untuk local dev, id UUID apa pun yang formatnya valid diterima miniflare
+# (dianggap storage lokal terpisah).
+#
+# Wajib diganti dengan id ASLI sebelum deploy produksi — kalau tidak,
+# binding tetap terpasang tapi menunjuk namespace kosong/dummy.
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "00000000-0000-0000-0000-000000000000"

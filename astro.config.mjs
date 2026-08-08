@@ -2,14 +2,17 @@
 import { defineConfig } from 'astro/config';
 
 import tailwindcss from '@tailwindcss/vite';
-import node from '@astrojs/node';
+import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
   // TODO: ganti dengan domain produksi (dipakai untuk canonical & og:url)
   site: 'https://example.com',
   output: 'server',
-  adapter: node({ mode: 'standalone' }),
+  // Cloudflare Pages (workerd). Bindings (KV, secrets) diakses via
+  // `import { env } from "cloudflare:workers"` — lihat src/env.d.ts.
+  // Konfigurasi binding lokal & deploy CLI: wrangler.toml.
+  adapter: cloudflare(),
   i18n: {
     locales: ['id', 'en'],
     defaultLocale: 'id',

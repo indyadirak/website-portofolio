@@ -22,6 +22,15 @@ jobs:
       # certificates, profiles, login_attempts). Skema auth MILIK SUPABASE
       # (users, hashed passwords) TIDAK ikut di-dump — sudah otomatis dikelola
       # dan di-backup oleh infrastruktur Supabase sendiri.
+      #
+      # PENTING — secret SUPABASE_DB_URL harus berisi connection string
+      # SESSION POOLER (port 5432), BUKAN Transaction Pooler (port 6543).
+      # pg_dump memakai protokol COPY yang TIDAK kompatibel dengan Transaction
+      # Pooler (mode transaction), yang bisa membuat backup hang/gagal —
+      # terutama saat ukuran data bertambah. Ambil dari dashboard Supabase:
+      #   Project Settings > Database > Connection string > SESSION POOLER
+      # contoh: postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+      # (jangan lupa tambahkan ?sslmode=require di akhir URL).
       - name: Dump public schema
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
