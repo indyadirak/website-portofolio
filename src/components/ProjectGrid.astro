@@ -1,0 +1,22 @@
+---
+import type { Project } from "../lib/types";
+import ProjectCard from "./ProjectCard.astro";
+
+interface Props {
+  projects: Project[];
+}
+
+const { projects } = Astro.props;
+---
+
+{
+  projects.length > 0 ? (
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {projects.map((project) => <ProjectCard project={project} />)}
+    </div>
+  ) : (
+    <p class="rounded border border-cyber-border bg-cyber-card p-8 font-mono text-sm text-cyber-muted">
+      $ echo "No projects found — belum ada data di Supabase."
+    </p>
+  )
+}

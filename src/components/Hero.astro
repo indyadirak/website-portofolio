@@ -1,0 +1,44 @@
+---
+import { siteConfig } from "../lib/config";
+
+interface Props {
+  role?: string;
+  status?: string;
+}
+
+const { role = siteConfig.author.role, status = "● system: online" } = Astro.props;
+---
+
+<section class="relative overflow-hidden">
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 cyber-grid opacity-[0.07]" />
+
+  <div class="relative mx-auto max-w-6xl px-6 py-24 md:py-32">
+    <p class="font-mono text-sm text-cyber-accent">$ whoami</p>
+    <h1 class="mt-4 font-mono text-4xl font-bold text-white md:text-6xl">
+      {siteConfig.author.name}
+      <span class="text-cyber-primary glow-text">;</span>
+    </h1>
+    <p class="mt-4 max-w-2xl font-mono text-lg text-slate-300">{role}</p>
+    <p class="mt-6 max-w-2xl text-base leading-relaxed text-cyber-muted">
+      {siteConfig.tagline} —{" "}
+      {siteConfig.description}
+    </p>
+
+    <div class="mt-10 flex flex-wrap items-center gap-4 font-mono text-sm">
+      <a
+        href="/projects"
+        class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-5 py-2.5 text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+      >
+        [ view_projects ]
+      </a>
+      <a
+        href="/contact"
+        class="rounded border border-cyber-border px-5 py-2.5 text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+      >
+        [ contact_me ]
+      </a>
+    </div>
+
+    <p class="mt-12 font-mono text-xs text-cyber-primary/70 glow-text">{status}</p>
+  </div>
+</section>

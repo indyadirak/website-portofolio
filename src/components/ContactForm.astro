@@ -1,0 +1,93 @@
+---
+---
+
+<form id="contact-form" class="space-y-5">
+  <div class="grid gap-5 md:grid-cols-2">
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Name</span>
+      <input
+        type="text"
+        name="name"
+        required
+        minlength={2}
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 placeholder-cyber-muted/50 outline-none transition-colors focus:border-cyber-primary"
+        placeholder="your_name"
+      />
+    </label>
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Email</span>
+      <input
+        type="email"
+        name="email"
+        required
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 placeholder-cyber-muted/50 outline-none transition-colors focus:border-cyber-primary"
+        placeholder="you@example.com"
+      />
+    </label>
+  </div>
+
+  <label class="block">
+    <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Subject</span>
+    <input
+      type="text"
+      name="subject"
+      required
+      minlength={3}
+      class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 placeholder-cyber-muted/50 outline-none transition-colors focus:border-cyber-primary"
+      placeholder="security_assessment_request"
+    />
+  </label>
+
+  <label class="block">
+    <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Message</span>
+    <textarea
+      name="message"
+      required
+      minlength={10}
+      rows={6}
+      class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 placeholder-cyber-muted/50 outline-none transition-colors focus:border-cyber-primary"
+      placeholder="> tuliskan detail permintaan Anda..."
+    ></textarea>
+  </label>
+
+  <div class="flex items-center gap-4">
+    <button
+      type="submit"
+      class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      [ send_message ]
+    </button>
+    <p id="contact-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-muted"></p>
+  </div>
+</form>
+
+<script>
+  import { submitContactMessage } from "../lib/data/contact";
+
+  const form = document.getElementById("contact-form") as HTMLFormElement | null;
+  const status = document.getElementById("contact-status") as HTMLParagraphElement | null;
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const data = new FormData(form);
+    const result = await submitContactMessage({
+      name: String(data.get("name") ?? ""),
+      email: String(data.get("email") ?? ""),
+      subject: String(data.get("subject") ?? ""),
+      message: String(data.get("message") ?? ""),
+    });
+
+    if (status) {
+      status.textContent = result.ok
+        ? "$ message sent — akan segera direspons."
+        : `$ error: ${result.error}`;
+      status.classList.toggle("text-cyber-primary", result.ok);
+      status.classList.toggle("text-cyber-danger", !result.ok);
+    }
+
+    if (result.ok) {
+      form.reset();
+    }
+  });
+</script>

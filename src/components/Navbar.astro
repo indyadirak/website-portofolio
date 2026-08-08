@@ -1,0 +1,45 @@
+---
+import { siteConfig } from "../lib/config";
+---
+
+<header class="sticky top-0 z-50 border-b border-cyber-border bg-cyber-bg/80 backdrop-blur-md">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+    <a href="/" class="font-mono text-lg font-bold tracking-tight text-cyber-primary glow-text">
+      {siteConfig.name}
+      <span class="text-cyber-accent">_</span>
+    </a>
+
+    <div class="hidden items-center gap-8 md:flex">
+      {
+        siteConfig.navLinks.map((link) => (
+          <a
+            href={link.href}
+            class="font-mono text-sm text-slate-400 transition-colors hover:text-cyber-primary"
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </div>
+
+    <div class="md:hidden">
+      <details class="relative">
+        <summary class="cursor-pointer list-none font-mono text-sm text-cyber-primary">
+          [menu]
+        </summary>
+        <div class="absolute right-0 mt-3 flex w-48 flex-col gap-1 rounded border border-cyber-border bg-cyber-panel p-3">
+          {
+            siteConfig.navLinks.map((link) => (
+              <a
+                href={link.href}
+                class="rounded px-3 py-2 font-mono text-sm text-slate-300 transition-colors hover:bg-cyber-card hover:text-cyber-primary"
+              >
+                {link.label}
+              </a>
+            ))
+          }
+        </div>
+      </details>
+    </div>
+  </nav>
+</header>

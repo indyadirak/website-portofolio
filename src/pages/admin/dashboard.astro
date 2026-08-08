@@ -1,0 +1,112 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import CertificateForm from "../../components/admin/CertificateForm.astro";
+import CertificateList from "../../components/admin/CertificateList.astro";
+import {
+  canDeleteCertificates,
+  canManageCertificates,
+} from "../../lib/auth";
+
+export const prerender = false;
+
+// ===== Validasi token sesi =====
+// Middleware sudah memvalidasi + auto-refresh session; guard ulang secara
+// defensif agar halaman tetap aman bila diakses langsung.
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+// ===== Data sertifikat (SELECT publik, aman untuk semua role) =====
+const { data: certificates } = await supabase
+  .from("certificates")
+  .select("*")
+  .order("issue_date", { ascending: false });
+
+const role = profile?.role ?? "viewer";
+const canWrite = canManageCertificates(profile); // admin | editor
+const isAdmin = canDeleteCertificates(profile); // admin saja
+---
+
+<BaseLayout
+  title="Command Center"
+  description="Admin CMS — kelola sertifikat dengan akses berbasis role dan MFA."
+>
+  <div class="mx-auto max-w-5xl px-6 py-14">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">$ command_center --session</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          Dashboard<span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="text-right font-mono text-xs">
+          <p class="text-slate-300">{user.email}</p>
+          <p class="mt-1">
+            <span class="rounded border border-cyber-primary/50 px-2 py-0.5 uppercase tracking-wider text-cyber-primary">
+              role: {role}
+            </span>
+          </p>
+        </div>
+        <button
+          id="logout-btn"
+          type="button"
+          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-danger hover:text-cyber-danger"
+        >
+          [ logout ]
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== FORM TAMBAH/EDIT: hanya admin & editor ===== -->
+    {
+      canWrite && (
+        <section class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+          <CertificateForm />
+        </section>
+      )
+    }
+
+    <!-- ===== DAFTAR SERTIFIKAT ===== -->
+    <section class="mt-10">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-mono text-lg font-bold text-white">Certificates</h2>
+        <span class="font-mono text-xs text-cyber-muted">
+          total: {certificates?.length ?? 0}
+        </span>
+      </div>
+
+      <CertificateList
+        certificates={certificates ?? []}
+        canWrite={canWrite}
+        isAdmin={isAdmin}
+      />
+
+      {
+        !canWrite && (
+          <p class="mt-6 rounded border border-cyber-border bg-cyber-card p-4 font-mono text-xs text-cyber-muted">
+            $ note: role Anda (viewer) hanya memiliki akses baca — tombol edit/delete tidak dirender.
+            Hubungi admin untuk upgrade role atau daftarkan MFA.
+          </p>
+        )
+      }
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  const logoutBtn = document.getElementById("logout-btn") as HTMLButtonElement;
+
+  logoutBtn.addEventListener("click", async () => {
+    logoutBtn.disabled = true;
+    const res = await fetch("/api/auth/logout", { method: "POST" });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      window.location.href = "/admin/login";
+    } else {
+      logoutBtn.disabled = false;
+    }
+  });
+</script>

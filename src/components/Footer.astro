@@ -1,0 +1,23 @@
+---
+import { siteConfig } from "../lib/config";
+---
+
+<footer class="border-t border-cyber-border bg-cyber-panel/50">
+  <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 md:flex-row">
+    <p class="font-mono text-xs text-cyber-muted">
+      © {new Date().getFullYear()} {siteConfig.author.name}. All rights reserved.
+    </p>
+
+    <div class="flex items-center gap-6 font-mono text-xs">
+      <a href={siteConfig.socials.github} target="_blank" rel="noopener noreferrer" class="text-cyber-muted transition-colors hover:text-cyber-primary">
+        GitHub
+      </a>
+      <a href={siteConfig.socials.linkedin} target="_blank" rel="noopener noreferrer" class="text-cyber-muted transition-colors hover:text-cyber-primary">
+        LinkedIn
+      </a>
+      <a href={siteConfig.socials.twitter} target="_blank" rel="noopener noreferrer" class="text-cyber-muted transition-colors hover:text-cyber-primary">
+        X / Twitter
+      </a>
+    </div>
+  </div>
+</footer>

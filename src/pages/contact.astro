@@ -1,0 +1,31 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import ContactForm from "../components/ContactForm.astro";
+
+export const prerender = true;
+---
+
+<BaseLayout
+  title="Contact"
+  description="Hubungi saya — permintaan security assessment, konsultasi, atau kolaborasi."
+>
+  <div class="mx-auto max-w-3xl px-6 py-16">
+    <SectionHeading
+      eyebrow="$ nc -lvp 443"
+      title="Contact"
+      description="Pesan akan tersimpan ke tabel contact_messages di Supabase (tanpa membocorkan data ke publik)."
+    />
+
+    <div class="rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+      <ContactForm />
+    </div>
+
+    <p class="mt-6 font-mono text-xs text-cyber-muted">
+      $ note: pastikan file <span class="text-cyber-primary">.env</span> terisi
+      (PUBLIC_SUPABASE_URL & PUBLIC_SUPABASE_ANON_KEY) dan tabel
+      <span class="text-cyber-primary"> contact_messages</span> sudah dibuat via{" "}
+      <span class="text-cyber-accent">supabase/schema.sql</span>.
+    </p>
+  </div>
+</BaseLayout>

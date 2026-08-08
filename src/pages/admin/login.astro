@@ -1,0 +1,196 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import MfaEnrollPanel from "../../components/admin/MfaEnrollPanel.astro";
+
+export const prerender = false;
+
+// Sudah login? Langsung ke dashboard (middleware juga mengarahkan ke sini jika belum).
+const { user } = Astro.locals;
+if (user) return Astro.redirect("/admin/dashboard");
+
+const errorParam = Astro.url.searchParams.get("error");
+---
+
+<BaseLayout
+  title="Admin Login"
+  description="Command Center login — dengan verifikasi MFA TOTP."
+>
+  <div class="mx-auto max-w-md px-6 py-20">
+    <p class="font-mono text-sm text-cyber-accent">$ auth --command-center</p>
+    <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+      Admin Login<span class="text-cyber-primary">;</span>
+    </h1>
+
+    {
+      errorParam === "supabase_not_configured" && (
+        <div class="mt-8 rounded border border-cyber-danger/50 bg-cyber-danger/10 p-4 font-mono text-xs text-cyber-danger">
+          $ error: PUBLIC_SUPABASE_URL / PUBLIC_SUPABASE_ANON_KEY belum diatur di .env —
+          salin dari .env.example lalu restart dev server.
+        </div>
+      )
+    }
+
+    <div class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+      <!-- Langkah 1: email + password -->
+      <form id="login-form" class="space-y-5">
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Email</span>
+          <input
+            id="login-email"
+            type="email"
+            required
+            class="w-full rounded border border-cyber-border bg-cyber-bg px-4 py-2.5 font-mono text-sm text-slate-200 placeholder-cyber-muted/50 outline-none transition-colors focus:border-cyber-primary"
+            placeholder="admin@example.com"
+          />
+        </label>
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Password</span>
+          <input
+            id="login-password"
+            type="password"
+            required
+            class="w-full rounded border border-cyber-border bg-cyber-bg px-4 py-2.5 font-mono text-sm text-slate-200 placeholder-cyber-muted/50 outline-none transition-colors focus:border-cyber-primary"
+            placeholder="••••••••"
+          />
+        </label>
+        <button
+          type="submit"
+          class="w-full rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          [ sign_in ]
+        </button>
+      </form>
+
+      <!-- Langkah 2: kode MFA 6 digit (hanya muncul jika MFA aktif) -->
+      <div id="mfa-step" hidden class="mt-8 border-t border-cyber-border pt-6">
+        <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+          [ mfa_required ]
+        </h2>
+        <p class="mt-2 text-sm text-cyber-muted">
+          Masukkan kode 6 digit dari aplikasi authenticator Anda.
+        </p>
+        <form id="mfa-form" class="mt-4 space-y-4">
+          <input
+            id="mfa-code"
+            type="text"
+            inputmode="numeric"
+            pattern="\d{6}"
+            maxlength="6"
+            required
+            autocomplete="one-time-code"
+            class="w-full rounded border border-cyber-border bg-cyber-bg px-4 py-2.5 text-center font-mono text-lg tracking-[0.5em] text-slate-200 outline-none focus:border-cyber-primary"
+            placeholder="000000"
+          />
+          <button
+            type="submit"
+            class="w-full rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            [ verify_mfa ]
+          </button>
+        </form>
+      </div>
+
+      <!-- Langkah 3: enrollment MFA (admin/editor baru pertama login) -->
+      <div id="enroll-step" hidden class="mt-8 border-t border-cyber-border pt-6">
+        <MfaEnrollPanel />
+      </div>
+
+      <p id="auth-status" role="status" aria-live="polite" class="mt-5 min-h-[1rem] font-mono text-xs text-cyber-danger"></p>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  const loginForm = document.getElementById("login-form") as HTMLFormElement;
+  const emailInput = document.getElementById("login-email") as HTMLInputElement;
+  const passwordInput = document.getElementById("login-password") as HTMLInputElement;
+  const loginBtn = loginForm.querySelector("button") as HTMLButtonElement;
+
+  const mfaStep = document.getElementById("mfa-step") as HTMLDivElement;
+  const mfaForm = document.getElementById("mfa-form") as HTMLFormElement;
+  const mfaCode = document.getElementById("mfa-code") as HTMLInputElement;
+
+  const enrollStep = document.getElementById("enroll-step") as HTMLDivElement;
+  const statusEl = document.getElementById("auth-status") as HTMLParagraphElement;
+
+  let factorId: string | null = null;
+
+  function showStatus(message: string, ok = false): void {
+    statusEl.textContent = `$ ${message}`;
+    statusEl.classList.toggle("text-cyber-primary", ok);
+    statusEl.classList.toggle("text-cyber-danger", !ok);
+  }
+
+  // ===== Langkah 1: email + password -> /api/auth/login =====
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    loginBtn.disabled = true;
+    showStatus("verifying...");
+
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: emailInput.value.trim(),
+        password: passwordInput.value,
+      }),
+    });
+    const data = await res.json();
+
+    loginBtn.disabled = false;
+
+    if (!res.ok || !data.ok) {
+      showStatus(data.error ?? "login gagal");
+      return;
+    }
+
+    switch (data.step) {
+      case "done":
+        window.location.href = "/admin/dashboard";
+        break;
+      case "mfa":
+        // MFA aktif: tampilkan input kode 6 digit, sesi belum penuh.
+        factorId = data.factorId;
+        loginForm.hidden = true;
+        mfaStep.hidden = false;
+        showStatus("mfa_required", true);
+        mfaCode.focus();
+        break;
+      case "enroll":
+        // Admin/editor tanpa MFA: wajib enrollment QR TOTP.
+        loginForm.hidden = true;
+        enrollStep.hidden = false;
+        showStatus("enrollment_required", true);
+        break;
+      default:
+        showStatus("unexpected_response");
+    }
+  });
+
+  // ===== Langkah 2: challenge + verify kode MFA -> /api/auth/mfa-verify =====
+  mfaForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const code = mfaCode.value.trim();
+    if (!/^\d{6}$/.test(code)) {
+      showStatus("kode harus 6 digit");
+      return;
+    }
+
+    showStatus("verifying_mfa...");
+
+    const res = await fetch("/api/auth/mfa-verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ factorId, code }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      showStatus(data.error ?? "kode MFA tidak valid");
+      return;
+    }
+
+    showStatus("mfa_verified", true);
+    window.location.href = "/admin/dashboard";
+  });
+</script>

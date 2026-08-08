@@ -1,0 +1,66 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import { siteConfig } from "../lib/config";
+
+export const prerender = true;
+
+const { author } = siteConfig;
+---
+
+<BaseLayout title="About" description={`Tentang ${author.name} — ${author.role}.`}>
+  <div class="mx-auto max-w-3xl px-6 py-16">
+    <SectionHeading eyebrow="$ cat ./about.txt" title="About Me" />
+
+    <div class="space-y-6 leading-relaxed text-slate-300">
+      <p>
+        Saya <strong class="text-cyber-primary">{author.name}</strong>, seorang{" "}
+        {author.role}. Fokus utama saya pada security assessment, threat
+        detection, dan membangun sistem yang aman sejak awal (security by design).
+      </p>
+      <p>
+        Situs ini dibangun dengan <span class="font-mono text-cyber-accent">Astro.js + Tailwind CSS</span>{" "}
+        dan data dinamis dikelola lewat <span class="font-mono text-cyber-accent">Supabase</span> —
+        project, skill, dan pesan kontak disimpan di database dengan access
+        policy (RLS) yang ketat.
+      </p>
+    </div>
+
+    <div class="mt-12 grid gap-6 sm:grid-cols-2">
+      <div class="rounded border border-cyber-border bg-cyber-card p-6">
+        <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+          Spesialisasi
+        </h2>
+        <ul class="mt-4 space-y-2 font-mono text-sm text-slate-300">
+          <li class="text-cyber-primary">$ penetration_testing</li>
+          <li>// incident_response</li>
+          <li>// network_security_monitoring</li>
+          <li>// security_awareness</li>
+        </ul>
+      </div>
+
+      <div class="rounded border border-cyber-border bg-cyber-card p-6">
+        <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+          Kontak
+        </h2>
+        <ul class="mt-4 space-y-2 font-mono text-sm text-slate-300">
+          <li>
+            email: <span class="text-cyber-primary">{author.email}</span>
+          </li>
+          <li>
+            github:{" "}
+            <a href={siteConfig.socials.github} target="_blank" rel="noopener noreferrer" class="text-cyber-primary hover:underline">
+              @your-username
+            </a>
+          </li>
+          <li>
+            linkedin:{" "}
+            <a href={siteConfig.socials.linkedin} target="_blank" rel="noopener noreferrer" class="text-cyber-primary hover:underline">
+              your-username
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
