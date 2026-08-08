@@ -37,15 +37,7 @@ compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
 
 # ===== KV namespace untuk rate limiting =====
-# Buat namespace produksi:
-#   npx wrangler kv namespace create RATE_LIMIT_KV
-# lalu ganti `id` di bawah dengan id yang ditampilkan perintah tersebut
-# (atau id dari dashboard: Workers & Pages > KV > RATE_LIMIT_KV).
-# Untuk local dev, id UUID apa pun yang formatnya valid diterima miniflare
-# (dianggap storage lokal terpisah).
-#
-# Wajib diganti dengan id ASLI sebelum deploy produksi — kalau tidak,
-# binding tetap terpasang tapi menunjuk namespace kosong/dummy.
+# Id ASLI (sudah dibuat via `npx wrangler kv namespace create RATE_LIMIT_KV`).
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
-id = "00000000-0000-0000-0000-000000000000"
+id = "b6712a968e694199a6dd5efce80d97f8"
