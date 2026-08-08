@@ -51,6 +51,34 @@ jobs:
             -o backup.sql.gpg backup.sql
           rm -f backup.sql
 
+      # ===== Salinan KEDUA: Google Drive (prinsip 3-2-1) =====
+      # File .gpg yang sama di-upload ke folder Drive via Service Account.
+      # NON-BLOCKING: kegagalan upload Drive (kuota penuh, token error, dll)
+      # TIDAK menggagalkan job — artifact GitHub tetap salinan utama untuk
+      # restore cepat; di sini cukup warning di log (continue-on-error).
+      #
+      # Secrets yang dibutuhkan:
+      #   GDRIVE_SERVICE_ACCOUNT_KEY = isi JSON key Service Account (download
+      #     dari GCloud Console) di-encode base64 SATU BARIS.
+      #   GDRIVE_BACKUP_FOLDER_ID    = ID folder khusus di Drive (bagian URL
+      #     setelah /folders/), di-share "Editor" ke email Service Account.
+      # Step ini otomatis di-skip selama kedua secret belum diset.
+      - name: Upload encrypted backup to Google Drive (optional)
+        if: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY != '' && secrets.GDRIVE_BACKUP_FOLDER_ID != '' }}
+        continue-on-error: true
+        env:
+          GDRIVE_SERVICE_ACCOUNT_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
+          GDRIVE_BACKUP_FOLDER_ID: ${{ secrets.GDRIVE_BACKUP_FOLDER_ID }}
+          DRIVE_RETENTION_WEEKS: "12"
+          BACKUP_FILE: backup.sql.gpg
+        run: |
+          # googleapis di-install ke temp dir agar tidak mencemari repo;
+          # script di-copy ke dir yang sama supaya resolve modul ESM sukses.
+          mkdir -p "$RUNNER_TEMP/gdrive"
+          npm install --silent --no-audit --no-fund --prefix "$RUNNER_TEMP/gdrive" googleapis
+          cp .github/scripts/gdrive-backup.mjs "$RUNNER_TEMP/gdrive/"
+          node "$RUNNER_TEMP/gdrive/gdrive-backup.mjs"
+
       # Retention 30 hari (bukan default 90) — membatasi backup lama tersimpan.
       - name: Upload encrypted artifact
         uses: actions/upload-artifact@v4
