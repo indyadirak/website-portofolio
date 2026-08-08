@@ -1,19 +1,16 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import SectionHeading from "../../components/SectionHeading.astro";
-import ContactForm from "../../components/ContactForm.astro";
-import EmailLink from "../../components/EmailLink.astro";
-import { getDictionary, getLocaleStaticPaths, localeFromPathname } from "../../lib/i18n";
+import MainLayout from "../../layouts/MainLayout.astro";
+import SectionHeading from "../SectionHeading.astro";
+import ContactForm from "../ContactForm.astro";
+import EmailLink from "../EmailLink.astro";
+import { getDictionary, localeFromUrl } from "../../lib/i18n";
 import { siteConfig } from "../../lib/config";
 
-export const prerender = true;
-export const getStaticPaths = getLocaleStaticPaths;
-
-const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
 ---
 
-<BaseLayout
+<MainLayout
   title={t.contact.title}
   description={t.meta.contact}
 >
@@ -42,4 +39,4 @@ const t = getDictionary(locale);
       $ note: {t.contact.note}
     </p>
   </div>
-</BaseLayout>
+</MainLayout>

@@ -15,21 +15,26 @@ const navLinks = [
   { label: t.nav.contact, href: getRelativeLocaleUrl(locale, "contact") },
 ];
 const cvHref = cvUrl(locale);
+const menuId = "site-menu";
+const btnId = "menu-toggle";
 ---
 
-<header class="sticky top-0 z-50 border-b border-cyber-border bg-cyber-bg/80 backdrop-blur-md">
-  <nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-    <a href={homeHref} class="font-mono text-lg font-bold tracking-tight text-cyber-primary glow-text">
+<header class="glass sticky top-0 z-50">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2 md:px-6">
+    <a
+      href={homeHref}
+      class="flex min-h-11 items-center font-mono text-base font-bold tracking-tight text-cyber-primary glow-text md:text-lg"
+    >
       {siteConfig.name}
       <span class="text-cyber-accent">_</span>
     </a>
 
-    <div class="hidden items-center gap-6 md:flex">
+    <div class="hidden items-center gap-2 lg:flex">
       {
         navLinks.map((link) => (
           <a
             href={link.href}
-            class="font-mono text-sm text-slate-400 transition-colors hover:text-cyber-primary"
+            class="flex min-h-11 items-center rounded px-3 font-mono text-sm text-cyber-muted transition-colors hover:text-cyber-primary"
           >
             {link.label}
           </a>
@@ -38,39 +43,67 @@ const cvHref = cvUrl(locale);
       <a
         href={cvHref}
         download
-        class="font-mono text-sm text-cyber-primary transition-opacity hover:opacity-80"
+        class="flex min-h-11 items-center rounded border border-cyber-primary/40 px-3 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary/10"
       >
         [{t.nav.downloadCv}]
       </a>
       <LanguageSwitcher />
     </div>
 
-    <div class="flex items-center gap-3 md:hidden">
+    <div class="flex items-center gap-2 lg:hidden">
       <LanguageSwitcher />
-      <details class="relative">
-        <summary class="cursor-pointer list-none font-mono text-sm text-cyber-primary">
-          [{t.nav.menu}]
-        </summary>
-        <div class="absolute right-0 mt-3 flex w-48 flex-col gap-1 rounded border border-cyber-border bg-cyber-panel p-3">
-          {
-            navLinks.map((link) => (
-              <a
-                href={link.href}
-                class="rounded px-3 py-2 font-mono text-sm text-slate-300 transition-colors hover:bg-cyber-card hover:text-cyber-primary"
-              >
-                {link.label}
-              </a>
-            ))
-          }
-          <a
-            href={cvHref}
-            download
-            class="rounded px-3 py-2 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-card"
-          >
-            [{t.nav.downloadCv}]
-          </a>
-        </div>
-      </details>
+      <button
+        id={btnId}
+        type="button"
+        aria-label="Toggle navigation menu"
+        aria-expanded="false"
+        aria-controls={menuId}
+        class="flex h-11 w-11 items-center justify-center rounded border border-cyber-border text-cyber-primary transition-colors hover:border-cyber-primary/50"
+      >
+        <svg id="icon-open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <svg id="icon-close" xmlns="http://www.w3.org/2000/svg" class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
   </nav>
+
+  <div id={menuId} class="hidden border-t border-cyber-border/60 bg-cyber-bg/95 backdrop-blur-xl lg:hidden">
+    <div class="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
+      {
+        navLinks.map((link) => (
+          <a
+            href={link.href}
+            class="flex min-h-11 items-center rounded px-3 font-mono text-sm text-cyber-muted transition-colors hover:bg-cyber-card hover:text-cyber-primary"
+          >
+            {link.label}
+          </a>
+        ))
+      }
+      <a
+        href={cvHref}
+        download
+        class="flex min-h-11 items-center rounded border border-cyber-primary/40 px-3 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary/10"
+      >
+        [{t.nav.downloadCv}]
+      </a>
+    </div>
+  </div>
 </header>
+
+<script>
+  const btn = document.getElementById("menu-toggle");
+  const menu = document.getElementById("site-menu");
+  const iconOpen = document.getElementById("icon-open");
+  const iconClose = document.getElementById("icon-close");
+  if (btn && menu) {
+    btn.addEventListener("click", () => {
+      const isOpen = menu.classList.toggle("hidden");
+      btn.setAttribute("aria-expanded", String(!isOpen));
+      iconOpen?.classList.toggle("hidden", !isOpen);
+      iconClose?.classList.toggle("hidden", isOpen);
+    });
+  }
+</script>

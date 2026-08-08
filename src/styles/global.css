@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cyber-bg: #05070d;
-  --color-cyber-panel: #0a0f1a;
-  --color-cyber-card: #0d1424;
-  --color-cyber-border: #1c2740;
-  --color-cyber-accent: #22d3ee;
-  --color-cyber-primary: #00ff9c;
+  /* SOC palette: Obsidian Black / Slate Gray / Cyber Green */
+  --color-cyber-bg: #0b0c10;
+  --color-cyber-panel: #111318;
+  --color-cyber-card: #16181f;
+  --color-cyber-border: #2a2d35;
+  --color-cyber-accent: #66fcf1;
+  --color-cyber-primary: #66fcf1;
   --color-cyber-danger: #ff4d6d;
-  --color-cyber-muted: #7d8aa5;
+  --color-cyber-muted: #c5c6c7;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, monospace;
@@ -75,5 +76,133 @@
     overflow: hidden;
     opacity: 0.01;
     pointer-events: none;
+  }
+
+  /* Glassmorphism (navbar/panel) */
+  .glass {
+    background: rgba(11, 12, 16, 0.72);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border-bottom: 1px solid rgba(102, 252, 241, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Scrollbar kustom tipis untuk terminal horizontal scroll */
+  .term-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 252, 241, 0.35) transparent;
+  }
+  .term-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+  .term-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .term-scroll::-webkit-scrollbar-thumb {
+    background: rgba(102, 252, 241, 0.35);
+    border-radius: 9999px;
+  }
+
+  /* ---- CSS-only animations (zero-JS) ---- */
+  /* Typing effect: aktif md+ (mobile: judul panjang tetap wrap normal,
+     karena animasi satu-baris 34 char mono tidak muat di viewport <768px).
+     Wrapper harus .w-fit + max-w-full agar lebar animasi = lebar teks. */
+  @keyframes type-width {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+  @keyframes type-caret {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+  .type-effect {
+    max-width: 100%;
+  }
+  @media (min-width: 768px) {
+    .type-effect {
+      overflow: hidden;
+      white-space: nowrap;
+      animation: type-width var(--type-duration, 2.4s) steps(var(--type-steps, 30), end) forwards;
+    }
+  }
+  .type-caret {
+    display: inline-block;
+    animation: type-caret 0.9s steps(1) infinite;
+  }
+
+  /* Status badge berkedip (SOC status light) */
+  @keyframes badge-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(102, 252, 241, 0.45);
+      opacity: 1;
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgba(102, 252, 241, 0);
+      opacity: 0.85;
+    }
+  }
+  .badge-pulse {
+    animation: badge-pulse 2s ease-in-out infinite;
+  }
+
+  /* Baris terminal muncul bertahap (max 12 baris) */
+  @keyframes term-fade {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .term-row {
+    animation: term-fade 0.35s ease-out both;
+  }
+  .term-row:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+  .term-row:nth-child(2) {
+    animation-delay: 0.12s;
+  }
+  .term-row:nth-child(3) {
+    animation-delay: 0.19s;
+  }
+  .term-row:nth-child(4) {
+    animation-delay: 0.26s;
+  }
+  .term-row:nth-child(5) {
+    animation-delay: 0.33s;
+  }
+  .term-row:nth-child(6) {
+    animation-delay: 0.4s;
+  }
+  .term-row:nth-child(7) {
+    animation-delay: 0.47s;
+  }
+  .term-row:nth-child(8) {
+    animation-delay: 0.54s;
+  }
+  .term-row:nth-child(9) {
+    animation-delay: 0.61s;
+  }
+  .term-row:nth-child(10) {
+    animation-delay: 0.68s;
+  }
+  .term-row:nth-child(11) {
+    animation-delay: 0.75s;
+  }
+  .term-row:nth-child(12) {
+    animation-delay: 0.82s;
   }
 }

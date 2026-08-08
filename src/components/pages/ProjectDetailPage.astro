@@ -1,32 +1,17 @@
 ---
-import BaseLayout from "../../../layouts/BaseLayout.astro";
+import MainLayout from "../../layouts/MainLayout.astro";
 import { getRelativeLocaleUrl } from "astro:i18n";
-import { getProjects } from "../../../lib/data/projects";
-import { getDictionary, locales, localeFromPathname, type Locale } from "../../../lib/i18n";
-
-export const prerender = true;
-
-export async function getStaticPaths() {
-  const projects = await getProjects();
-  const paths = [];
-  for (const locale of locales) {
-    for (const project of projects) {
-      paths.push({
-        params: { lang: locale, slug: project.slug },
-        props: { project },
-      });
-    }
-  }
-  return paths;
-}
+import { getProjects } from "../../lib/data/projects";
+import { getDictionary, localeFromUrl, type Locale } from "../../lib/i18n";
+import type { Project } from "../../lib/types";
 
 interface Props {
-  project: import("../../../lib/types").Project;
+  project: Project;
 }
 
 const { project } = Astro.props;
 
-const locale: Locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const locale: Locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
 
 const allProjects = await getProjects();
@@ -35,7 +20,7 @@ const related = allProjects
   .slice(0, 3);
 ---
 
-<BaseLayout
+<MainLayout
   title={project.title}
   description={project.summary}
 >
@@ -114,4 +99,4 @@ const related = allProjects
       $ echo "end of file" <span class="text-cyber-primary">■</span>
     </p>
   </article>
-</BaseLayout>
+</MainLayout>

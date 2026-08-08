@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
+import MainLayout from "../../layouts/MainLayout.astro";
 import CertificateForm from "../../components/admin/CertificateForm.astro";
 import CertificateList from "../../components/admin/CertificateList.astro";
 import {
@@ -36,7 +36,7 @@ const canWrite = canManageCertificates(profile); // admin | editor
 const isAdmin = canDeleteCertificates(profile); // admin saja
 ---
 
-<BaseLayout
+<MainLayout
   title="Command Center"
   description="Admin CMS — kelola sertifikat dengan akses berbasis role dan MFA."
 >
@@ -135,7 +135,7 @@ const isAdmin = canDeleteCertificates(profile); // admin saja
       }
     </section>
   </div>
-</BaseLayout>
+</MainLayout>
 
 <script>
   const logoutBtn = document.getElementById("logout-btn") as HTMLButtonElement;

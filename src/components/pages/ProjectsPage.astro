@@ -1,0 +1,23 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SectionHeading from "../SectionHeading.astro";
+import ProjectGrid from "../ProjectGrid.astro";
+import { getProjects } from "../../lib/data/projects";
+import { getDictionary, localeFromUrl } from "../../lib/i18n";
+
+const locale = localeFromUrl(Astro.url);
+const t = getDictionary(locale);
+
+const projects = await getProjects();
+---
+
+<MainLayout title={t.projects.title} description={t.meta.projects}>
+  <div class="mx-auto max-w-6xl px-6 py-16">
+    <SectionHeading
+      eyebrow={t.projects.eyebrow}
+      title={t.projects.title}
+      description={t.projects.description}
+    />
+    <ProjectGrid projects={projects} />
+  </div>
+</MainLayout>

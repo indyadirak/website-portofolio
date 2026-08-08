@@ -21,16 +21,18 @@ export function otherLocale(locale: Locale): Locale {
   return locale === "id" ? "en" : "id";
 }
 
-/** Mengekstrak locale dari pathname URL, mis. "/en/projects/" -> "en". */
+/**
+ * Mengekstrak locale dari pathname URL.
+ * Strategi: id = default TANPA prefix, en = prefix /en/.
+ * - "/en/about/" -> "en"
+ * - "/about/", "/", "/admin/login", "/api/contact" -> null (artinya id)
+ */
 export function localeFromPathname(pathname: string): Locale | null {
-  const match = pathname.match(/^\/(id|en)(?:\/|$)/);
+  const match = pathname.match(/^\/(en)(?:\/|$)/);
   return match ? (match[1] as Locale) : null;
 }
 
-/**
- * getStaticPaths bersama untuk halaman statis di bawah [lang].
- * Di mode static, setiap dynamic route wajib enumerasi params-nya sendiri.
- */
-export function getLocaleStaticPaths() {
-  return locales.map((lang) => ({ params: { lang } }));
+/** Locale aktif untuk sebuah URL; default ke "id" bila tanpa prefix. */
+export function localeFromUrl(url: URL): Locale {
+  return localeFromPathname(url.pathname) ?? "id";
 }

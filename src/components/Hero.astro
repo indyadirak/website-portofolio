@@ -7,47 +7,63 @@ const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
 
 const available = siteConfig.contact.availabilityStatus === "open-to-work";
+
+// --type-steps: langkah animasi typing ≈ jumlah karakter + easing.
+// (lebar animasi = 100% dari wrapper .w-fit, lihat .type-effect di global.css)
+const typeSteps = t.hero.title.length + 8;
 ---
 
 <section class="relative overflow-hidden">
-  <div aria-hidden="true" class="pointer-events-none absolute inset-0 cyber-grid opacity-[0.07]" />
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 cyber-grid opacity-[0.06]" />
 
-  <div class="relative mx-auto max-w-6xl px-6 py-24 md:py-32">
-    <p class="font-mono text-sm text-cyber-accent">{t.hero.eyebrow}</p>
-    <h1 class="mt-4 font-mono text-4xl font-bold text-white md:text-6xl">
-      {siteConfig.author.name}
-      <span class="text-cyber-primary glow-text">;</span>
-    </h1>
-    <p class="mt-4 max-w-2xl font-mono text-lg text-slate-300">{t.hero.role}</p>
-    <p class="mt-6 max-w-2xl text-base leading-relaxed text-cyber-muted">
-      {t.hero.tagline} —{" "}
+  <div class="relative mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24 lg:py-32">
+    <p class="font-mono text-xs text-cyber-accent md:text-sm">{t.hero.eyebrow}</p>
+
+    <div class="mt-4 w-fit max-w-full">
+      <h1
+        class="type-effect font-mono text-3xl font-bold leading-tight text-cyber-primary glow-text lg:text-5xl"
+        style={`--type-steps: ${typeSteps}; --type-duration: 2.4s;`}
+      >
+        {t.hero.title}
+      </h1>
+    </div>
+    <span class="type-caret mt-4 hidden font-mono text-3xl text-cyber-accent md:inline-block lg:text-5xl" aria-hidden="true">
+      █
+    </span>
+
+    <p class="mt-5 max-w-2xl font-mono text-sm text-cyber-muted md:text-lg">{t.hero.tagline}</p>
+    <p class="mt-4 max-w-2xl text-sm leading-relaxed text-cyber-muted md:text-base">
       {t.hero.description}
     </p>
 
-    <div class="mt-10 flex flex-wrap items-center gap-4 font-mono text-sm">
+    {
+      available && (
+        <p class="badge-pulse mt-8 inline-flex min-h-11 items-center rounded border border-cyber-primary/50 bg-cyber-primary/10 px-4 font-mono text-xs font-semibold text-cyber-primary md:text-sm">
+          [ {t.hero.badge} ]
+        </p>
+      )
+    }
+
+    <div class="mt-10 flex flex-wrap items-center gap-3 font-mono text-sm">
       <a
         href={getRelativeLocaleUrl(locale, "projects")}
-        class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-5 py-2.5 text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+        class="inline-flex min-h-11 items-center rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg md:px-5"
       >
         {t.hero.viewProjects}
       </a>
       <a
         href={getRelativeLocaleUrl(locale, "contact")}
-        class="rounded border border-cyber-border px-5 py-2.5 text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+        class="inline-flex min-h-11 items-center rounded border border-cyber-border px-4 text-cyber-muted transition-colors hover:border-cyber-accent hover:text-cyber-accent md:px-5"
       >
         {t.hero.contactMe}
       </a>
       <a
         href={cvUrl(locale)}
         download
-        class="rounded border border-cyber-accent/60 bg-cyber-accent/10 px-5 py-2.5 text-cyber-accent transition-colors hover:bg-cyber-accent hover:text-cyber-bg"
+        class="inline-flex min-h-11 items-center rounded border border-cyber-accent/60 bg-cyber-accent/10 px-4 text-cyber-accent transition-colors hover:bg-cyber-accent hover:text-cyber-bg md:px-5"
       >
         {t.hero.downloadCv}
       </a>
     </div>
-
-    <p class="mt-12 font-mono text-xs text-cyber-primary/70 glow-text">
-      {available ? t.hero.statusOpen : t.hero.statusClosed}
-    </p>
   </div>
 </section>

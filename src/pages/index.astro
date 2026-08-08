@@ -1,8 +1,8 @@
 ---
-// Halaman root: redirect "/" -> "/id/".
-// SSR (bukan prerender) agar menghasilkan HTTP 302 murni, bukan halaman
-// HTML dengan meta-refresh (hasil default Astro.redirect di static page).
-export const prerender = false;
+// Halaman home bahasa Indonesia (default) — konten dari komponen shared.
+import HomePage from "../components/pages/HomePage.astro";
 
-return Astro.redirect("/id/");
+export const prerender = true;
 ---
+
+<HomePage />

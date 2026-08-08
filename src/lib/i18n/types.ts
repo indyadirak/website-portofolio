@@ -14,6 +14,8 @@ export interface Dictionary {
   };
   hero: {
     eyebrow: string;
+    title: string;
+    badge: string;
     role: string;
     tagline: string;
     description: string;
@@ -22,6 +24,12 @@ export interface Dictionary {
     downloadCv: string;
     statusOpen: string;
     statusClosed: string;
+  };
+  opsLog: {
+    eyebrow: string;
+    title: string;
+    header: string;
+    rows: string[];
   };
   home: {
     featuredEyebrow: string;

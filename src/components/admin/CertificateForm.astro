@@ -54,11 +54,12 @@
 
   <label class="block">
     <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">
-      File Sertifikat (PDF / PNG / JPG / WEBP / GIF, maks 5 MB)
+      File Sertifikat (PDF / PNG / JPG / WEBP / GIF, maks 5 MB) — PNG/JPG otomatis dikompres ke WebP
     </span>
     <input id="f-file" type="file"
       accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif"
       class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary file:mr-3 file:rounded file:border-0 file:bg-cyber-card file:px-3 file:py-1.5 file:font-mono file:text-xs file:text-cyber-primary" />
+    <p id="f-file-size" class="mt-2 hidden font-mono text-[11px] text-cyber-primary" aria-live="polite"></p>
     <p id="f-file-current" class="mt-2 font-mono text-[11px] text-cyber-muted"></p>
   </label>
 
@@ -90,6 +91,7 @@
   const skills = document.getElementById("f-skills") as HTMLInputElement;
   const fileInput = document.getElementById("f-file") as HTMLInputElement;
   const fileCurrent = document.getElementById("f-file-current") as HTMLParagraphElement;
+  const sizeEl = document.getElementById("f-file-size") as HTMLParagraphElement;
 
   let editingId: string | null = null;
 
@@ -116,7 +118,70 @@
     if (!editing) {
       fileInput.value = "";
       fileCurrent.textContent = "";
+      sizeEl.classList.add("hidden");
     }
+  }
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  /**
+   * Kompres gambar via Canvas API (tanpa library eksternal):
+   * - Resolusi maksimal lebar 1600px (rasio dipertahankan)
+   * - Format WebP, kualitas ~0.8
+   * - Nama file unik (timestamp + UUID)
+   * Catatan: re-encode canvas hanya menyalin piksel, sehingga metadata EXIF
+   * (termasuk data GPS/lokasi) dari foto asli OTOMATIS dibuang — nilai
+   * tambah privasi di luar sekadar pengurangan ukuran file.
+   */
+  async function compressToWebp(file: File): Promise<File | null> {
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch {
+      // Fallback decode via <img> (Safari), lalu dibuat bitmap dari elemen.
+      const url = URL.createObjectURL(file);
+      try {
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("decode_failed"));
+          img.src = url;
+        });
+        bitmap = await createImageBitmap(img);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        URL.revokeObjectURL(url);
+        throw err;
+      }
+    }
+
+    const maxWidth = 1600;
+    const scale = Math.min(1, maxWidth / bitmap.width);
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return null;
+    }
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/webp", 0.8)
+    );
+    if (!blob) return null;
+
+    const uniqueName = `webp-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.webp`;
+    return new File([blob], uniqueName, { type: "image/webp" });
   }
 
   window.addEventListener("certificate:edit", ((event: Event) => {
@@ -166,7 +231,31 @@
 
     if (hasFile) {
       const formData = new FormData();
-      formData.append("file", fileInput.files![0]);
+      let uploadFile: File = fileInput.files![0];
+
+      // ===== Optimasi penyimpanan: PNG/JPG otomatis dikompres ke WebP =====
+      // (re-encode canvas juga membuang metadata EXIF/GPS dari foto asli)
+      if (uploadFile.type === "image/png" || uploadFile.type === "image/jpeg") {
+        statusEl.textContent = "$ compressing image...";
+        const compressed = await compressToWebp(uploadFile);
+        if (compressed) {
+          const reduced = Math.round((1 - compressed.size / uploadFile.size) * 100);
+          sizeEl.classList.remove("hidden");
+          sizeEl.textContent = `${formatBytes(uploadFile.size)} ➔ ${formatBytes(compressed.size)} (Terkoreksi ${reduced}%)`;
+          uploadFile = compressed;
+        }
+      }
+
+      // Nama file unik (timestamp + UUID) untuk SEMUA tipe file.
+      const ext = (uploadFile.name.split(".").pop() ?? "").toLowerCase() || "bin";
+      uploadFile = new File(
+        [uploadFile],
+        `file-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`,
+        { type: uploadFile.type }
+      );
+
+      statusEl.textContent = "";
+      formData.append("file", uploadFile);
       formData.append("title", payload.title);
       formData.append("issuer", payload.issuer);
       formData.append("issueDate", payload.issueDate);

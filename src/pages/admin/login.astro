@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
+import MainLayout from "../../layouts/MainLayout.astro";
 import MfaEnrollPanel from "../../components/admin/MfaEnrollPanel.astro";
 
 export const prerender = false;
@@ -11,7 +11,7 @@ if (user) return Astro.redirect("/admin/dashboard");
 const errorParam = Astro.url.searchParams.get("error");
 ---
 
-<BaseLayout
+<MainLayout
   title="Admin Login"
   description="Command Center login — dengan verifikasi MFA TOTP."
 >
@@ -98,7 +98,7 @@ const errorParam = Astro.url.searchParams.get("error");
       <p id="auth-status" role="status" aria-live="polite" class="mt-5 min-h-[1rem] font-mono text-xs text-cyber-danger"></p>
     </div>
   </div>
-</BaseLayout>
+</MainLayout>
 
 <script>
   const loginForm = document.getElementById("login-form") as HTMLFormElement;

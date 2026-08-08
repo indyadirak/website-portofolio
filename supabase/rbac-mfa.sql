@@ -126,6 +126,20 @@ create policy "profiles_select_own" on public.profiles
 -- Perubahan role / mfa_enforced hanya via Supabase Dashboard (lihat bawah).
 
 -- ------------------------------------------------------------------
+-- 5.5) GRANT EKSPLISIT (WAJIB!)
+--      Tabel yang dibuat via SQL Editor TIDAK otomatis memiliki GRANT.
+--      Tanpa grant, anon/authenticated ditolak di level tabel SEBELUM
+--      policy RLS sempat dievaluasi. Grant di sini sengaja minimal:
+--      - anon:          hanya SELECT certificates (kartu publik).
+--      - authenticated: SELECT certificates + SELECT profil sendiri.
+--      Mutasi (INSERT/UPDATE/DELETE) tetap diputuskan policy RLS aal2.
+--      profiles sengaja TIDAK di-grant ke anon (data private).
+-- ------------------------------------------------------------------
+grant select on public.certificates to anon, authenticated;
+grant select on public.profiles to authenticated;
+grant insert, update, delete on public.certificates to authenticated;
+
+-- ------------------------------------------------------------------
 -- 6) TRIGGER: auto-create profil saat user auth baru terdaftar.
 --    AFTER INSERT pada auth.users -> buat baris public.profiles
 --    dengan role default 'viewer' dan mfa_enforced default false.

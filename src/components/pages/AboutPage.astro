@@ -1,21 +1,18 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import SectionHeading from "../../components/SectionHeading.astro";
-import EmailLink from "../../components/EmailLink.astro";
-import { getDictionary, getLocaleStaticPaths, localeFromPathname } from "../../lib/i18n";
+import MainLayout from "../../layouts/MainLayout.astro";
+import SectionHeading from "../SectionHeading.astro";
+import EmailLink from "../EmailLink.astro";
+import { getDictionary, localeFromUrl } from "../../lib/i18n";
 import { siteConfig } from "../../lib/config";
 
-export const prerender = true;
-export const getStaticPaths = getLocaleStaticPaths;
-
-const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
 
 const { author, contact } = siteConfig;
 const available = contact.availabilityStatus === "open-to-work";
 ---
 
-<BaseLayout title={t.about.title} description={t.meta.about}>
+<MainLayout title={t.about.title} description={t.meta.about}>
   <div class="mx-auto max-w-3xl px-6 py-16">
     <SectionHeading eyebrow={t.about.eyebrow} title={t.about.title} />
 
@@ -69,4 +66,4 @@ const available = contact.availabilityStatus === "open-to-work";
       </div>
     </div>
   </div>
-</BaseLayout>
+</MainLayout>

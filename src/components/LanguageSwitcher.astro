@@ -2,15 +2,16 @@
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { localeFromPathname, otherLocale } from "../lib/i18n";
 
-// Switcher hanya dirender pada halaman ber-prefix bahasa (bukan /admin, /api).
+// Switcher hanya dirender pada halaman publik (bukan /admin, /api).
 const pathname = Astro.url.pathname;
-const current = localeFromPathname(pathname);
-if (!current) return; // eslint-disable-line no-unreachable
+if (pathname.startsWith("/admin") || pathname.startsWith("/api")) return; // eslint-disable-line no-unreachable
 
+// id = default tanpa prefix ("/about" -> id), en = prefix /en/.
+const current = localeFromPathname(pathname) ?? "id";
 const target = otherLocale(current);
 
-// Pertahankan halaman yang sama: "/en/projects/" -> "/id/projects/"
-const rest = pathname.replace(/^\/(id|en)\//, "").replace(/\/+$/, "");
+// Pertahankan halaman yang sama: "/en/projects/" -> "/projects/", "/about" -> "/en/about"
+const rest = pathname.replace(/^\/(en)\//, "").replace(/\/+$/, "");
 const href = getRelativeLocaleUrl(target, rest);
 const title = target === "en" ? "Switch to English" : "Ganti ke Bahasa Indonesia";
 ---

@@ -13,12 +13,13 @@ export default defineConfig({
   i18n: {
     locales: ['id', 'en'],
     defaultLocale: 'id',
-    // Strategi manual: i18n hanya menyediakan helper (getRelativeLocaleUrl, dll).
-    // Astro TIDAK memaksa 404/redirect pada URL tanpa prefix locale
-    // (mis. /admin/*, /api/*), karena strategi prefix-default mengharuskan
-    // SEMUA halaman memakai prefix locale dan sisanya diberi 404.
-    // Redirect root "/" -> "/id/" ditangani src/pages/index.astro.
-    routing: 'manual',
+    // prefixDefaultLocale: false -> strategi "pathname-prefix-other-locales":
+    //   id = default, TANPA prefix di URL (/about, /, /projects/...)
+    //   en = ber-prefix /en/ (/en/about, /en/, /en/projects/...)
+    // Lebih baik untuk SEO halaman utama bahasa Indonesia.
+    // Halaman admin & api berada di root tanpa prefix dan tidak tersentuh
+    // oleh middleware i18n (tidak mengandung segment locale).
+    routing: { prefixDefaultLocale: false },
   },
   build: {
     // CSP ketat (public/_headers) tanpa 'unsafe-inline' style-src:

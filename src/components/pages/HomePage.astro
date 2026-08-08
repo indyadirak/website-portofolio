@@ -1,27 +1,27 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import Hero from "../../components/Hero.astro";
-import SectionHeading from "../../components/SectionHeading.astro";
-import ProjectGrid from "../../components/ProjectGrid.astro";
-import SkillGrid from "../../components/SkillGrid.astro";
+import MainLayout from "../../layouts/MainLayout.astro";
+import Hero from "../Hero.astro";
+import TerminalLog from "../TerminalLog.astro";
+import SectionHeading from "../SectionHeading.astro";
+import ProjectGrid from "../ProjectGrid.astro";
+import SkillGrid from "../SkillGrid.astro";
 import { getProjects } from "../../lib/data/projects";
 import { getSkills } from "../../lib/data/skills";
-import { getDictionary, getLocaleStaticPaths, localeFromPathname } from "../../lib/i18n";
+import { getDictionary, localeFromUrl } from "../../lib/i18n";
 import { siteConfig } from "../../lib/config";
 import { getRelativeLocaleUrl } from "astro:i18n";
 
-export const prerender = true;
-export const getStaticPaths = getLocaleStaticPaths;
-
-const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
 
 const featuredProjects = await getProjects({ featuredOnly: true });
 const skills = await getSkills();
 ---
 
-<BaseLayout title={siteConfig.name} description={t.meta.home}>
+<MainLayout title={siteConfig.name} description={t.meta.home}>
   <Hero />
+
+  <TerminalLog />
 
   <section id="projects" class="mx-auto max-w-6xl px-6 py-16">
     <SectionHeading
@@ -45,4 +45,4 @@ const skills = await getSkills();
     />
     <SkillGrid skills={skills} />
   </section>
-</BaseLayout>
+</MainLayout>
