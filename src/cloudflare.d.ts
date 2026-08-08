@@ -25,6 +25,31 @@ interface Env {
    * TIDAK di-bake ke bundle build (lihat src/lib/config.ts).
    */
   TURNSTILE_SECRET_KEY?: string;
+  /**
+   * URL Supabase (sama dengan PUBLIC_SUPABASE_URL). Runtime secret yang
+   * di-set deploy.yml dari secrets.PUBLIC_SUBAPASE_URL — dipakai endpoint
+   * /api/backup-config (PostgREST, service role) untuk baca konfigurasi
+   * backup Drive saat workflow GitHub mengeksekusi backup mingguan.
+   */
+  SUPABASE_URL?: string;
+  /**
+   * service_role key Supabase — runtime secret, TIDAK pernah di-bundle.
+   * Hanya dipakai server-side (endpoint /api/backup-config yang di-gate
+   * BACKUP_FETCH_TOKEN). Set via deploy.yml dari secrets.SUPABASE_SERVICE_ROLE_KEY.
+   */
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+  /**
+   * Token acak untuk memanggil /api/backup-config dari GitHub Actions.
+   * Nilai sama di dua tempat: secrets.BACKUP_FETCH_TOKEN (GitHub) dan
+   * worker secret BACKUP_FETCH_TOKEN (deploy.yml).
+   */
+  BACKUP_FETCH_TOKEN?: string;
+  /**
+   * Kunci AES-256-GCM untuk enkripsi-at-rest JSON key Service Account
+   * Drive sebelum disimpan ke public.backup_config. Set via deploy.yml
+   * dari secrets.GDRIVE_CONFIG_ENCRYPTION_SECRET.
+   */
+  GDRIVE_CONFIG_ENCRYPTION_SECRET?: string;
 }
 
 declare module "cloudflare:workers" {

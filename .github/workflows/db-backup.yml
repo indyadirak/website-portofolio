@@ -57,16 +57,21 @@ jobs:
       # TIDAK menggagalkan job — artifact GitHub tetap salinan utama untuk
       # restore cepat; di sini cukup warning di log (continue-on-error).
       #
-      # Secrets yang dibutuhkan:
-      #   GDRIVE_SERVICE_ACCOUNT_KEY = isi JSON key Service Account (download
-      #     dari GCloud Console) di-encode base64 SATU BARIS.
-      #   GDRIVE_BACKUP_FOLDER_ID    = ID folder khusus di Drive (bagian URL
-      #     setelah /folders/), di-share "Editor" ke email Service Account.
-      # Step ini otomatis di-skip selama kedua secret belum diset.
+      # Sumber kredensial (script gdrive-backup.mjs):
+      #   1. PREFERENSI — GUI admin: config diambil dari endpoint
+      #      /api/backup-config (worker). Butuh:
+      #        - vars.BACKUP_CONFIG_URL   = URL worker (mis. https://xxx.workers.dev)
+      #        - secrets.BACKUP_FETCH_TOKEN (sama dengan runtime secret
+      #          BACKUP_FETCH_TOKEN yang di-set deploy.yml ke Worker)
+      #   2. FALLBACK lama — secrets.GDRIVE_SERVICE_ACCOUNT_KEY (base64 JSON)
+      #      + secrets.GDRIVE_BACKUP_FOLDER_ID (tetap didukung, tidak wajib).
+      # Step ini otomatis di-skip selama kedua sumber belum diset.
       - name: Upload encrypted backup to Google Drive (optional)
-        if: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY != '' && secrets.GDRIVE_BACKUP_FOLDER_ID != '' }}
+        if: ${{ secrets.BACKUP_FETCH_TOKEN != '' || secrets.GDRIVE_SERVICE_ACCOUNT_KEY != '' }}
         continue-on-error: true
         env:
+          BACKUP_FETCH_URL: ${{ vars.BACKUP_CONFIG_URL }}
+          BACKUP_FETCH_TOKEN: ${{ secrets.BACKUP_FETCH_TOKEN }}
           GDRIVE_SERVICE_ACCOUNT_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
           GDRIVE_BACKUP_FOLDER_ID: ${{ secrets.GDRIVE_BACKUP_FOLDER_ID }}
           DRIVE_RETENTION_WEEKS: "12"

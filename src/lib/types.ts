@@ -146,6 +146,19 @@ export type ProfilesRow = {
   updated_at: string;
 };
 
+/**
+ * Baris tabel public.backup_config (single-row, id = 1).
+ * `gdrive_service_account_key` berisi ciphertext AES-256-GCM
+ * ("enc:<iv>:<tag>:<ct>" base64) — plaintext hanya dalam bentuk itu.
+ */
+export type BackupConfigRow = {
+  id: number;
+  gdrive_service_account_key: string | null;
+  gdrive_folder_id: string | null;
+  updated_at: string | null;
+  updated_by: string | null;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -272,6 +285,24 @@ export interface Database {
           mfa_enforced?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      backup_config: {
+        Row: BackupConfigRow;
+        Insert: {
+          id: number;
+          gdrive_service_account_key?: string | null;
+          gdrive_folder_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          id?: number;
+          gdrive_service_account_key?: string | null;
+          gdrive_folder_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
         };
         Relationships: [];
       };

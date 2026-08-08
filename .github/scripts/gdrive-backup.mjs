@@ -10,14 +10,20 @@
 //   upload Drive TIDAK menggagalkan job (artifact GitHub tetap salinan utama).
 //
 // Env:
-//   GDRIVE_SERVICE_ACCOUNT_KEY  (wajib)  JSON key Service Account, base64-encoded
-//   GDRIVE_BACKUP_FOLDER_ID     (wajib)  ID folder Drive tujuan
+//   BACKUP_FETCH_URL            (wajib prefer) worker URL (vars.BACKUP_CONFIG_URL) —
+//                                konfigurasi diambil dari endpoint /api/backup-config
+//   BACKUP_FETCH_TOKEN          (wajib prefer) token gate endpoint (secrets.BACKUP_FETCH_TOKEN)
+//   GDRIVE_SERVICE_ACCOUNT_KEY  (fallback legacy) JSON key SA, base64-encoded
+//   GDRIVE_BACKUP_FOLDER_ID     (fallback legacy) ID folder Drive tujuan
 //   BACKUP_FILE                 (ops)    file yang di-upload (default backup.sql.gpg)
 //   DRIVE_RETENTION_WEEKS       (ops)    jumlah minggu retention (default 12)
 //
+// Prioritas kredensial: (1) BACKUP_FETCH_TOKEN/BACKUP_FETCH_URL (GUI admin),
+// (2) GDRIVE_SERVICE_ACCOUNT_KEY/GDRIVE_BACKUP_FOLDER_ID (secret lama manual).
+//
 // JANGAN pernah console.log isi JSON key / secret apapun — log hanya id/name.
 
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { google } from "googleapis";
 
 const SCOPE = ["https://www.googleapis.com/auth/drive.file"];
@@ -27,29 +33,68 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function main() {
+/**
+ * Resolusi kredensial Drive: endpoint konfigurasi (GUI admin) lebih diutamakan;
+ * bila tidak tersedia, fallback ke env GDRIVE_* (cara lama). Mengembalikan
+ * { keyB64, folderId } atau null (tidak dikonfigurasi -> skip tanpa error).
+ */
+async function resolveCredentials() {
+  const fetchUrl = process.env.BACKUP_FETCH_URL;
+  const fetchToken = process.env.BACKUP_FETCH_TOKEN;
+
+  if (fetchUrl && fetchToken) {
+    const res = await fetch(`${fetchUrl.replace(/\/+$/, "")}/api/backup-config`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${fetchToken}` },
+      signal: AbortSignal.timeout(20_000),
+    });
+
+    if (res.status === 503) {
+      console.warn("[gdrive] endpoint /api/backup-config belum dikonfigurasi (503) — skip (artifact GitHub tetap tersimpan).");
+      return null;
+    }
+    if (!res.ok) {
+      throw new Error(`fetch konfigurasi gagal: HTTP ${res.status}`);
+    }
+
+    const cfg = await res.json();
+    if (!cfg?.configured || !cfg.gdriveServiceAccountKey || !cfg.gdriveFolderId) {
+      console.warn("[gdrive] konfigurasi Drive belum diisi di GUI admin — skip (artifact GitHub tetap tersimpan).");
+      return null;
+    }
+    return { keyB64: cfg.gdriveServiceAccountKey, folderId: cfg.gdriveFolderId };
+  }
+
   const keyB64 = process.env.GDRIVE_SERVICE_ACCOUNT_KEY;
   const folderId = process.env.GDRIVE_BACKUP_FOLDER_ID;
-
-  if (!keyB64 || !folderId) {
-    console.warn(
-      "[gdrive] GDRIVE_SERVICE_ACCOUNT_KEY / GDRIVE_BACKUP_FOLDER_ID kosong — step Drive di-skip (artifact GitHub tetap tersimpan)."
-    );
-    return;
+  if (keyB64 && folderId) {
+    return { keyB64, folderId };
   }
+
+  console.warn("[gdrive] kredensial belum diset (BACKUP_FETCH_TOKEN/BACKUP_FETCH_URL atau GDRIVE_*) — skip (artifact GitHub tetap tersimpan).");
+  return null;
+}
+
+async function main() {
+  const cred = await resolveCredentials();
+  if (!cred) return;
 
   const retentionWeeks = Number(process.env.DRIVE_RETENTION_WEEKS ?? 12);
   const backupFile = process.env.BACKUP_FILE ?? "backup.sql.gpg";
   const retentionMs = retentionWeeks * 7 * 24 * 60 * 60 * 1000;
 
-  const credentials = JSON.parse(Buffer.from(keyB64, "base64").toString("utf8"));
+  if (!existsSync(backupFile)) {
+    throw new Error(`file backup tidak ditemukan: ${backupFile} — pastikan step dump+enkripsi sukses.`);
+  }
+
+  const credentials = JSON.parse(Buffer.from(cred.keyB64, "base64").toString("utf8"));
   const auth = new google.auth.GoogleAuth({ credentials, scopes: SCOPE });
   const drive = google.drive({ version: "v3", auth });
 
   // 1. Upload (nama ber-timestamp: backup-2026-08-08.sql.gpg)
   const name = `${BACKUP_PREFIX}${today()}.sql.gpg`;
   const created = await drive.files.create({
-    requestBody: { name, parents: [folderId] },
+    requestBody: { name, parents: [cred.folderId] },
     media: { mimeType: "application/octet-stream", body: createReadStream(backupFile) },
     fields: "id,name",
   });
@@ -58,7 +103,7 @@ async function main() {
   // 2. Retention — hapus backup-* yang lebih tua dari retentionWeeks.
   const cutoffMs = Date.now() - retentionMs;
   const listed = await drive.files.list({
-    q: `'${folderId}' in parents and trashed = false`,
+    q: `'${cred.folderId}' in parents and trashed = false`,
     fields: "files(id,name,createdTime)",
     pageSize: 100,
     orderBy: "createdTime",
