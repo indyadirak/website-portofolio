@@ -13,6 +13,17 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Pin runtime Node (Node 20 default deprecated oleh GitHub; runner
+      # sekarang default Node 24). 22 = sama dengan deploy.yml & engines
+      # package.json — deterministik, silakan update semua di satu tempat.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Install PostgreSQL client & GPG
         run: |
           sudo apt-get update
