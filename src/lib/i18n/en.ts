@@ -113,6 +113,7 @@ export const en: Dictionary = {
     revealEmail: "[ reveal_email ]",
     orVia: "or via",
     note: "The form above posts to the /api/contact endpoint with rate limiting and honeypot protection.",
+    captchaRequired: "Please complete the Turnstile verification first.",
   },
   footer: {
     rights: "All rights reserved.",

@@ -88,6 +88,7 @@ export interface Dictionary {
     revealEmail: string;
     orVia: string;
     note: string;
+    captchaRequired: string;
   };
   footer: {
     rights: string;

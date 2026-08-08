@@ -1,5 +1,6 @@
 ---
 import { getDictionary, localeFromPathname } from "../lib/i18n";
+import { turnstile } from "../lib/config";
 
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
@@ -13,6 +14,7 @@ const t = getDictionary(locale);
   data-i18n-rate={t.contact.tooManyRequests}
   data-i18n-noconfig={t.contact.notConfigured}
   data-i18n-fail={t.contact.sendFailed}
+  data-i18n-captcha={t.contact.captchaRequired}
 >
   <div class="grid gap-5 md:grid-cols-2">
     <label class="block">
@@ -78,7 +80,21 @@ const t = getDictionary(locale);
     </button>
     <p id="contact-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-muted"></p>
   </div>
+
+  {
+    turnstile.siteKey && (
+      <div
+        id="turnstile-widget"
+        class="cf-turnstile"
+        data-sitekey={turnstile.siteKey}
+        data-language={locale === "en" ? "en" : "id"}
+      ></div>
+    )
+  }
+  <input type="hidden" id="turnstile-token" name="cf-turnstile-response" />
 </form>
+
+<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
 
 <script>
   const form = document.getElementById("contact-form") as HTMLFormElement | null;
@@ -90,6 +106,7 @@ const t = getDictionary(locale);
     rate: form?.dataset.i18nRate ?? "rate limited",
     noconfig: form?.dataset.i18nNoconfig ?? "not configured",
     fail: form?.dataset.i18nFail ?? "failed",
+    captcha: form?.dataset.i18nCaptcha ?? "complete the captcha first",
   };
 
   function show(text: string, ok: boolean): void {
@@ -99,8 +116,43 @@ const t = getDictionary(locale);
     status.classList.toggle("text-cyber-danger", !ok);
   }
 
+  // ===== Turnstile (widget dirender eksplisit; callback global dipanggil
+  // oleh api.js dari challenges.cloudflare.com) =====
+  const widgetEl = document.getElementById("turnstile-widget");
+  const tokenInput = document.getElementById("turnstile-token") as HTMLInputElement | null;
+
+  type TurnstileApi = {
+    render: (el: HTMLElement, opts: Record<string, unknown>) => void;
+  };
+
+  (window as unknown as { onTurnstileSuccess?: (token: string) => void }).onTurnstileSuccess =
+    (token: string) => {
+      if (tokenInput) tokenInput.value = token;
+    };
+
+  let rendered = false;
+  function renderTurnstile(): void {
+    const api = (window as unknown as { turnstile?: TurnstileApi }).turnstile;
+    if (!widgetEl || !api || rendered) return;
+    rendered = true;
+    api.render(widgetEl, {
+      sitekey: widgetEl.dataset.sitekey,
+      theme: "dark",
+      language: widgetEl.dataset.language,
+      callback: "onTurnstileSuccess",
+    });
+  }
+  renderTurnstile();
+  window.addEventListener("load", renderTurnstile);
+
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    // Wajib selesaikan CAPTCHA sebelum submit (bila widget ada).
+    if (widgetEl && (!tokenInput || !tokenInput.value)) {
+      show(`${messages.errorPrefix} ${messages.captcha}`, false);
+      return;
+    }
 
     const data = new FormData(form);
     const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
@@ -116,6 +168,7 @@ const t = getDictionary(locale);
           email: String(data.get("email") ?? ""),
           message: String(data.get("message") ?? ""),
           website: String(data.get("website") ?? ""),
+          "cf-turnstile-response": tokenInput?.value ?? "",
         }),
       });
     } catch {
@@ -131,6 +184,7 @@ const t = getDictionary(locale);
     if (result.ok) {
       show(messages.success, true);
       form.reset();
+      if (tokenInput) tokenInput.value = "";
       return;
     }
 
@@ -140,6 +194,9 @@ const t = getDictionary(locale);
         break;
       case "not_configured":
         show(`${messages.errorPrefix} ${messages.noconfig}`, false);
+        break;
+      case "captcha_failed":
+        show(`${messages.errorPrefix} ${messages.captcha}`, false);
         break;
       default:
         show(`${messages.errorPrefix} ${messages.fail}`, false);

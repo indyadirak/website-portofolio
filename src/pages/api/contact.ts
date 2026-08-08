@@ -1,11 +1,13 @@
 import type { APIRoute } from "astro";
 import { getSupabase } from "../../lib/supabase";
+import { isTurnstileEnabled, turnstile } from "../../lib/config";
 
 /**
  * Endpoint kontak publik: /api/contact
  * - Validasi input (nama, email, pesan) dengan batas panjang.
  * - Honeypot "website": bot yang mengisinya dibalas sukses palsu (200)
  *   tanpa INSERT — tidak membocorkan bahwa deteksi terjadi.
+ * - Turnstile (Cloudflare): wajib token valid bila dikonfigurasi.
  * - Rate limiting sederhana in-memory: maks 3 submission / IP / 10 menit.
  *   CATATAN: state in-memory tidak persisten antar instance/edge — lihat
  *   catatan deployment di akhir file.
@@ -24,6 +26,26 @@ function clientIp(request: Request, astroClientAddress: string | undefined): str
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
   return astroClientAddress ?? "unknown";
+}
+
+/**
+ * Verifikasi token Turnstile via siteverify Cloudflare.
+ * Return true bila Turnstile tidak dikonfigurasi (mode dev) ATAU
+ * token valid. Token wajib ada & valid saat Turnstile aktif.
+ */
+async function verifyTurnstile(token: string | null): Promise<boolean> {
+  if (!isTurnstileEnabled) return true;
+  if (!token) return false;
+
+  const form = new URLSearchParams({ secret: turnstile.secretKey, response: token });
+  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    body: form,
+  }).catch(() => null);
+  if (!res) return false;
+
+  const data = (await res.json().catch(() => null)) as { success?: boolean } | null;
+  return data?.success === true;
 }
 
 function json(body: Record<string, unknown>, status = 200): Response {
@@ -83,6 +105,13 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     message.length > 5000
   ) {
     return json({ ok: false, error: "validation" }, 400);
+  }
+
+  // ===== Turnstile: token wajib valid bila dikonfigurasi =====
+  const cfToken =
+    typeof body["cf-turnstile-response"] === "string" ? body["cf-turnstile-response"] : "";
+  if (!(await verifyTurnstile(cfToken))) {
+    return json({ ok: false, error: "captcha_failed" }, 400);
   }
 
   // ===== Rate limit =====

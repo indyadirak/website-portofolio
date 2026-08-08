@@ -14,7 +14,7 @@ Jika kamu menemukan kerentanan keamanan di proyek ini, **jangan** buka issue pub
 
 - https://github.com/indyadirak/website-portofolio/security/advisories/new
 
-Laporan akan ditinjau oleh pemilik repository (pranala email akan ditambahkan di sini bila tersedia).
+Laporan akan ditinjau oleh pemilik repository.
 
 Sertakan dalam laporan:
 

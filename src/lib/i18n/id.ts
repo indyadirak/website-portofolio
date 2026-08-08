@@ -113,6 +113,7 @@ export const id: Dictionary = {
     revealEmail: "[ reveal_email ]",
     orVia: "atau via",
     note: "Form di atas menggunakan API endpoint /api/contact dengan rate limiting dan proteksi honeypot.",
+    captchaRequired: "Selesaikan verifikasi Turnstile terlebih dahulu.",
   },
   footer: {
     rights: "All rights reserved.",

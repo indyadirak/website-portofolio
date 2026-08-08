@@ -47,3 +47,17 @@ export type SiteConfig = typeof siteConfig;
 export function cvUrl(locale: Locale): string {
   return locale === "en" ? siteConfig.cv.en : siteConfig.cv.id;
 }
+
+/**
+ * Cloudflare Turnstile (anti-bot form kontak).
+ * - siteKey  : publik, dirender di widget (aman untuk frontend)
+ * - secretKey: server-only, dipakai verifikasi token di /api/contact
+ * Jika keduanya kosong, Turnstile dinonaktifkan (mode dev) dan
+ * form/API berjalan tanpa CAPTCHA.
+ */
+export const turnstile = {
+  siteKey: (import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as string | undefined) ?? "",
+  secretKey: (import.meta.env.TURNSTILE_SECRET_KEY as string | undefined) ?? "",
+};
+
+export const isTurnstileEnabled = Boolean(turnstile.siteKey && turnstile.secretKey);
