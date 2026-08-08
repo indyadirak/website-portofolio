@@ -1,0 +1,33 @@
+# Dependency Review
+# Mengaudit perubahan dependency (package.json / package-lock.json) pada tiap PR
+# ke main. PR GAGAL otomatis jika ada dependency baru dengan kerentanan
+# level high atau critical.
+# Lihat: https://github.com/actions/dependency-review-action
+name: "Dependency Review"
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write   # agar bisa memberi komentar hasil review di PR
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Gagalkan PR jika ditemukan dependency berkerentanan
+          fail-on-severity: high
+          # Opsional: batasi juga perhatian pada tipe dependency tertentu
+          # deny-groups: ["development"]
+          # Gagalkan bila dependency hanya memperbaiki via update besar
+          # fail-on-scopes: runtime
+          # Allowlist paket yang diketahui (isi jika perlu)
+          # allow-ghsas: []

@@ -1,0 +1,21 @@
+# CODEOWNERS — review wajib untuk path sensitif
+# Setiap perubahan pada file di bawah ini memerlukan approval dari pemilik
+# sebelum PR bisa di-merge (wajib dipasang branch protection rule di Settings).
+
+# Database schema & RLS — sumber kebenaran izin data
+/supabase/*.sql                      @indyadirak
+
+# Admin CMS — area berperan tinggi
+/src/pages/admin/**                  @indyadirak
+
+# Middleware session & guard /admin
+/src/middleware.ts                   @indyadirak
+
+# Autentikasi, MFA session, RBAC helper
+/src/lib/auth.ts                     @indyadirak
+
+# Workflow CI/CD keamanan
+/.github/workflows/**                @indyadirak
+
+# CSP & security headers (production)
+/public/_headers                     @indyadirak

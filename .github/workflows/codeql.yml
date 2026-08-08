@@ -1,0 +1,47 @@
+# CodeQL Code Scanning
+# Scan kerentanan pada kode JavaScript/TypeScript.
+# Jalankan pada tiap push & PR ke main, plus jadwal mingguan (Senin 06:00 UTC).
+# Hasil: GitHub > Security > Code scanning alerts
+name: "CodeQL"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+  security-events: write   # upload hasil scan ke Code scanning alerts
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript-typescript"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Inisialisasi CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      # Autobuild: untuk JavaScript/TypeScript hanya mengekstrak kode,
+      # tidak diperlukan proses build aplikasi.
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
