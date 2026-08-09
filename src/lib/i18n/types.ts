@@ -101,6 +101,24 @@ export interface Dictionary {
     message: string;
     backHome: string;
   };
+  errorPages: {
+    forbidden: {
+      title: string;
+      message: string;
+      backHome: string;
+      backDashboard: string;
+    };
+    tooManyRequests: {
+      title: string;
+      message: string;
+      backHome: string;
+    };
+    serverError: {
+      title: string;
+      message: string;
+      backHome: string;
+    };
+  };
   meta: {
     home: string;
     projects: string;

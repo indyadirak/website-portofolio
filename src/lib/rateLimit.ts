@@ -44,6 +44,25 @@ const BACKUP_CONFIG_WINDOW_SEC = Math.max(
   Math.ceil(BACKUP_CONFIG_LIMITS.WINDOW_MS / 1000)
 );
 
+/**
+ * =====================================================================
+ * KONSTANTA RATE LIMIT NAVIGASI HALAMAN (middleware SSR).
+ * Melindungi halaman HTML (bukan API — tiap endpoint punya guard sendiri)
+ * dari hammering/scraping. Fail-OPEN: kalau KV tidak tersedia, navigasi
+ * tetap dilayani (availability > limit; endpoint sensitif sudah fail-closed).
+ * =====================================================================
+ */
+export const PAGE_NAV_LIMITS = {
+  /** Maks request per-IP per window (halaman HTML saja). */
+  MAX_REQUESTS: 60,
+  /** Jendela hitung (1 menit). */
+  WINDOW_MS: 60 * 1000,
+  /** Buffer TTL key (menit) agar window sempat terbaca saat mau kedaluwarsa. */
+  TTL_BUFFER_SEC: 60,
+} as const;
+
+const PAGE_NAV_WINDOW_SEC = Math.max(1, Math.ceil(PAGE_NAV_LIMITS.WINDOW_MS / 1000));
+
 /** Durasi lockout level ke-n (progresif, capped di LOCKOUT_MAX_MS). */
 function lockoutDurationMs(level: number): number {
   const d = LOGIN_LIMITS.LOCKOUT_BASE_MS * 2 ** (level - 1);
@@ -56,12 +75,14 @@ function lockoutDurationMs(level: number): number {
 //   ratelimit:loginc:<ip>:<email>             counter percobaan login per-IP+email (3x/10m)
 //   ratelimit:lockout:<ip>:<email>            state lockout progresif {level, until}
 //   ratelimit:backupcfg:<ip>                  counter token salah /api/backup-config (5x/10m)
+//   ratelimit:pagenav:<ip>                    counter navigasi halaman HTML (60x/1m)
 const KEY = {
   contact: "ratelimit:contact:",
   loginIp: "ratelimit:loginip:",
   loginCred: "ratelimit:loginc:",
   loginLockout: "ratelimit:lockout:",
   backupConfig: "ratelimit:backupcfg:",
+  pageNav: "ratelimit:pagenav:",
 } as const;
 
 interface Entry {
@@ -421,6 +442,80 @@ export const backupConfigAttemptGuard = {
       await kv.delete(storageKey);
     } catch (err) {
       console.error("[backupcfg-guard] KV delete gagal saat recordSuccess:", err);
+    }
+  },
+};
+
+// =====================================================================
+// PAGE NAVIGATION GUARD — proteksi halaman HTML (middleware SSR).
+//   * Berbeda dari endpoint: FAIL-OPEN (availability diutamakan; kalau KV
+//     tidak tersedia/gagal, navigasi tetap dilayani). Endpoint sensitif
+//     (login, backup-config) tetap fail-closed dengan guard masing-masing.
+//   * Hanya menghitung request halaman (bukan aset statis /_astro, bukan
+//     /api/*) — lihat middleware.ts.
+//   * Saat limit tercapai, middleware me-rewrite ke halaman 429.astro.
+// =====================================================================
+export interface PageNavDecision {
+  allowed: boolean;
+  /** Estimasi detik hingga boleh navigasi lagi (hanya saat ditolak). */
+  retryAfterSec?: number;
+}
+
+export const pageNavigationGuard = {
+  // Fallback dev-only in-memory (identik behavior, tanpa KV).
+  _dev: new Map<string, Entry>(),
+
+  async check(ip: string): Promise<PageNavDecision> {
+    const kv = env.RATE_LIMIT_KV;
+    const now = Date.now();
+    const storageKey = KEY.pageNav + ip;
+    const windowMs = PAGE_NAV_LIMITS.WINDOW_MS;
+
+    if (!kv) {
+      if (import.meta.env.DEV) {
+        const entry = this._dev.get(storageKey);
+        if (entry && inWindow(entry, now, windowMs)) {
+          if (entry.count >= PAGE_NAV_LIMITS.MAX_REQUESTS) {
+            return {
+              allowed: false,
+              retryAfterSec: Math.ceil((entry.windowStart + windowMs - now) / 1000),
+            };
+          }
+          entry.count += 1;
+        } else {
+          this._dev.set(storageKey, { count: 1, windowStart: now });
+        }
+        return { allowed: true };
+      }
+      // Production tanpa binding KV: fail-open (halaman tetap dilayani).
+      return { allowed: true };
+    }
+
+    try {
+      const entry = parseEntry(await kv.get(storageKey));
+      if (entry && inWindow(entry, now, windowMs)) {
+        if (entry.count >= PAGE_NAV_LIMITS.MAX_REQUESTS) {
+          return {
+            allowed: false,
+            retryAfterSec: Math.ceil((entry.windowStart + windowMs - now) / 1000),
+          };
+        }
+        entry.count += 1;
+        await kv.put(storageKey, JSON.stringify(entry), {
+          expirationTtl: PAGE_NAV_WINDOW_SEC + PAGE_NAV_LIMITS.TTL_BUFFER_SEC,
+        });
+        return { allowed: true };
+      }
+
+      await kv.put(storageKey, JSON.stringify({ count: 1, windowStart: now }), {
+        expirationTtl: PAGE_NAV_WINDOW_SEC + PAGE_NAV_LIMITS.TTL_BUFFER_SEC,
+      });
+      return { allowed: true };
+    } catch (err) {
+      // KV read/write gagal — fail-open: jangan pernah menolak navigasi
+      // pengunjung sah karena infra limiter bermasalah.
+      console.error("[pagenav-guard] KV gagal — fail-open:", err);
+      return { allowed: true };
     }
   },
 };

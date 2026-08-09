@@ -1,0 +1,32 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+import { siteConfig } from "../lib/config";
+
+// 500.astro adalah halaman error khusus Astro: dirender OTOMATIS saat
+// sebuah halaman/middleware melempar error tak terduga (SSR), jadi
+// pengunjung tidak pernah melihat stack trace mentah Node/Workers.
+// Wajib SSR (jangan di-prerender) — error hanya terjadi saat runtime.
+export const prerender = false;
+
+Astro.response.status = 500;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+const e = t.errorPages.serverError;
+---
+
+<MainLayout title={`500 — ${siteConfig.name}`}>
+  <div class="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center px-6 py-24 text-center">
+    <p class="font-mono text-6xl font-bold text-cyber-danger glow-text">500</p>
+    <h1 class="mt-6 font-mono text-2xl font-bold text-white">{e.title}</h1>
+    <p class="mt-4 max-w-md text-cyber-muted">{e.message}</p>
+    <a
+      href={getRelativeLocaleUrl(locale, "")}
+      class="mt-10 rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-3 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+    >
+      {e.backHome}
+    </a>
+  </div>
+</MainLayout>

@@ -1,0 +1,48 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+import { siteConfig } from "../lib/config";
+
+// SSR: halaman ini dirender dinamis (bisa di-rewrite dari middleware
+// dengan status 403), jadi jangan di-prerender seperti 404.
+export const prerender = false;
+
+// Dipanggil dari middleware (role guard admin) maupun langsung;
+// selalu balas dengan status 403 yang benar.
+Astro.response.status = 403;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+const e = t.errorPages.forbidden;
+
+// 403 bisa muncul saat user SUDAH login (role tidak cukup) atau akses
+// langsung. Tombol dashboard hanya relevan bila ada sesi aktif.
+const isLoggedIn = Boolean(Astro.locals.user);
+---
+
+<MainLayout title={`403 — ${siteConfig.name}`}>
+  <div class="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center px-6 py-24 text-center">
+    <p class="font-mono text-6xl font-bold text-cyber-danger glow-text">403</p>
+    <h1 class="mt-6 font-mono text-2xl font-bold text-white">{e.title}</h1>
+    <p class="mt-4 max-w-md text-cyber-muted">{e.message}</p>
+    <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
+      {
+        isLoggedIn && (
+          <a
+            href="/admin/dashboard"
+            class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-3 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+          >
+            {e.backDashboard}
+          </a>
+        )
+      }
+      <a
+        href={getRelativeLocaleUrl(locale, "")}
+        class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-3 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+      >
+        {e.backHome}
+      </a>
+    </div>
+  </div>
+</MainLayout>

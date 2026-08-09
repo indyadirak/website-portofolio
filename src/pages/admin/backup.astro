@@ -13,6 +13,12 @@ if (!user) {
 
 const isAdmin = canDeleteCertificates(profile); // admin saja
 
+// Guard defensif: middleware sudah memblokir non-admin (403), tapi bila
+// ada jalur bypass, halaman ini menolak dirender dan menampilkan 403.
+if (!isAdmin) {
+  return Astro.rewrite("/403");
+}
+
 // SELECT di-guard RLS: non-admin tidak akan mendapat baris ini.
 let config: {
   clientEmail: string | null;
@@ -70,15 +76,6 @@ if (isAdmin) {
         &lt;- dashboard
       </a>
     </div>
-
-    {
-      !isAdmin && (
-        <p class="mt-10 rounded border border-cyber-border bg-cyber-card p-6 font-mono text-xs text-cyber-muted">
-          $ access_denied: hanya role <span class="text-cyber-primary">admin</span> yang dapat
-          mengelola konfigurasi backup Google Drive. Hubungi admin untuk perubahan.
-        </p>
-      )
-    }
 
     {
       isAdmin && (

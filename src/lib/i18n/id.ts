@@ -133,6 +133,27 @@ export const id: Dictionary = {
     message: "File yang Anda cari tidak ditemukan di sistem ini. Periksa kembali path atau kembali ke beranda.",
     backHome: "[ cd ~ ]",
   },
+  errorPages: {
+    forbidden: {
+      title: "[ ACCESS DENIED ]",
+      message:
+        "Clearance tidak mencukupi — resource ini khusus role admin. Percobaan akses Anda telah dicatat di log. Bila ini keliru, hubungi admin.",
+      backHome: "[ cd ~ ]",
+      backDashboard: "[ cd /admin/dashboard ]",
+    },
+    tooManyRequests: {
+      title: "[ RATE LIMIT EXCEEDED ]",
+      message:
+        "Terlalu banyak permintaan dalam waktu singkat dari IP Anda. Tenang sejenak, lalu coba lagi beberapa menit lagi.",
+      backHome: "[ cd ~ ]",
+    },
+    serverError: {
+      title: "[ SYSTEM FAULT ]",
+      message:
+        "Terjadi gangguan sistem yang tak terduga. Tim sudah diberitahu secara otomatis — silakan coba lagi beberapa saat.",
+      backHome: "[ cd ~ ]",
+    },
+  },
   meta: {
     home: "Portfolio Cyber Security — penetration testing, security research, dan blue team defense.",
     projects: "Portofolio project Cyber Security — diambil dinamis dari Supabase.",

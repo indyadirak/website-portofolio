@@ -1,0 +1,30 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+import { siteConfig } from "../lib/config";
+
+// SSR: dirender dinamis saat middleware/rate limiter menolak request
+// navigasi halaman. Status 429 di-set eksplisit.
+export const prerender = false;
+
+Astro.response.status = 429;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+const e = t.errorPages.tooManyRequests;
+---
+
+<MainLayout title={`429 — ${siteConfig.name}`}>
+  <div class="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center px-6 py-24 text-center">
+    <p class="font-mono text-6xl font-bold text-cyber-accent glow-text">429</p>
+    <h1 class="mt-6 font-mono text-2xl font-bold text-white">{e.title}</h1>
+    <p class="mt-4 max-w-md text-cyber-muted">{e.message}</p>
+    <a
+      href={getRelativeLocaleUrl(locale, "")}
+      class="mt-10 rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-3 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+    >
+      {e.backHome}
+    </a>
+  </div>
+</MainLayout>

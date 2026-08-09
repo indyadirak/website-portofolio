@@ -133,6 +133,27 @@ export const en: Dictionary = {
     message: "The file you are looking for was not found in this system. Check the path or go back home.",
     backHome: "[ cd ~ ]",
   },
+  errorPages: {
+    forbidden: {
+      title: "[ ACCESS DENIED ]",
+      message:
+        "Insufficient clearance — this resource is admin-only. Your access attempt has been logged. Contact the admin if this is a mistake.",
+      backHome: "[ cd ~ ]",
+      backDashboard: "[ cd /admin/dashboard ]",
+    },
+    tooManyRequests: {
+      title: "[ RATE LIMIT EXCEEDED ]",
+      message:
+        "Too many requests from your IP in a short period. Take a break and try again in a few minutes.",
+      backHome: "[ cd ~ ]",
+    },
+    serverError: {
+      title: "[ SYSTEM FAULT ]",
+      message:
+        "An unexpected system fault occurred. The team has been notified automatically — please try again shortly.",
+      backHome: "[ cd ~ ]",
+    },
+  },
   meta: {
     home: "Cyber Security Portfolio — penetration testing, security research, and blue team defense.",
     projects: "Cyber Security project portfolio — loaded dynamically from Supabase.",
