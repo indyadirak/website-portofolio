@@ -4,6 +4,9 @@ import type { Database } from "./types";
 /** Bucket privat untuk file sertifikat (lihat supabase/storage.sql). */
 export const CERTIFICATE_BUCKET = "certificates";
 
+/** Bucket publik untuk file CV (lihat supabase/cv.sql). */
+export const CV_BUCKET = "cv";
+
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
 
 interface AllowedFileType {
@@ -109,5 +112,79 @@ export async function removeCertificateFile(
 
   if (error) {
     console.error("[storage] Gagal menghapus file (mungkin orphan):", error.message);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CV / Resume files (bucket publik `cv`, PDF saja)
+// ---------------------------------------------------------------------------
+
+export type CvLocale = "id" | "en";
+
+/** Path stabil di storage per bahasa — nama tetap agar URL publik tidak berubah. */
+export function cvStoragePath(locale: CvLocale): string {
+  return `cv-${locale}.pdf`;
+}
+
+/**
+ * Validasi file CV DI SISI SERVER: PDF saja (magic bytes %PDF), maks 5 MB.
+ * CV tidak boleh non-PDF (misal gambar) — format CV standar adalah PDF.
+ */
+export async function validateCvFile(file: File): Promise<FileValidationResult> {
+  if (file.size <= 0) {
+    return { ok: false, error: "file_kosong" };
+  }
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { ok: false, error: "file_terlalu_besar_maksimal_5mb" };
+  }
+
+  const pdf = ALLOWED_FILE_TYPES.find((t) => t.mime === "application/pdf");
+  if (file.type !== pdf?.mime) {
+    return { ok: false, error: "cv_harus_pdf" };
+  }
+
+  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  if (!pdf!.match(head)) {
+    return { ok: false, error: "mime_tidak_sesuai_isi_file" };
+  }
+
+  return { ok: true, mime: pdf!.mime, ext: "pdf" };
+}
+
+/**
+ * Upload (atau ganti) file CV ke bucket publik `cv`.
+ * Path tetap `cv-<locale>.pdf` + upsert — URL publik tidak berubah saat
+ * admin mengganti CV (cache busting via ?v= di resolveCvUrl).
+ */
+export async function uploadCvFile(
+  supabase: SupabaseClient<Database>,
+  locale: CvLocale,
+  file: File,
+  mime: string
+): Promise<{ path: string | null; error: string | null }> {
+  const path = cvStoragePath(locale);
+
+  const { data, error } = await supabase.storage
+    .from(CV_BUCKET)
+    .upload(path, file, { contentType: mime, cacheControl: "no-cache", upsert: true });
+
+  if (error) {
+    console.error("[storage] Upload CV gagal:", error.message);
+    return { path: null, error: error.message };
+  }
+
+  return { path: data.path, error: null };
+}
+
+/** Menghapus file CV dari bucket (best-effort). */
+export async function removeCvFile(
+  supabase: SupabaseClient<Database>,
+  locale: CvLocale
+): Promise<void> {
+  const { error } = await supabase.storage.from(CV_BUCKET).remove([cvStoragePath(locale)]);
+
+  if (error) {
+    console.error("[storage] Gagal menghapus CV (mungkin orphan):", error.message);
   }
 }

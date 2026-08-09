@@ -1,4 +1,3 @@
-import type { Locale } from "./i18n";
 import { env } from "cloudflare:workers";
 
 /**
@@ -45,11 +44,6 @@ export const siteConfig = {
 } as const;
 
 export type SiteConfig = typeof siteConfig;
-
-/** URL CV sesuai bahasa aktif situs. */
-export function cvUrl(locale: Locale): string {
-  return locale === "en" ? siteConfig.cv.en : siteConfig.cv.id;
-}
 
 /**
  * Cloudflare Turnstile (anti-bot form kontak).

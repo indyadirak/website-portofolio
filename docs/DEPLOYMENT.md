@@ -19,7 +19,7 @@ Versi infrastruktur saat ini:
 - [ ] Node.js ≥ 22.12 (disarankan 24) terpasang; `npm ci` berjalan lokal tanpa error
 - [ ] Akun: GitHub, Cloudflare (dengan Workers), Supabase (project aktif), Google (untuk Service Account Drive)
 - [ ] `src/lib/config.ts` (siteConfig): isi `name`, `url` (domain asli), `author`, `contact` (email/LinkedIn/GitHub), `availabilityStatus`
-- [ ] File CV ditempatkan: `public/cv-id.pdf` & `public/cv-en.pdf` (bersihkan metadata PDF dengan exiftool; tanpa nomor telepon)
+- [ ] CV/Resume: upload via admin GUI (`/admin/cv` → bucket publik `cv`). Opsional fallback statis di `public/cv-id.pdf` & `public/cv-en.pdf` (bersihkan metadata PDF dengan exiftool; tanpa nomor telepon)
 
 ---
 
@@ -33,6 +33,7 @@ Versi infrastruktur saat ini:
   - [ ] `login-attempts.sql` (audit login, RPC 5-param)
   - [ ] `backup-config.sql` (konfigurasi Drive, RLS aal2+admin)
   - [ ] `backup-config-access-log.sql` (audit endpoint backup-config)
+  - [ ] `cv.sql` (bucket publik `cv` + tabel `cv_files` untuk upload CV via admin GUI)
 - [ ] **Buat admin user**: Authentication → Users → Add user (email + password kuat). Wajib: set `role = 'admin'` di tabel `public.profiles` dan `mfa_enforced = true` (dashboard atau SQL) — tanpa role admin, GUI backup & audit tidak bisa diakses
 - [ ] Catat dari Project Settings → API: `URL` + `anon` key + `service_role` key
 - [ ] Catat dari Project Settings → Database → Connection string: **SESSION POOLER (port 5432)** — untuk pg_dump (jangan Transaction Pooler 6543), tambahkan `?sslmode=require`
@@ -100,6 +101,7 @@ Generate nilai acak (PowerShell):
 
 - [ ] Buka `/admin/login` → login admin pertama → **enroll MFA TOTP** (wajib untuk admin)
 - [ ] `/admin/dashboard` → `[ backup ]` → paste JSON key SA + folder ID Drive → **simpan** (status ter-mask: email SA & tail folder ID tampil)
+- [ ] `/admin/dashboard` → `[ cv ]` → upload CV/Resume PDF per bahasa (id & en) — tombol unduh di navbar/hero otomatis menunjuk ke file terbaru di bucket publik `cv`; fallback ke `public/cv-*.pdf` bila belum di-upload
 - [ ] (Opsional) Cek status key SA: `https://www.googleapis.com/auth/drive.file` aktif di IAM
 
 ## 7. Verifikasi end-to-end

@@ -159,6 +159,17 @@ export type BackupConfigRow = {
   updated_by: string | null;
 };
 
+/** Baris tabel public.cv_files — metadata file CV per bahasa (id | en). */
+export type CvFilesRow = {
+  locale: "id" | "en";
+  file_path: string;
+  file_name: string;
+  size_bytes: number;
+  mime: string;
+  uploaded_by: string | null;
+  updated_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -303,6 +314,28 @@ export interface Database {
           gdrive_folder_id?: string | null;
           updated_at?: string;
           updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      cv_files: {
+        Row: CvFilesRow;
+        Insert: {
+          locale: "id" | "en";
+          file_path: string;
+          file_name: string;
+          size_bytes: number;
+          mime: string;
+          uploaded_by?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          locale?: "id" | "en";
+          file_path?: string;
+          file_name?: string;
+          size_bytes?: number;
+          mime?: string;
+          uploaded_by?: string | null;
+          updated_at?: string;
         };
         Relationships: [];
       };

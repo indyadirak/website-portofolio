@@ -92,6 +92,11 @@ export function canDeleteCertificates(profile: Profile | null): boolean {
   return hasRole(profile, "admin");
 }
 
+/** Manajemen CV/Resume: admin saja (file identitas pemilik situs). */
+export function canManageCv(profile: Profile | null): boolean {
+  return hasRole(profile, "admin");
+}
+
 export interface AuthContext {
   supabase: SupabaseClient<Database>;
   user: User | null;

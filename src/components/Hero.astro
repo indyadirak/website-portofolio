@@ -1,7 +1,8 @@
 ---
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { getDictionary, localeFromPathname } from "../lib/i18n";
-import { siteConfig, cvUrl } from "../lib/config";
+import { siteConfig } from "../lib/config";
+import { resolveCvUrl } from "../lib/cv";
 
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
@@ -58,7 +59,7 @@ const typeSteps = t.hero.title.length + 8;
         {t.hero.contactMe}
       </a>
       <a
-        href={cvUrl(locale)}
+        href={resolveCvUrl(locale)}
         download
         class="inline-flex min-h-11 items-center rounded border border-cyber-accent/60 bg-cyber-accent/10 px-4 text-cyber-accent transition-colors hover:bg-cyber-accent hover:text-cyber-bg md:px-5"
       >

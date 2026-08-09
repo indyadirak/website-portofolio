@@ -1,0 +1,206 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import { canManageCv } from "../../lib/auth";
+import type { CvFilesRow } from "../../lib/types";
+
+export const prerender = false;
+
+// Middleware sudah memvalidasi sesi; guard ulang defensif (pola dashboard).
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+const canEdit = canManageCv(profile); // admin saja
+
+// Guard defensif: middleware sudah memblokir non-admin (403), tapi bila
+// ada jalur bypass, halaman ini menolak dirender dan menampilkan 403.
+if (!canEdit) {
+  return Astro.rewrite("/403");
+}
+
+// Metadata file CV (RLS: select publik, aman untuk semua role).
+const { data: cvRows } = await supabase.from("cv_files").select("*");
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+const locales = ["id", "en"] as const;
+const localeLabels: Record<(typeof locales)[number], string> = {
+  id: "CV (Indonesia)",
+  en: "CV (English / Resume)",
+};
+
+const cvByLocale: Partial<Record<(typeof locales)[number], CvFilesRow>> = {};
+for (const row of cvRows ?? []) {
+  if (row.locale === "id" || row.locale === "en") {
+    cvByLocale[row.locale] = row;
+  }
+}
+---
+
+<MainLayout
+  title="CV & Resume"
+  description="Admin — kelola file CV/Resume yang diunduh pengunjung dari navbar & hero."
+>
+  <div class="mx-auto max-w-3xl px-6 py-14">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">$ cv --manage</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          CV / Resume<span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      <a
+        href="/admin/dashboard"
+        class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-primary hover:text-cyber-primary"
+      >
+        &lt;- dashboard
+      </a>
+    </div>
+
+    <p class="mt-4 font-mono text-xs leading-relaxed text-cyber-muted">
+      $ info: file PDF yang di-upload di sini menggantikan CV statis di
+      <span class="text-cyber-accent">public/cv-*.pdf</span> — tombol unduh di
+      navbar &amp; hero otomatis menunjuk ke file terbaru. Format: PDF, maks
+      5 MB.
+    </p>
+
+    <div class="mt-8 space-y-6">
+      {locales.map((locale) => {
+            const row = cvByLocale[locale];
+            return (
+              <section class="rounded border border-cyber-border bg-cyber-panel p-6">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <h2 class="font-mono text-lg font-bold text-white">{localeLabels[locale]}</h2>
+                  <span class="font-mono text-xs text-cyber-muted">
+                    {row
+                      ? `active: ${row.file_name} (${formatBytes(row.size_bytes)})`
+                      : "active: fallback statis public/cv-*.pdf"}
+                  </span>
+                </div>
+
+                {row && (
+                  <p class="mt-2 font-mono text-xs text-cyber-muted">
+                    updated: {new Date(row.updated_at).toLocaleString("id-ID")}
+                  </p>
+                )}
+
+                <form data-cv-form data-locale={locale} class="mt-4">
+                  <label
+                    for={`cv-file-${locale}`}
+                    class="font-mono text-xs text-slate-300"
+                  >
+                    Upload / ganti file
+                  </label>
+                  <input
+                    id={`cv-file-${locale}`}
+                    name="file"
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    required
+                    class="mt-2 w-full cursor-pointer rounded border border-cyber-border bg-cyber-card px-3 py-2.5 font-mono text-xs text-slate-200 file:mr-3 file:rounded file:border-0 file:bg-cyber-primary/20 file:px-3 file:py-1.5 file:font-mono file:text-xs file:text-cyber-primary hover:border-cyber-primary/50"
+                  />
+                  <div class="mt-4 flex items-center gap-3">
+                    <button
+                      type="submit"
+                      class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:opacity-50"
+                    >
+                      [ upload ]
+                    </button>
+                    {row && (
+                      <button
+                        type="button"
+                        data-cv-delete
+                        data-locale={locale}
+                        class="rounded border border-cyber-danger/50 px-4 py-2 font-mono text-xs text-cyber-danger transition-colors hover:bg-cyber-danger/10 disabled:opacity-50"
+                      >
+                        [ hapus ]
+                      </button>
+                    )}
+                    <span data-cv-status class="font-mono text-xs text-cyber-accent"></span>
+                  </div>
+                </form>
+              </section>
+            );
+          })}
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  function setStatus(locale: string, message: string, isError = false) {
+    const el = document.querySelector<HTMLElement>(`[data-cv-form][data-locale="${locale}"] [data-cv-status]`);
+    if (el) {
+      el.textContent = message;
+      el.style.color = isError ? "#f87171" : "#67e8f9";
+    }
+  }
+
+  document.querySelectorAll<HTMLFormElement>("[data-cv-form]").forEach((form) => {
+    const locale = form.dataset.locale ?? "";
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fileInput = form.querySelector<HTMLInputElement>('input[type="file"]');
+      const file = fileInput?.files?.[0];
+
+      if (!file) {
+        setStatus(locale, "pilih file PDF dulu", true);
+        return;
+      }
+
+      const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      setStatus(locale, "uploading...");
+
+      const formData = new FormData();
+      formData.append("locale", locale);
+      formData.append("file", file);
+
+      try {
+        const res = await fetch("/api/admin/cv", { method: "POST", body: formData });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatus(locale, `gagal: ${data.error ?? "unknown"}`, true);
+          if (submitBtn) submitBtn.disabled = false;
+          return;
+        }
+        setStatus(locale, "saved — reloading...");
+        window.location.reload();
+      } catch {
+        setStatus(locale, "gagal: network error", true);
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-cv-delete]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const locale = btn.dataset.locale ?? "";
+      if (!window.confirm(`Hapus file CV (${locale})? Kembali ke fallback statis.`)) return;
+
+      btn.disabled = true;
+      setStatus(locale, "menghapus...");
+
+      try {
+        const res = await fetch(`/api/admin/cv?locale=${encodeURIComponent(locale)}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatus(locale, `gagal: ${data.error ?? "unknown"}`, true);
+          btn.disabled = false;
+          return;
+        }
+        setStatus(locale, "deleted — reloading...");
+        window.location.reload();
+      } catch {
+        setStatus(locale, "gagal: network error", true);
+        btn.disabled = false;
+      }
+    });
+  });
+</script>
