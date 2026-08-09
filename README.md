@@ -176,6 +176,31 @@ Garis besar pertahanan berlapis:
 | **Auth**         | MFA TOTP wajib, rate limit & lockout anti brute-force, audit trail   |
 | **Backup**       | Enkripsi GPG + AES-256-GCM at-rest, rotasi kredensial, akses token-gated |
 
+### 🗝️ Filosofi Keamanan Kunci API
+
+Project ini membagi kredensial Supabase dalam **dua kelas** — jangan pernah
+mencampurnya:
+
+| Kelas | Kunci | Terlihat di build? | Bisa di-commit? |
+|---|---|---|---|
+| **Publishable** (aman publik) | `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_ANON_KEY`, `PUBLIC_TURNSTILE_SITE_KEY` | Ya (`import.meta.env.PUBLIC_*`) | Ya — memang dirancang untuk frontend/browser |
+| **Secret** (rahasia) | `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`, `BACKUP_FETCH_TOKEN`, `GDRIVE_CONFIG_ENCRYPTION_SECRET` | **Tidak pernah** | **Tidak pernah** — hanya runtime secret Worker (`wrangler secret put`) |
+
+Alasan `anon` key boleh publik: anon hanya beroperasi **di bawah RLS Postgres**.
+Semua tabel produksi punya kebijakan RLS ketat (MFA `aal2` + role `admin`/`editor`
+untuk tulis, deny-by-default). Tanpa role & session yang valid, anon key hanyalah
+"kunci pintu terbuka" yang tidak bisa membuka apa pun. `service_role` adalah
+kebalikannya — melewati RLS sepenuhnya (privilege eskalasi), maka ia **hanya**
+hidup di server-side: Worker secret + endpoint `/api/backup-config` yang di-gate
+`BACKUP_FETCH_TOKEN` + rate-limit, dan tidak pernah menyentuh bundle.
+
+Konvensi penamaan di kode:
+- Prefix `PUBLIC_` (Astro) / `NEXT_PUBLIC_` (Next.js) → ekspos ke browser → **hanya** kunci publishable
+- Tanpa prefix → `env.*` di Cloudflare `cloudflare:workers` → runtime secret, wajib via `wrangler secret put`
+- Guard `src/lib/supabase.ts`: build gagal-lunak (demo data) bila `PUBLIC_*` belum di-set, sehingga key yang salah tidak pernah jatuh ke produksi dalam diam
+
+Cara memverifikasi kunci secret TIDAK bocor ke bundle: `rg "SUPABASE_SERVICE_ROLE|TURNSTILE_SECRET" dist/` → harus 0 hasil setelah `npm run build`.
+
 ---
 
 ## 📄 Lisensi

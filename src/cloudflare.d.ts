@@ -27,7 +27,7 @@ interface Env {
   TURNSTILE_SECRET_KEY?: string;
   /**
    * URL Supabase (sama dengan PUBLIC_SUPABASE_URL). Runtime secret yang
-   * di-set deploy.yml dari secrets.PUBLIC_SUBAPASE_URL — dipakai endpoint
+   * di-set deploy.yml dari secrets.PUBLIC_SUPABASE_URL — dipakai endpoint
    * /api/backup-config (PostgREST, service role) untuk baca konfigurasi
    * backup Drive saat workflow GitHub mengeksekusi backup mingguan.
    */

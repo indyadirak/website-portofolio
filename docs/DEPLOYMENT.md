@@ -1,14 +1,21 @@
 # DEPLOYMENT — Website Portofolio (Astro + Supabase + Cloudflare Workers)
 
-> **DOKUMEN HIDUP** — checklist ini wajib diperbarui setiap kali ada perubahan
-> infrastruktur baru (tabel/RLS baru, secret baru, binding baru, layanan
-> eksternal baru). Jika Anda menambah fitur yang memerlukan langkah manual
-> (SQL, secret, setup eksternal), tambahkan langkahnya DI SINI sekaligus.
+> **DOKUMEN HIDUP — WAJIB DISINKRONKAN SETIAP PERUBAHAN.**
+> Checklist ini wajib diperbarui setiap kali ada perubahan infrastruktur baru
+> (tabel/RLS baru, secret baru, binding baru, layanan eksternal baru). Jika Anda
+> menambah fitur yang memerlukan langkah manual (SQL, secret, setup eksternal),
+> tambahkan langkahnya DI SINI sekaligus dalam commit fitur yang sama — jadikan
+> sinkronisasi dokumen ini bagian rutin dari setiap penambahan fitur besar,
+> bukan pekerjaan terpisah yang gampang terlupa.
+>
+> Sinkronisasi terakhir: commit `9e6da1b` (fitur Skills filter, Project
+> P/S/I, image zoom, collapsible projects — migrasi `public-features.sql`).
 
 Versi infrastruktur saat ini:
 - Runtime: **Cloudflare Workers (Static Assets)** — adapter `@astrojs/cloudflare`
 - Database: **Supabase** (Postgres + Auth + RLS + MFA TOTP)
-- Rate limiting & lockout: **Cloudflare KV** (`RATE_LIMIT_KV`)
+- Rate limiting & lockout: **Cloudflare KV** (`RATE_LIMIT_KV` — id asli sudah
+  terpasang di `wrangler.toml`, lihat §2)
 - Backup: workflow GitHub Actions mingguan → artifact GitHub (30 hari) + **Google Drive** (3-2-1, retensi 12 minggu, konfigurasi via GUI admin)
 - Node: **24** (kedua workflow GitHub Actions dipin eksplisit)
 
@@ -25,27 +32,28 @@ Versi infrastruktur saat ini:
 
 ## 1. Database (Supabase) — kerjakan PERTAMA
 
-- [ ] Jalankan SQL Editor **berurutan** (file di `supabase/`):
-  - [ ] `schema.sql` (tabel proyek/skills)
-  - [ ] `rbac-mfa.sql` (profiles + certificates + RLS + trigger auto-profil)
+- [ ] Jalankan SQL Editor **berurutan** (file di `supabase/`, semuanya idempotent — aman dijalankan ulang):
+  - [ ] `schema.sql` (tabel proyek/skills — fondasi)
+  - [ ] `rbac-mfa.sql` (profiles + certificates + RLS + trigger auto-profil — **wajib SEBELUM `storage.sql` & `cv.sql`**)
   - [ ] `contact.sql` (contact_messages + RLS + insert policy)
-  - [ ] `storage.sql` (bucket sertifikat)
+  - [ ] `storage.sql` (bucket sertifikat — **SETELAH `rbac-mfa.sql`**)
   - [ ] `login-attempts.sql` (audit login, RPC 5-param)
   - [ ] `backup-config.sql` (konfigurasi Drive, RLS aal2+admin)
   - [ ] `backup-config-access-log.sql` (audit endpoint backup-config)
-  - [ ] `cv.sql` (bucket publik `cv` + tabel `cv_files` untuk upload CV via admin GUI)
+  - [ ] `cv.sql` (bucket publik `cv` + tabel `cv_files` untuk upload CV via admin GUI — **SETELAH `rbac-mfa.sql`**)
+  - [ ] `public-features.sql` (**migrasi fitur publik**: kolom `problem`/`solution`/`impact` di `projects`, kategori skills baru `Offensive Security`, RLS write projects untuk admin/editor — butuh `schema.sql` & `rbac-mfa.sql` sudah jalan; file ini wajib dijalankan bila memulai dari repo ini pasca commit `9e6da1b`)
+  - [ ] **Urutan = urutan eksekusi**. Jangan menukar: `storage.sql` & `cv.sql` mensyaratkan `rbac-mfa.sql`; `public-features.sql` mensyaratkan `schema.sql` + `rbac-mfa.sql`.
 - [ ] **Buat admin user**: Authentication → Users → Add user (email + password kuat). Wajib: set `role = 'admin'` di tabel `public.profiles` dan `mfa_enforced = true` (dashboard atau SQL) — tanpa role admin, GUI backup & audit tidak bisa diakses
 - [ ] Catat dari Project Settings → API: `URL` + `anon` key + `service_role` key
 - [ ] Catat dari Project Settings → Database → Connection string: **SESSION POOLER (port 5432)** — untuk pg_dump (jangan Transaction Pooler 6543), tambahkan `?sslmode=require`
 
 ## 2. Cloudflare — KV & token
 
-- [ ] **Buat KV namespace asli** (WAJIB — id di `wrangler.toml` masih dummy `00000000-...`, rate limiting login/backup-config TIDAK AKTIF sebelum ini):
+- [ ] **KV namespace `RATE_LIMIT_KV`**: id **ASLI** sudah terpasang di `wrangler.toml` (rate limiting login/backup-config AKTIF). Hanya perlu dibuat ulang jika pindah akun/project Cloudflare:
   ```
   npx wrangler kv namespace create RATE_LIMIT_KV
   ```
-  lalu ganti `id` di `wrangler.toml` dengan id hasil perintah.
-  **Guard otomatis**: deploy.yml kini memblokir deploy (job gagal dengan pesan jelas) selama id placeholder masih ada — agar kasus "silent inert" (rate limiter tampak normal tapi tidak pernah membatasi) tidak pernah terlewat.
+  lalu salin `id` hasil perintah ke `wrangler.toml` (ganti placeholder `"<id>"`). **Guard otomatis**: deploy.yml memblokir deploy selama id placeholder masih ada — agar kasus "silent inert" (rate limiter tampak normal tapi tidak pernah membatasi) tidak pernah terlewat.
 - [ ] Buat API token dengan permission minimal: **Workers Scripts: Edit**, **KV: Edit**, **Account Settings: Read** → simpan sebagai `CLOUDFLARE_API_TOKEN`; `CLOUDFLARE_ACCOUNT_ID` dari dashboard
 - [ ] (Opsional) Custom domain: Workers → worker → Settings → Triggers → Custom Domains
 
@@ -53,7 +61,7 @@ Versi infrastruktur saat ini:
 
 GitHub → Settings → Secrets and variables → Actions.
 
-### Secrets (12)
+### Secrets (11)
 
 | Secret | Nilai |
 |---|---|
@@ -75,6 +83,11 @@ Generate nilai acak (PowerShell):
 [Convert]::ToBase64String((1..48 | ForEach-Object { Get-Random -Max 256 }) -as [byte[]])
 ```
 
+> **Filosofi kunci**: `PUBLIC_*` di tabel ini adalah key *publishable* (aman
+> ter-expose ke build/browser — anon key beroperasi di bawah RLS), sedangkan
+> sisanya *secret* sejati yang hanya boleh hidup sebagai runtime secret Worker.
+> Penjelasan lengkap & tabel padanan: **README.md → 🗝️ Filosofi Keamanan Kunci API**.
+
 ### Variables (1)
 
 | Variable | Nilai |
@@ -93,8 +106,43 @@ Generate nilai acak (PowerShell):
 
 ## 5. Deploy pertama
 
+Dua jalur — fungsinya identik, pilih salah satu:
+
+### Jalur A — GitHub Actions (disarankan, sekali setup)
+
 - [ ] `git push origin main` → workflow **Deploy to Cloudflare Workers** hijau
-- [ ] Verifikasi runtime secret terpasang (harus ada 6): `npx wrangler secret list` → `TURNSTILE_SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_FETCH_TOKEN`, `GDRIVE_CONFIG_ENCRYPTION_SECRET`
+- [ ] Setelah hijau: verifikasi runtime secret terpasang (harus ada 5):
+  `npx wrangler secret list` → `TURNSTILE_SECRET_KEY`, `SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_FETCH_TOKEN`, `GDRIVE_CONFIG_ENCRYPTION_SECRET`
+
+### Jalur B — Deploy manual (tanpa GitHub Actions)
+
+Build lalu deploy dari mesin lokal (tidak butuh secret GitHub apa pun — secret
+dipasang langsung ke Worker):
+
+```powershell
+# 1. Build produksi (butuh PUBLIC_* env saat build — anon key PUBLIK,
+#    boleh di .env; TURNSTILE_SECRET_KEY opsional saat build, dipasang
+#    sebagai runtime secret di langkah 3)
+npm run build
+
+# 2. Deploy ke Cloudflare Workers
+npx wrangler deploy
+
+# 3. Pasang runtime secrets (nilai SAMA dengan tabel §3)
+npx wrangler secret put TURNSTILE_SECRET_KEY
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+npx wrangler secret put BACKUP_FETCH_TOKEN
+npx wrangler secret put GDRIVE_CONFIG_ENCRYPTION_SECRET
+```
+
+> Runtime secret TIDAK pernah ikut di-bundle ke `dist/` — hanya build-time
+> `PUBLIC_*` yang masuk bundle (aman: anon key memang publik).
+> Catatan: `SUPABASE_URL` adalah salinan `PUBLIC_SUPABASE_URL` (URL bukan
+> rahasia) — di-ekspos sebagai secret hanya karena `env.SUPABASE_URL` dibaca
+> server-side di endpoint backup-config.
+
 - [ ] Turnstile widget aktif di dashboard Cloudflare (site key match dengan secret)
 
 ## 6. Admin & konfigurasi backup
