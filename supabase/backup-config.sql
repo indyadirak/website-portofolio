@@ -37,6 +37,8 @@ alter table public.backup_config enable row level security;
 -- 2) POLICIES: HANYA aal2 + role admin (paralel dengan certificates
 --    write policy di rbac-mfa.sql — backup config sama sensitifnya).
 -- ------------------------------------------------------------------
+drop policy if exists "backup_config_select_mfa_admin" on public.backup_config;
+
 create policy "backup_config_select_mfa_admin" on public.backup_config
   for select
   to authenticated
@@ -49,6 +51,8 @@ create policy "backup_config_select_mfa_admin" on public.backup_config
     )
   );
 
+drop policy if exists "backup_config_insert_mfa_admin" on public.backup_config;
+
 create policy "backup_config_insert_mfa_admin" on public.backup_config
   for insert
   to authenticated
@@ -60,6 +64,8 @@ create policy "backup_config_insert_mfa_admin" on public.backup_config
         and profiles.role = 'admin'
     )
   );
+
+drop policy if exists "backup_config_update_mfa_admin" on public.backup_config;
 
 create policy "backup_config_update_mfa_admin" on public.backup_config
   for update
@@ -80,6 +86,8 @@ create policy "backup_config_update_mfa_admin" on public.backup_config
         and profiles.role = 'admin'
     )
   );
+
+drop policy if exists "backup_config_delete_mfa_admin" on public.backup_config;
 
 create policy "backup_config_delete_mfa_admin" on public.backup_config
   for delete

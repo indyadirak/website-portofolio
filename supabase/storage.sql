@@ -13,10 +13,11 @@ values ('certificates', 'certificates', false)
 on conflict (id) do nothing;
 
 -- ------------------------------------------------------------------
--- 2) Aktifkan RLS pada storage.objects (default Supabase sudah aktif,
---    dipastikan ulang agar tidak ada celah).
+-- 2) RLS pada storage.objects
+--    Sudah aktif SECARA DEFAULT di semua project Supabase (storage
+--    dikelola platform, bukan postgres), jadi TIDAK perlu (dan tidak
+--    bisa) menjalankan: alter table storage.objects enable row level security;
 -- ------------------------------------------------------------------
-alter table storage.objects enable row level security;
 
 -- ------------------------------------------------------------------
 -- 3) POLICIES storage.objects
@@ -30,11 +31,15 @@ alter table storage.objects enable row level security;
 
 -- Read: hanya user login (viewer boleh baca sertifikat, jadi berhak
 -- membuat signed URL untuk melihat file).
+drop policy if exists "certificates_files_select_auth" on storage.objects;
+
 create policy "certificates_files_select_auth" on storage.objects
   for select to authenticated
   using (bucket_id = 'certificates');
 
 -- Insert: aal2 + role admin/editor — sama ketatnya dengan insert row.
+drop policy if exists "certificates_files_insert_mfa_admin_editor" on storage.objects;
+
 create policy "certificates_files_insert_mfa_admin_editor" on storage.objects
   for insert to authenticated
   with check (
@@ -48,6 +53,8 @@ create policy "certificates_files_insert_mfa_admin_editor" on storage.objects
   );
 
 -- Update: hanya pemilik file.
+drop policy if exists "certificates_files_update_owner" on storage.objects;
+
 create policy "certificates_files_update_owner" on storage.objects
   for update to authenticated
   using (bucket_id = 'certificates' and owner = auth.uid())
@@ -55,6 +62,8 @@ create policy "certificates_files_update_owner" on storage.objects
 
 -- Delete: MFA (aal2) + role admin — file hanya dihapus saat admin
 -- menghapus sertifikat (rollback juga dilakukan via policy ini).
+drop policy if exists "certificates_files_delete_mfa_admin" on storage.objects;
+
 create policy "certificates_files_delete_mfa_admin" on storage.objects
   for delete to authenticated
   using (

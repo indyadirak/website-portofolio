@@ -13,6 +13,7 @@ alter table public.contact_messages
 -- 2) Ganti policy lama agar konsisten dengan skema baru
 drop policy if exists "contact_messages_public_insert" on public.contact_messages;
 drop policy if exists "contact_messages_admin_select" on public.contact_messages;
+drop policy if exists "contact_messages_auth_select" on public.contact_messages;
 
 create policy "contact_messages_public_insert" on public.contact_messages
   for insert to anon, authenticated

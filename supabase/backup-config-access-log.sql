@@ -39,6 +39,8 @@ create index if not exists backup_config_access_log_attempted_at_idx
 alter table public.backup_config_access_log enable row level security;
 
 -- SELECT hanya admin (pola sama dengan login_attempts_admin_select).
+drop policy if exists "backup_config_access_log_admin_select" on public.backup_config_access_log;
+
 create policy "backup_config_access_log_admin_select"
   on public.backup_config_access_log
   for select

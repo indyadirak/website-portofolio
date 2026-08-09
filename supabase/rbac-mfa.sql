@@ -50,12 +50,16 @@ alter table public.certificates enable row level security;
 -- ------------------------------------------------------------------
 
 -- 4a. SELECT publik tanpa syarat (anon + authenticated).
+drop policy if exists "certificates_public_read" on public.certificates;
+
 create policy "certificates_public_read" on public.certificates
   for select
   to anon, authenticated
   using (true);
 
 -- 4b. INSERT: HANYA user dengan MFA terverifikasi (aal2) DAN role admin/editor.
+drop policy if exists "certificates_insert_mfa_admin_editor" on public.certificates;
+
 create policy "certificates_insert_mfa_admin_editor" on public.certificates
   for insert
   to authenticated
@@ -70,6 +74,8 @@ create policy "certificates_insert_mfa_admin_editor" on public.certificates
 
 -- 4c. UPDATE: policy terpisah — klausa USING DAN WITH CHECK
 --     KEDUANYA mensyaratkan aal2 + role admin/editor.
+drop policy if exists "certificates_update_mfa_admin_editor" on public.certificates;
+
 create policy "certificates_update_mfa_admin_editor" on public.certificates
   for update
   to authenticated
@@ -91,6 +97,8 @@ create policy "certificates_update_mfa_admin_editor" on public.certificates
   );
 
 -- 4d. DELETE: HANYA MFA terverifikasi (aal2) DAN role admin.
+drop policy if exists "certificates_delete_mfa_admin" on public.certificates;
+
 create policy "certificates_delete_mfa_admin" on public.certificates
   for delete
   to authenticated
@@ -114,6 +122,8 @@ create policy "certificates_delete_mfa_admin" on public.certificates
 --    (RLS memblokir pembacaan profiles) sehingga admin/editor akan
 --    ditolak melakukan mutasi apa pun meski MFA & kredensial benar.
 -- ------------------------------------------------------------------
+drop policy if exists "profiles_select_own" on public.profiles;
+
 create policy "profiles_select_own" on public.profiles
   for select
   to authenticated
