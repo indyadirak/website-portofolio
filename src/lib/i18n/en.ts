@@ -56,6 +56,19 @@ export const en: Dictionary = {
     skillsTitle: "Skills & Expertise",
     skillsDescription: "Skills managed dynamically from the skills table in Supabase.",
   },
+  skills: {
+    all: "[ all ]",
+    empty: '$ echo "No skills in this category yet."',
+    categories: {
+      offensive: "Offensive",
+      defensive: "Defensive",
+      tools: "Tools",
+      programming: "Programming",
+      network: "Network",
+      forensics: "Forensics",
+      softSkill: "Soft Skill",
+    },
+  },
   projects: {
     eyebrow: "$ ls -la ./projects",
     title: "All Projects",
@@ -69,6 +82,19 @@ export const en: Dictionary = {
     sourceCode: "[ source_code ]",
     liveDemo: "[ live_demo ]",
     relatedTitle: "Related Projects",
+    problemLabel: "PROBLEM",
+    approachLabel: "APPROACH",
+    impactLabel: "IMPACT",
+    secondaryTitle: "Secondary Projects",
+    secondaryDescription:
+      "Small projects, experiments, and research that don't make the featured list.",
+    expandSecondary: "[ expand_secondary ]",
+    collapseSecondary: "[ collapse_secondary ]",
+    secondaryEmpty: '$ echo "No secondary projects — every project is marked featured."',
+    featuredLabel: "featured",
+  },
+  imageZoom: {
+    closeLabel: "close image",
   },
   about: {
     eyebrow: "$ cat ./about.txt",

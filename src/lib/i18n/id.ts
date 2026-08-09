@@ -56,6 +56,19 @@ export const id: Dictionary = {
     skillsTitle: "Skills & Expertise",
     skillsDescription: "Skill yang dikelola secara dinamis dari tabel skills di Supabase.",
   },
+  skills: {
+    all: "[ semua ]",
+    empty: '$ echo "Tidak ada skill untuk kategori ini."',
+    categories: {
+      offensive: "Offensive",
+      defensive: "Defensive",
+      tools: "Tools",
+      programming: "Programming",
+      network: "Network",
+      forensics: "Forensics",
+      softSkill: "Soft Skill",
+    },
+  },
   projects: {
     eyebrow: "$ ls -la ./projects",
     title: "Semua Proyek",
@@ -69,6 +82,19 @@ export const id: Dictionary = {
     sourceCode: "[ source_code ]",
     liveDemo: "[ live_demo ]",
     relatedTitle: "Proyek Terkait",
+    problemLabel: "PROBLEM",
+    approachLabel: "APPROACH",
+    impactLabel: "IMPACT",
+    secondaryTitle: "Proyek Sekunder",
+    secondaryDescription:
+      "Proyek kecil, eksperimen, dan riset yang tidak masuk daftar unggulan.",
+    expandSecondary: "[ expand_secondary ]",
+    collapseSecondary: "[ collapse_secondary ]",
+    secondaryEmpty: '$ echo "Belum ada proyek sekunder — semua project ditandai featured."',
+    featuredLabel: "featured",
+  },
+  imageZoom: {
+    closeLabel: "tutup gambar",
   },
   about: {
     eyebrow: "$ cat ./about.txt",

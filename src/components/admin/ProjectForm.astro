@@ -1,0 +1,284 @@
+---
+/**
+ * Form tambah/edit project.
+ * Hanya dirender oleh dashboard untuk role admin & editor.
+ */
+---
+
+<form id="project-form" class="space-y-5">
+  <p id="project-form-mode" class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
+    [ add_project ]
+  </p>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Title *</span>
+      <input id="p-title" type="text" required minlength={3}
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="Network Security Baseline Audit" />
+    </label>
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Slug *</span>
+      <input id="p-slug" type="text" required pattern="[a-z0-9-]+"
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="network-security-baseline" />
+    </label>
+  </div>
+
+  <label class="block">
+    <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Summary *</span>
+    <input id="p-summary" type="text" required minlength={10}
+      class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+      placeholder="Ringkasan satu kalimat untuk kartu project." />
+  </label>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Category *</span>
+      <select id="p-category" required
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">
+        <option>Web App</option>
+        <option>Mobile</option>
+        <option>Network</option>
+        <option>IoT</option>
+        <option>Red Team</option>
+        <option>Blue Team</option>
+        <option>Defensive</option>
+        <option>OSINT</option>
+        <option>Forensics</option>
+      </select>
+    </label>
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Status *</span>
+      <select id="p-status" required
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">
+        <option value="active">active</option>
+        <option value="archived">archived</option>
+        <option value="planned">planned</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Tags (koma)</span>
+      <input id="p-tags" type="text"
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="Suricata, Grafana, Docker" />
+    </label>
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Image URL</span>
+      <input id="p-image-url" type="url"
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="https://..." />
+    </label>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Repo URL</span>
+      <input id="p-repo-url" type="url"
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="https://github.com/..." />
+    </label>
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Live URL</span>
+      <input id="p-live-url" type="url"
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="https://..." />
+    </label>
+  </div>
+
+  <label class="block">
+    <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Description (detail)</span>
+    <textarea id="p-description" rows={3}
+      class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+      placeholder="Deskripsi panjang — dipakai bila Problem/Approach/Impact belum diisi."></textarea>
+  </label>
+
+  <div class="rounded border border-cyber-border bg-cyber-panel p-4">
+    <p class="mb-3 font-mono text-xs uppercase tracking-wider text-cyber-accent">Struktur Bukti (Problem / Approach / Impact)</p>
+    <div class="space-y-3">
+      <label class="block">
+        <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-muted">Problem — masalah yang dipecahkan</span>
+        <textarea id="p-problem" rows={2}
+          class="w-full rounded border border-cyber-border bg-cyber-card px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+          placeholder="Masalah teknis/konteks apa yang mendasari proyek ini?"></textarea>
+      </label>
+      <label class="block">
+        <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-muted">Approach — pendekatan solusi</span>
+        <textarea id="p-solution" rows={2}
+          class="w-full rounded border border-cyber-border bg-cyber-card px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+          placeholder="Teknologi, metode, dan langkah yang dipakai untuk menyelesaikannya."></textarea>
+      </label>
+      <label class="block">
+        <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-muted">Impact — hasil yang terukur</span>
+        <textarea id="p-impact" rows={2}
+          class="w-full rounded border border-cyber-border bg-cyber-card px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+          placeholder="Hasil nyata/terukur dari solusi yang diimplementasikan."></textarea>
+      </label>
+    </div>
+  </div>
+
+  <label class="flex min-h-11 cursor-pointer items-center gap-3">
+    <input id="p-featured" type="checkbox"
+      class="h-5 w-5 rounded border-cyber-border bg-cyber-panel accent-cyber-primary" />
+    <span class="font-mono text-xs uppercase tracking-wider text-cyber-accent">Featured — tampil di daftar unggulan (home)</span>
+  </label>
+
+  <div class="flex items-center gap-4">
+    <button type="submit" id="p-submit"
+      class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50">
+      [ save_project ]
+    </button>
+    <button type="button" id="p-cancel" hidden
+      class="rounded border border-cyber-border px-5 py-2.5 font-mono text-sm text-slate-300 hover:border-cyber-accent hover:text-cyber-accent">
+      [ cancel_edit ]
+    </button>
+    <p id="p-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
+  </div>
+</form>
+
+<script>
+  const form = document.getElementById("project-form") as HTMLFormElement;
+  const modeEl = document.getElementById("project-form-mode") as HTMLParagraphElement;
+  const submitBtn = document.getElementById("p-submit") as HTMLButtonElement;
+  const cancelBtn = document.getElementById("p-cancel") as HTMLButtonElement;
+  const statusEl = document.getElementById("p-status") as HTMLParagraphElement;
+
+  const title = document.getElementById("p-title") as HTMLInputElement;
+  const slug = document.getElementById("p-slug") as HTMLInputElement;
+  const summary = document.getElementById("p-summary") as HTMLInputElement;
+  const category = document.getElementById("p-category") as HTMLSelectElement;
+  const status = document.getElementById("p-status") as HTMLSelectElement;
+  const tags = document.getElementById("p-tags") as HTMLInputElement;
+  const imageUrl = document.getElementById("p-image-url") as HTMLInputElement;
+  const repoUrl = document.getElementById("p-repo-url") as HTMLInputElement;
+  const liveUrl = document.getElementById("p-live-url") as HTMLInputElement;
+  const description = document.getElementById("p-description") as HTMLTextAreaElement;
+  const problem = document.getElementById("p-problem") as HTMLTextAreaElement;
+  const solution = document.getElementById("p-solution") as HTMLTextAreaElement;
+  const impact = document.getElementById("p-impact") as HTMLTextAreaElement;
+  const featured = document.getElementById("p-featured") as HTMLInputElement;
+
+  let editingId: string | null = null;
+
+  interface ProjectEditDetail {
+    id: string;
+    slug: string;
+    title: string;
+    summary: string;
+    description: string;
+    category: string;
+    tags: string[];
+    imageUrl?: string | null;
+    repoUrl?: string | null;
+    liveUrl?: string | null;
+    featured: boolean;
+    status: string;
+    problem?: string | null;
+    solution?: string | null;
+    impact?: string | null;
+  }
+
+  function toInput(value: string | null | undefined): string {
+    return value ?? "";
+  }
+
+  function setMode(editing: boolean): void {
+    editingId = editing ? editingId : null;
+    modeEl.textContent = editing ? "[ edit_project ]" : "[ add_project ]";
+    submitBtn.textContent = editing ? "[ update_project ]" : "[ save_project ]";
+    cancelBtn.hidden = !editing;
+  }
+
+  // Slug otomatis dari judul (hanya saat menambah, tidak menimpa edit).
+  function slugify(value: string): string {
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  title.addEventListener("input", () => {
+    if (!editingId && document.activeElement !== slug) {
+      slug.value = slugify(title.value);
+    }
+  });
+
+  window.addEventListener("project:edit", ((event: Event) => {
+    const detail = (event as CustomEvent<ProjectEditDetail>).detail;
+    editingId = detail.id;
+    title.value = detail.title;
+    slug.value = detail.slug;
+    summary.value = detail.summary;
+    category.value = detail.category;
+    status.value = detail.status;
+    tags.value = (detail.tags ?? []).join(", ");
+    imageUrl.value = toInput(detail.imageUrl);
+    repoUrl.value = toInput(detail.repoUrl);
+    liveUrl.value = toInput(detail.liveUrl);
+    description.value = detail.description ?? "";
+    problem.value = toInput(detail.problem);
+    solution.value = toInput(detail.solution);
+    impact.value = toInput(detail.impact);
+    featured.checked = Boolean(detail.featured);
+    setMode(true);
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+    title.focus();
+  }) as EventListener);
+
+  cancelBtn.addEventListener("click", () => {
+    editingId = null;
+    form.reset();
+    setMode(false);
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    statusEl.textContent = "";
+
+    submitBtn.disabled = true;
+
+    const payload = {
+      slug: slug.value.trim(),
+      title: title.value.trim(),
+      summary: summary.value.trim(),
+      description: description.value.trim() || null,
+      category: category.value as never,
+      status: status.value as never,
+      tags: tags.value.split(",").map((s) => s.trim()).filter(Boolean),
+      imageUrl: imageUrl.value.trim() || null,
+      repoUrl: repoUrl.value.trim() || null,
+      liveUrl: liveUrl.value.trim() || null,
+      featured: featured.checked,
+      problem: problem.value.trim() || null,
+      solution: solution.value.trim() || null,
+      impact: impact.value.trim() || null,
+    };
+
+    const res = await fetch(
+      editingId ? `/api/projects?id=${encodeURIComponent(editingId)}` : "/api/projects",
+      {
+        method: editingId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await res.json();
+
+    submitBtn.disabled = false;
+
+    if (!res.ok || !data.ok) {
+      statusEl.textContent = `$ error: ${data.error ?? "gagal menyimpan"}`;
+      statusEl.classList.add("text-cyber-danger");
+      return;
+    }
+
+    statusEl.textContent = "$ saved — reloading...";
+    statusEl.classList.remove("text-cyber-danger");
+    statusEl.classList.add("text-cyber-primary");
+    window.location.reload();
+  });
+</script>

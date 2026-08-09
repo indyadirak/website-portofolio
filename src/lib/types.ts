@@ -24,6 +24,10 @@ export interface Project {
   liveUrl: string | null;
   featured: boolean;
   status: ProjectStatus;
+  /** Struktur "Problem / Approach / Impact" — nullable untuk project lama. */
+  problem: string | null;
+  solution: string | null;
+  impact: string | null;
   createdAt: string;
 }
 
@@ -35,7 +39,7 @@ export interface Skill {
   icon: string | null;
 }
 
-export type SkillCategory = "Offensive" | "Defensive" | "Tools" | "Programming" | "Soft Skill";
+export type SkillCategory = "Offensive" | "Defensive" | "Tools" | "Programming" | "Soft Skill" | "Network" | "Forensics";
 
 export type SkillLevel = "beginner" | "intermediate" | "advanced" | "expert";
 
@@ -101,6 +105,9 @@ export type ProjectsRow = {
   live_url: string | null;
   featured: boolean;
   status: ProjectStatus;
+  problem: string | null;
+  solution: string | null;
+  impact: string | null;
   created_at: string;
 };
 
@@ -188,6 +195,9 @@ export interface Database {
           live_url?: string | null;
           featured?: boolean;
           status?: ProjectStatus;
+          problem?: string | null;
+          solution?: string | null;
+          impact?: string | null;
           created_at?: string;
         };
         Update: {
@@ -203,6 +213,9 @@ export interface Database {
           live_url?: string | null;
           featured?: boolean;
           status?: ProjectStatus;
+          problem?: string | null;
+          solution?: string | null;
+          impact?: string | null;
           created_at?: string;
         };
         Relationships: [];

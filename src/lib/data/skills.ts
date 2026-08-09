@@ -35,5 +35,7 @@ export const skillCategories: SkillCategory[] = [
   "Defensive",
   "Tools",
   "Programming",
+  "Network",
+  "Forensics",
   "Soft Skill",
 ];

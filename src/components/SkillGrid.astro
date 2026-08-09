@@ -1,5 +1,7 @@
 ---
-import type { Skill, SkillLevel } from "../lib/types";
+import type { Skill, SkillCategory } from "../lib/types";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+import { skillCategories } from "../lib/data/skills";
 
 interface Props {
   skills: Skill[];
@@ -7,39 +9,103 @@ interface Props {
 
 const { skills } = Astro.props;
 
-const levelMeter: Record<SkillLevel, number> = {
-  beginner: 25,
-  intermediate: 50,
-  advanced: 75,
-  expert: 100,
-};
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
 
-const levelColor: Record<SkillLevel, string> = {
-  beginner: "bg-cyber-accent",
-  intermediate: "bg-cyber-accent",
-  advanced: "bg-cyber-primary",
-  expert: "bg-cyber-primary",
+const categoryLabels: Record<SkillCategory, string> = {
+  Offensive: t.skills.categories.offensive,
+  Defensive: t.skills.categories.defensive,
+  Tools: t.skills.categories.tools,
+  Programming: t.skills.categories.programming,
+  Network: t.skills.categories.network,
+  Forensics: t.skills.categories.forensics,
+  "Soft Skill": t.skills.categories.softSkill,
 };
 ---
 
-<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-  {skills.map((skill) => (
-    <div class="rounded border border-cyber-border bg-cyber-card p-5">
-      <div class="flex items-center justify-between">
-        <p class="flex items-center gap-2 font-mono text-sm font-semibold text-slate-200">
-          {skill.icon && <span aria-hidden="true">{skill.icon}</span>}
-          {skill.name}
-        </p>
-        <span class="font-mono text-[11px] uppercase tracking-wider text-cyber-accent">
-          {skill.category}
-        </span>
-      </div>
-      <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-cyber-panel">
-        <div
-          class={`h-full rounded-full ${levelColor[skill.level]}`}
-          data-meter-width={levelMeter[skill.level]}
-        />
-      </div>
-    </div>
+<div class="flex flex-wrap items-center gap-2">
+  <span class="mr-1 font-mono text-[11px] uppercase tracking-wider text-cyber-muted">
+    $ filter:
+  </span>
+  <button
+    type="button"
+    data-skill-filter="all"
+    aria-pressed="true"
+    class="skill-filter-btn rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+  >
+    {t.skills.all}
+  </button>
+  {skillCategories.map((category) => (
+    <button
+      type="button"
+      data-skill-filter={category}
+      aria-pressed="false"
+      class="skill-filter-btn rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+    >
+      {categoryLabels[category]}
+    </button>
   ))}
 </div>
+
+<div id="skill-list" class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  {skills.map((skill) => (
+    <span
+      data-skill-chip
+      data-category={skill.category}
+      class="flex items-center gap-3 rounded border border-cyber-border bg-cyber-card px-4 py-3 font-mono text-sm text-slate-200"
+    >
+      {skill.icon && (
+        <span aria-hidden="true" class="text-base leading-none">{skill.icon}</span>
+      )}
+      <span class="min-w-0 flex-1 truncate">{skill.name}</span>
+      <span class="shrink-0 font-mono text-[10px] uppercase tracking-wider text-cyber-accent">
+        {categoryLabels[skill.category]}
+      </span>
+    </span>
+  ))}
+</div>
+
+<p id="skill-empty" hidden class="mt-6 rounded border border-cyber-border bg-cyber-card p-6 font-mono text-sm text-cyber-muted">
+  {t.skills.empty}
+</p>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-skill-filter]");
+  const chips = document.querySelectorAll<HTMLElement>("[data-skill-chip]");
+  const emptyEl = document.getElementById("skill-empty") as HTMLParagraphElement;
+
+  const activeClasses = [
+    "border-cyber-primary/60",
+    "bg-cyber-primary/10",
+    "text-cyber-primary",
+  ];
+  const idleClasses = [
+    "border-cyber-border",
+    "text-slate-300",
+  ];
+
+  function applyFilter(category: string): void {
+    let visible = 0;
+
+    chips.forEach((chip) => {
+      const match = category === "all" || chip.dataset.category === category;
+      chip.hidden = !match;
+      if (match) visible += 1;
+    });
+
+    if (emptyEl) emptyEl.hidden = visible > 0;
+
+    buttons.forEach((btn) => {
+      const active = btn.dataset.skillFilter === category;
+      btn.setAttribute("aria-pressed", String(active));
+      btn.classList.remove(...activeClasses, ...idleClasses);
+      btn.classList.add(...(active ? activeClasses : idleClasses));
+    });
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      applyFilter(btn.dataset.skillFilter ?? "all");
+    });
+  });
+</script>

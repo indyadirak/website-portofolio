@@ -17,6 +17,9 @@ function toProject(row: ProjectsRow): Project {
     liveUrl: row.live_url,
     featured: row.featured,
     status: row.status,
+    problem: row.problem ?? null,
+    solution: row.solution ?? null,
+    impact: row.impact ?? null,
     createdAt: row.created_at,
   };
 }

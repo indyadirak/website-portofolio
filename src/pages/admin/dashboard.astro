@@ -2,9 +2,13 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import CertificateForm from "../../components/admin/CertificateForm.astro";
 import CertificateList from "../../components/admin/CertificateList.astro";
+import ProjectForm from "../../components/admin/ProjectForm.astro";
+import ProjectList from "../../components/admin/ProjectList.astro";
 import {
   canDeleteCertificates,
+  canDeleteProjects,
   canManageCertificates,
+  canManageProjects,
 } from "../../lib/auth";
 
 export const prerender = false;
@@ -24,6 +28,12 @@ const { data: certificates } = await supabase
   .select("*")
   .order("issue_date", { ascending: false });
 
+// ===== Data projects (SELECT publik, aman untuk semua role) =====
+const { data: projects } = await supabase
+  .from("projects")
+  .select("*")
+  .order("created_at", { ascending: false });
+
 // ===== Pesan kontak masuk (SELECT authenticated — viewer ikut bisa baca) =====
 const { data: messages } = await supabase
   .from("contact_messages")
@@ -34,6 +44,8 @@ const { data: messages } = await supabase
 const role = profile?.role ?? "viewer";
 const canWrite = canManageCertificates(profile); // admin | editor
 const isAdmin = canDeleteCertificates(profile); // admin saja
+const canWriteProjects = canManageProjects(profile); // admin | editor
+const isAdminProjects = canDeleteProjects(profile); // admin saja
 ---
 
 <MainLayout
@@ -78,6 +90,31 @@ const isAdmin = canDeleteCertificates(profile); // admin saja
         </button>
       </div>
     </div>
+
+    <!-- ===== FORM PROJECT (tambah/edit): hanya admin & editor ===== -->
+    {
+      canWriteProjects && (
+        <section class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+          <ProjectForm />
+        </section>
+      )
+    }
+
+    <!-- ===== DAFTAR PROJECT ===== -->
+    <section class="mt-10">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-mono text-lg font-bold text-white">Projects</h2>
+        <span class="font-mono text-xs text-cyber-muted">
+          total: {projects?.length ?? 0}
+        </span>
+      </div>
+
+      <ProjectList
+        projects={projects ?? []}
+        canWrite={canWriteProjects}
+        isAdmin={isAdminProjects}
+      />
+    </section>
 
     <!-- ===== FORM TAMBAH/EDIT: hanya admin & editor ===== -->
     {

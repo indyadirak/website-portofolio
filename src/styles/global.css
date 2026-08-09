@@ -205,4 +205,61 @@
   .term-row:nth-child(12) {
     animation-delay: 0.82s;
   }
+
+  /* ---- Image zoom modal ---- */
+  .zoom-layer {
+    background: rgba(11, 12, 16, 0.9);
+    backdrop-filter: blur(4px);
+  }
+  .zoom-box {
+    transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+  }
+  .zoom-box[hidden] {
+    display: block;
+    opacity: 0;
+    transform: scale(0.96);
+    pointer-events: none;
+  }
+  /* Klik gambar untuk perbesar (scale) — toggle kelas ini via JS */
+  .zoom-img-zoomed {
+    transform: scale(1.8);
+    cursor: zoom-out;
+  }
+  .zoom-img {
+    transition: transform 0.2s ease-out;
+    cursor: zoom-in;
+    touch-action: manipulation;
+  }
+
+  /* ---- Collapsible <details> (secondary projects) ---- */
+  @keyframes detail-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  details.soc-details[open] > summary + .soc-details-content {
+    animation: detail-drop 0.25s ease-out both;
+  }
+  details.soc-details > summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+  }
+  details.soc-details > summary::-webkit-details-marker {
+    display: none;
+  }
+  details.soc-details > summary::before {
+    content: "▶";
+    color: var(--color-cyber-accent);
+    font-size: 0.65em;
+    transition: transform 0.18s ease-out;
+  }
+  details.soc-details[open] > summary::before {
+    transform: rotate(90deg);
+  }
 }

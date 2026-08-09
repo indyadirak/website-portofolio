@@ -19,6 +19,12 @@ export const demoProjects: Project[] = [
     liveUrl: null,
     featured: true,
     status: "active",
+    problem:
+      "Latihan red team sering terhambat oleh setup lab yang manual, mahal, dan tidak reproducible — setiap praktikan mengulang konfigurasi dari nol.",
+    solution:
+      "Environment lab berbasis kode (Ansible) dengan Windows Server + Kali Linux: deploy domain controller, user, GPO, dan host target dalam satu perintah, dengan skenario AD attack yang terisolasi per subnet.",
+    impact:
+      "Waktu setup lab turun dari hitungan hari menjadi menit, dan skenario latihan bisa dibagikan ulang secara konsisten antar anggota tim.",
     createdAt: "2025-06-01T00:00:00.000Z",
   },
   {
@@ -35,6 +41,12 @@ export const demoProjects: Project[] = [
     liveUrl: null,
     featured: true,
     status: "active",
+    problem:
+      "Jaringan eksperimen tidak memiliki visibilitas lalu lintas: serangan brute-force dan scanning berlangsung tanpa tercatat maupun dilaporkan.",
+    solution:
+      "Deployment Suricata IDS dengan ruleset terkini + honeypot Cowrie di DMZ, log dialirkan ke Loki dan divisualisasikan di Grafana dengan alerting Telegram.",
+    impact:
+      "Semua percobaan login dan scanning kini terdeteksi dalam < 1 menit, dengan riwayat serangan tersimpan untuk analisis tren dan hardening.",
     createdAt: "2025-09-15T00:00:00.000Z",
   },
   {
@@ -51,6 +63,12 @@ export const demoProjects: Project[] = [
     liveUrl: null,
     featured: false,
     status: "archived",
+    problem:
+      "Solusi chat pihak ketiga menyimpan pesan dalam bentuk plaintext di server, berisiko terhadap penyalahgunaan dan kebocoran data.",
+    solution:
+      "Prototipe chat WebSocket dengan E2E encryption X25519 + ChaCha20-Poly1305, forward secrecy via double ratchet sederhana, dan verifikasi fingerprint manual.",
+    impact:
+      "Membuktikan bahwa chat encrypted ujung-ke-ujung bisa dibangun dengan library ringan tanpa layanan pihak ketiga.",
     createdAt: "2024-11-20T00:00:00.000Z",
   },
   {
@@ -67,6 +85,12 @@ export const demoProjects: Project[] = [
     liveUrl: null,
     featured: false,
     status: "planned",
+    problem:
+      "Pengguna dan tim kecil tidak punya cara cepat untuk menilai apakah sebuah URL adalah phishing sebelum mengkliknya.",
+    solution:
+      "Web app analisis URL dengan heuristics scoring (typosquatting, usia domain, redirect), lookup reputasi ke URLhaus/PhishTank, dan skor risiko akhir.",
+    impact:
+      "Perencanaan: memangkas waktu verifikasi URL dari menit menjadi detik untuk tim SOC skala kecil.",
     createdAt: "2026-01-05T00:00:00.000Z",
   },
   {
@@ -83,6 +107,12 @@ export const demoProjects: Project[] = [
     liveUrl: null,
     featured: false,
     status: "active",
+    problem:
+      "Pasca-CVE-2021-44228, banyak aplikasi internal belum terverifikasi kerentanannya dan audit manual tidak scalable.",
+    solution:
+      "Scanner Python dengan payload jndi di header HTTP standar (User-Agent, X-Forwarded-For, dll.), callback detection, dan report HTML per-target.",
+    impact:
+      "Memungkinkan verifikasi ratusan host dalam beberapa jam, dengan bukti callback yang dapat diaudit.",
     createdAt: "2024-04-10T00:00:00.000Z",
   },
   {
@@ -99,6 +129,12 @@ export const demoProjects: Project[] = [
     liveUrl: null,
     featured: false,
     status: "archived",
+    problem:
+      "Audit wireless di lokasi klien membutuhkan perangkat yang bulky dan penyiapan yang lama setiap kali digunakan.",
+    solution:
+      "Kit portable Raspberry Pi dengan mode monitor, toolset WPA2 handshake capture, dan scanner rogue AP dengan output laporan terstruktur.",
+    impact:
+      "Audit lapangan menjadi one-shot boot & scan, mengurangi waktu persiapan di lokasi secara signifikan.",
     createdAt: "2023-08-30T00:00:00.000Z",
   },
 ];
@@ -116,6 +152,10 @@ export const demoSiteSkills: Skill[] = [
   { id: "s10", name: "Bash / Powershell Scripting", category: "Programming", level: "expert", icon: "⚙️" },
   { id: "s11", name: "Security Awareness Training", category: "Soft Skill", level: "advanced", icon: "🎓" },
   { id: "s12", name: "Security Documentation", category: "Soft Skill", level: "expert", icon: "📝" },
+  { id: "s13", name: "VLAN & Routing (Mikrotik/Cisco)", category: "Network", level: "expert", icon: "🌐" },
+  { id: "s14", name: "Firewall & NAT Configuration", category: "Network", level: "advanced", icon: "🧱" },
+  { id: "s15", name: "Digital Forensics", category: "Forensics", level: "intermediate", icon: "🔍" },
+  { id: "s16", name: "Log Analysis & Triage", category: "Forensics", level: "advanced", icon: "📋" },
 ];
 
 export const demoSkills: Skill[] = demoSiteSkills;

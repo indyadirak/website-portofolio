@@ -43,7 +43,55 @@ const related = allProjects
 
     <div class="my-8 h-px w-full bg-cyber-border" />
 
-    <p class="text-lg leading-relaxed text-slate-200">{project.description}</p>
+    {
+      project.imageUrl && (
+        <figure class="mb-8">
+          <img
+            src={project.imageUrl}
+            alt={project.title}
+            data-zoom
+            loading="lazy"
+            class="max-h-96 w-full rounded border border-cyber-border bg-cyber-panel object-contain"
+          />
+          <figcaption class="mt-2 font-mono text-[11px] text-cyber-muted">
+            $ click_image_to_zoom
+          </figcaption>
+        </figure>
+      )
+    }
+
+    {
+      project.problem || project.solution || project.impact ? (
+        <div class="space-y-8">
+          {project.problem && (
+            <section>
+              <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+                [{t.projects.problemLabel}]
+              </h2>
+              <p class="mt-3 text-base leading-relaxed text-slate-200">{project.problem}</p>
+            </section>
+          )}
+          {project.solution && (
+            <section>
+              <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+                [{t.projects.approachLabel}]
+              </h2>
+              <p class="mt-3 text-base leading-relaxed text-slate-200">{project.solution}</p>
+            </section>
+          )}
+          {project.impact && (
+            <section>
+              <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-primary">
+                [{t.projects.impactLabel}]
+              </h2>
+              <p class="mt-3 text-base leading-relaxed text-slate-200">{project.impact}</p>
+            </section>
+          )}
+        </div>
+      ) : (
+        <p class="text-lg leading-relaxed text-slate-200">{project.description}</p>
+      )
+    }
 
     <div class="mt-8 flex flex-wrap gap-2">
       {project.tags.map((tag) => (

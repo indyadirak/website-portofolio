@@ -40,6 +40,20 @@ export interface Dictionary {
     skillsTitle: string;
     skillsDescription: string;
   };
+  skills: {
+    all: string;
+    empty: string;
+    /** Label kategori skill yang dilokalisasi (kunci = nilai enum kategori). */
+    categories: {
+      offensive: string;
+      defensive: string;
+      tools: string;
+      programming: string;
+      network: string;
+      forensics: string;
+      softSkill: string;
+    };
+  };
   projects: {
     eyebrow: string;
     title: string;
@@ -53,6 +67,18 @@ export interface Dictionary {
     sourceCode: string;
     liveDemo: string;
     relatedTitle: string;
+    problemLabel: string;
+    approachLabel: string;
+    impactLabel: string;
+    secondaryTitle: string;
+    secondaryDescription: string;
+    expandSecondary: string;
+    collapseSecondary: string;
+    secondaryEmpty: string;
+    featuredLabel: string;
+  };
+  imageZoom: {
+    closeLabel: string;
   };
   about: {
     eyebrow: string;

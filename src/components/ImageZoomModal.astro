@@ -1,0 +1,84 @@
+---
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+---
+
+<div
+  id="zoom-modal"
+  class="zoom-layer fixed inset-0 z-50 hidden items-center justify-center p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Image preview"
+  hidden
+>
+  <button
+    id="zoom-close"
+    type="button"
+    class="absolute right-4 top-4 z-10 flex h-12 w-12 items-center justify-center rounded border border-cyber-border bg-cyber-panel text-lg text-cyber-primary transition-colors hover:border-cyber-primary hover:bg-cyber-primary hover:text-cyber-bg"
+    aria-label={t.imageZoom.closeLabel}
+  >
+    <span aria-hidden="true">✕</span>
+  </button>
+
+  <figure class="zoom-box max-h-full max-w-full">
+    <img
+      id="zoom-img"
+      src=""
+      alt=""
+      class="zoom-img max-h-[85vh] max-w-[92vw] rounded border border-cyber-border bg-cyber-panel object-contain shadow-2xl"
+    />
+  </figure>
+</div>
+
+<script>
+  const modal = document.getElementById("zoom-modal") as HTMLDivElement;
+  const img = document.getElementById("zoom-img") as HTMLImageElement;
+  const closeBtn = document.getElementById("zoom-close") as HTMLButtonElement;
+
+  function openZoom(trigger: HTMLElement): void {
+    const src = trigger.getAttribute("data-zoom") ?? trigger.getAttribute("src");
+    const alt = trigger.getAttribute("alt") ?? "";
+    if (!src) return;
+
+    img.src = src;
+    img.alt = alt;
+    img.classList.remove("zoom-img-zoomed");
+    modal.hidden = false;
+    modal.classList.remove("hidden");
+    closeBtn.focus();
+
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeZoom(): void {
+    modal.hidden = true;
+    modal.classList.add("hidden");
+    img.src = "";
+    document.body.style.overflow = "";
+  }
+
+  document.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement | null;
+    const trigger = target?.closest<HTMLElement>("[data-zoom]");
+    if (trigger) {
+      event.preventDefault();
+      openZoom(trigger);
+    }
+  });
+
+  closeBtn.addEventListener("click", closeZoom);
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeZoom();
+  });
+
+  img.addEventListener("click", () => {
+    img.classList.toggle("zoom-img-zoomed");
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.hidden) closeZoom();
+  });
+</script>

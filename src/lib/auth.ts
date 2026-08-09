@@ -92,6 +92,14 @@ export function canDeleteCertificates(profile: Profile | null): boolean {
   return hasRole(profile, "admin");
 }
 
+export function canManageProjects(profile: Profile | null): boolean {
+  return hasRole(profile, "admin", "editor");
+}
+
+export function canDeleteProjects(profile: Profile | null): boolean {
+  return hasRole(profile, "admin");
+}
+
 /** Manajemen CV/Resume: admin saja (file identitas pemilik situs). */
 export function canManageCv(profile: Profile | null): boolean {
   return hasRole(profile, "admin");
