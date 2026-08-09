@@ -12,10 +12,10 @@ export const siteConfig = {
   /** Nama situs / brand. */
   name: "CyberSec",
   /** Domain produksi (ganti saat deploy; dipakai untuk canonical & og:url). */
-  url: "https://example.com",
+  url: "https://portfolio.indyadirak.my.id",
 
   author: {
-    name: "Your Name",
+    name: "Indy Adira Khalfani",
     role: "Cyber Security Specialist",
     /** Institusi pendidikan (JSON-LD alumniOf). Kosongkan ("") untuk skip. */
     alumniOf: "",
@@ -23,7 +23,7 @@ export const siteConfig = {
 
   contact: {
     /** Email utama — TIDAK dirender polos di HTML (lihat EmailLink.astro). */
-    email: "hello@example.com",
+    email: "indyadira@indyadirak.my.id",
     /** LinkedIn boleh tampil sebagai link biasa — memang untuk dibagikan. */
     linkedinUrl: "https://linkedin.com/in/your-username",
     githubUrl: "https://github.com/your-username",
