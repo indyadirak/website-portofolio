@@ -78,7 +78,6 @@ async function logAccess(args: {
   const { supabaseUrl, serviceRoleKey, ip, userAgent, status, blockedReason } = args;
   const headers = {
     apikey: serviceRoleKey,
-    Authorization: `Bearer ${serviceRoleKey}`,
     "Content-Type": "application/json",
   };
 
@@ -184,7 +183,6 @@ export async function POST({ request }: APIContext) {
         method: "GET",
         headers: {
           apikey: serviceRoleKey,
-          Authorization: `Bearer ${serviceRoleKey}`,
           Accept: "application/json",
         },
       }

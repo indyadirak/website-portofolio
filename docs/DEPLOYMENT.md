@@ -73,7 +73,7 @@ GitHub → Settings → Secrets and variables → Actions.
 | `TURNSTILE_SECRET_KEY` | Secret key Turnstile (dashboard Cloudflare) |
 | `SUPABASE_DB_URL` | SESSION POOLER + `?sslmode=require` (untuk pg_dump) |
 | `BACKUP_ENCRYPTION_KEY` | Passphrase GPG enkripsi backup (acak) |
-| `SUPABASE_SERVICE_ROLE_KEY` | service_role Supabase (paling berkuasa — hanya server-side) |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role Supabase (paling berkuasa — hanya server-side). Format legacy `eyJ...` ATAU baru `sb_secret_...` — kode endpoint backup-config sudah kompatibel dua-duanya (header `apikey` saja) |
 | `BACKUP_FETCH_TOKEN` | Token acak gate `/api/backup-config` — nilai yang SAMA otomatis disalin ke Worker oleh deploy.yml |
 | `GDRIVE_CONFIG_ENCRYPTION_SECRET` | Kunci AES-256-GCM ≥ 32 byte (enkripsi-at-rest key SA Drive) |
 
