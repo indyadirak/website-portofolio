@@ -21,10 +21,22 @@ import { pageNavigationGuard } from "./lib/rateLimit";
  * CSP tanpa 'unsafe-inline'/'unsafe-eval': semua script Astro di-build
  * menjadi file eksternal (_astro/*.js). `challenges.cloudflare.com`
  * diizinkan untuk widget Turnstile; `*.supabase.co` untuk data & koneksi.
+ *
+ * PENGECUALIAN KHUSUS DEVELOPMENT: Vite dev-mode meng-inject CSS lewat
+ * tag <style> via JavaScript (dianggap "inline style" oleh browser),
+ * begitu juga Astro Dev Toolbar. Tanpa pengecualian ini halaman tampil
+ * tanpa CSS saat `npm run dev`. Hanya directive style-src yang
+ * dilonggarkan; sisanya tetap ketat. Saat production build, CSS dimuat
+ * lewat file .css statis via <link> (comply dengan style-src 'self').
+ * JANGAN HAPUS blok ini tanpa memastikan dev-mode tetap berfungsi.
  */
+const CSP_STYLE_SRC = import.meta.env.DEV
+  ? "style-src 'self' 'unsafe-inline'"
+  : "style-src 'self'";
+
 const SECURITY_HEADERS: Record<string, string> = {
   "Content-Security-Policy":
-    "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; img-src 'self' data: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+    `default-src 'self'; script-src 'self' https://challenges.cloudflare.com; ${CSP_STYLE_SRC}; img-src 'self' data: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`,
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
