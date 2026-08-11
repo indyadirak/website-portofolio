@@ -26,6 +26,7 @@ Versi infrastruktur saat ini:
 - [ ] Node.js ≥ 22.12 (disarankan 24) terpasang; `npm ci` berjalan lokal tanpa error
 - [ ] Akun: GitHub, Cloudflare (dengan Workers), Supabase (project aktif), Google (untuk Service Account Drive)
 - [ ] `src/lib/config.ts` (siteConfig): isi `name`, `url` (domain asli), `author`, `contact` (email/LinkedIn/GitHub), `availabilityStatus`
+- [ ] `astro.config.mjs`: `site` = domain produksi (dipakai untuk canonical & og:url — jangan biarkan placeholder `https://example.com`)
 - [ ] CV/Resume: upload via admin GUI (`/admin/cv` → bucket publik `cv`). Opsional fallback statis di `public/cv-id.pdf` & `public/cv-en.pdf` (bersihkan metadata PDF dengan exiftool; tanpa nomor telepon)
 
 ---
@@ -127,7 +128,9 @@ dipasang langsung ke Worker):
 npm run build
 
 # 2. Deploy ke Cloudflare Workers
-npx wrangler deploy
+# (config lengkap worker + assets ada di dist/server/wrangler.json —
+#  jangan `wrangler deploy` tanpa argumen: wrangler.toml root hanya untuk dev)
+npx wrangler deploy dist/server/wrangler.json
 
 # 3. Pasang runtime secrets (nilai SAMA dengan tabel §3)
 npx wrangler secret put TURNSTILE_SECRET_KEY

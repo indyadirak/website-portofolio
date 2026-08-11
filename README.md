@@ -47,7 +47,7 @@ Portfolio website untuk profesional **Cyber Security**, dibangun di atas **Astro
 
 ### 🛡️ Keamanan
 - **RLS di semua tabel** — izin data dipaksa di level database
-- **CSP ketat** tanpa `unsafe-inline` — semua style & script file eksternal
+- **CSP ketat** tanpa `unsafe-inline` — semua style & script file eksternal (pengecualian: `style-src 'unsafe-inline'` **hanya** di mode dev agar Vite HMR / Astro Dev Toolbar berfungsi; production tetap ketat)
 - **Security headers** di middleware (runtime), `public/_headers` sebagai fallback aset statis
 - **Brute-force protection** — rate limit + lockout bertingkat per IP/email
 - **Audit trail** — percobaan login & akses kredensial dicatat
@@ -81,14 +81,14 @@ Portfolio website untuk profesional **Cyber Security**, dibangun di atas **Astro
 ├── public/
 │   └── _headers               # security headers fallback (aset statis)
 ├── src/
-│   ├── components/            # Hero, SkillGrid, ProjectGrid, admin/, ...
-│   ├── layouts/               # BaseLayout (head, nav, footer)
-│   ├── lib/                   # supabase, auth, storage, config, i18n, data
-│   ├── middleware.ts          # validasi session + guard /admin
+│   ├── components/            # Navbar, Hero, SkillGrid, ProjectGrid, admin/, ...
+│   ├── layouts/               # MainLayout (head, nav, footer)
+│   ├── lib/                   # auth, supabase, rateLimit, i18n, config, storage, cv, audit, api, data
+│   ├── middleware.ts          # security headers + rate limit + validasi session + guard /admin
 │   ├── pages/
-│   │   ├── index.astro, about, projects, contact, 404   # publik (id & en/)
+│   │   ├── index.astro, about, projects, contact, 404/403/429/500   # publik (id & en/)
 │   │   ├── admin/             # login, dashboard, backup, cv
-│   │   └── api/               # auth/*, certificates, contact, backup-config, admin/cv
+│   │   └── api/               # auth/*, certificates (+upload), contact, projects, backup-config, admin/cv
 │   └── styles/global.css
 ├── supabase/
 │   └── *.sql                  # skema, RLS/RBAC+MFA, storage, audit
@@ -152,7 +152,7 @@ Dua opsi — keduanya mengarah ke **Cloudflare Workers** (SSR + static assets):
 | Opsi                    | Cara                                                                |
 | ----------------------- | ------------------------------------------------------------------- |
 | **Auto (disarankan)**   | Push ke `main` → GitHub Actions deploy otomatis (`.github/workflows/deploy.yml`) |
-| **Manual**              | `npx wrangler deploy` setelah `npm run build`                       |
+| **Manual**              | `npx wrangler deploy dist/server/wrangler.json` setelah `npm run build` |
 
 **Sebelum deploy**: pastikan environment variables Supabase di-set
 (`PUBLIC_*` via secrets, non-publik sebagai runtime secrets Worker), dan ikuti
