@@ -25,8 +25,8 @@ export const siteConfig = {
     /** Email utama — TIDAK dirender polos di HTML (lihat EmailLink.astro). */
     email: "indyadira@indyadirak.my.id",
     /** LinkedIn boleh tampil sebagai link biasa — memang untuk dibagikan. */
-    linkedinUrl: "https://linkedin.com/in/your-username",
-    githubUrl: "https://github.com/your-username",
+    linkedinUrl: "https://www.linkedin.com/in/indyadirak",
+    githubUrl: "https://github.com/indyadirak",
     availabilityStatus: "open-to-work" satisfies AvailabilityStatus,
   },
 
