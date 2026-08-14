@@ -95,11 +95,33 @@ const personJsonLd = {
     ></script>
   </head>
   <body class="min-h-screen flex flex-col bg-cyber-bg">
+    <!-- psst... buka Console browser (F12) — ada flag buat kamu. -->
     <Navbar />
     <main class="flex-1">
       <slot />
     </main>
     <Footer />
     <ImageZoomModal />
+
+    <!-- Easter egg CTF (kosmetik — BUKAN kredensial asli). Muncul otomatis
+         di Console browser tiap halaman dimuat. Flag sudah final:
+         flag{stay_curious_stay_secure}. Jangan diisi token/secret nyata
+         supaya tidak disalahartikan sebagai kebocoran data. -->
+    <script>
+      // Tema SOC: Obsidian Black (#0b0c10) + Cyber Green (#00ff88).
+      const FLAG = "flag{stay_curious_stay_secure}";
+
+      const box =
+        "background:#0b0c10;color:#00ff88;font-family:'JetBrains Mono',monospace;" +
+        "padding:10px 14px;border-left:4px solid #00ff88;font-size:12px;";
+      const dim =
+        "background:#0b0c10;color:#8a8f98;font-family:'JetBrains Mono',monospace;" +
+        "padding:2px 14px;font-size:11px;";
+
+      console.log("%c\n  [ SOC CONSOLE ] — intrusion detected: curious_visitor\n", box);
+      console.log("%c  Nice, you found me. Here's your flag:", dim);
+      console.log("%c  " + FLAG, box);
+      console.log("%c  stay curious, stay secure — indyadirak\n", dim);
+    </script>
   </body>
 </html>
