@@ -30,6 +30,13 @@ export default defineConfig({
     inlineStylesheets: 'never',
   },
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    build: {
+      // Astro auto-inline script chunks yang lebih kecil dari limit ini
+      // (default 4096) — script inline diblokir CSP ketat (script-src 'self'
+      // tanpa 'unsafe-inline'). Kecilkan ke 0 agar SEMUA script menjadi
+      // file eksternal /_astro/*.js (begitu juga aset lain yang di-import).
+      assetsInlineLimit: 0,
+    },
   }
 });
