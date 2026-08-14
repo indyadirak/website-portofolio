@@ -5,6 +5,7 @@ import {
   canManageCertificates,
 } from "../../lib/auth";
 import { removeCertificateFile } from "../../lib/storage";
+import type { CertificateCategory } from "../../lib/types";
 
 export const prerender = false;
 
@@ -13,12 +14,15 @@ export interface CertificateInput {
   issuer: string;
   issueDate: string;
   expiryDate?: string | null;
+  category?: CertificateCategory;
   credentialId?: string | null;
   credentialUrl?: string | null;
   skills?: string[];
   description?: string | null;
   fileUrl?: string | null;
 }
+
+const CERTIFICATE_CATEGORIES: CertificateCategory[] = ["compliance", "training"];
 
 /** Konversi input (camelCase) -> kolom tabel (snake_case). */
 function toRow(input: CertificateInput) {
@@ -27,6 +31,9 @@ function toRow(input: CertificateInput) {
     issuer: input.issuer.trim(),
     issue_date: input.issueDate,
     expiry_date: input.expiryDate ?? null,
+    category: (input.category === "compliance" || input.category === "training"
+      ? input.category
+      : "training") as CertificateCategory,
     credential_id: input.credentialId ?? null,
     credential_url: input.credentialUrl ?? null,
     skills: input.skills ?? [],
@@ -41,6 +48,12 @@ function validate(input: CertificateInput): string | null {
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.issueDate)) {
     return "issueDate_format_yyyy-mm-dd";
+  }
+  if (
+    input.category !== undefined &&
+    !CERTIFICATE_CATEGORIES.includes(input.category as CertificateCategory)
+  ) {
+    return "category_harus_compliance_atau_training";
   }
   return null;
 }

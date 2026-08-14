@@ -60,6 +60,9 @@ export interface SocialLinks {
 /** Role RBAC pada tabel public.profiles. */
 export type UserRole = "admin" | "editor" | "viewer";
 
+/** Kategori sertifikat: kepatuhan (standar) vs pelatihan (kursus/workshop). */
+export type CertificateCategory = "compliance" | "training";
+
 /** Sertifikat (tabel public.certificates) — domain type. */
 export interface Certificate {
   id: string;
@@ -67,6 +70,7 @@ export interface Certificate {
   issuer: string;
   issueDate: string;
   expiryDate: string | null;
+  category: CertificateCategory;
   credentialId: string | null;
   credentialUrl: string | null;
   skills: string[];
@@ -133,6 +137,7 @@ export type CertificatesRow = {
   issuer: string;
   issue_date: string;
   expiry_date: string | null;
+  category: CertificateCategory;
   credential_id: string | null;
   credential_url: string | null;
   skills: string[];
@@ -264,6 +269,7 @@ export interface Database {
           issuer: string;
           issue_date: string;
           expiry_date?: string | null;
+          category?: CertificateCategory;
           credential_id?: string | null;
           credential_url?: string | null;
           skills?: string[];
@@ -279,6 +285,7 @@ export interface Database {
           issuer?: string;
           issue_date?: string;
           expiry_date?: string | null;
+          category?: CertificateCategory;
           credential_id?: string | null;
           credential_url?: string | null;
           skills?: string[];

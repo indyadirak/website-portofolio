@@ -6,6 +6,7 @@ import {
   uploadCertificateFile,
   validateUploadFile,
 } from "../../../lib/storage";
+import type { CertificateCategory } from "../../../lib/types";
 
 export const prerender = false;
 
@@ -13,10 +14,13 @@ interface CertificateMeta {
   title: string;
   issuer: string;
   issueDate: string;
+  category: CertificateCategory;
   expiryDate?: string | null;
   credentialUrl?: string | null;
   skills: string[];
 }
+
+const CERTIFICATE_CATEGORIES: CertificateCategory[] = ["compliance", "training"];
 
 function parseMeta(formData: FormData): CertificateMeta | null {
   const title = formData.get("title");
@@ -29,11 +33,15 @@ function parseMeta(formData: FormData): CertificateMeta | null {
   const expiry = formData.get("expiryDate");
   const url = formData.get("credentialUrl");
   const rawSkills = formData.get("skills");
+  const rawCategory = formData.get("category");
+  const category =
+    rawCategory === "compliance" || rawCategory === "training" ? rawCategory : "training";
 
   return {
     title,
     issuer,
     issueDate,
+    category,
     expiryDate: typeof expiry === "string" && expiry ? expiry : null,
     credentialUrl: typeof url === "string" && url ? url : null,
     skills:
@@ -49,6 +57,9 @@ function validateMeta(meta: CertificateMeta): string | null {
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta.issueDate)) {
     return "issueDate_format_yyyy-mm-dd";
+  }
+  if (!CERTIFICATE_CATEGORIES.includes(meta.category)) {
+    return "category_harus_compliance_atau_training";
   }
   return null;
 }
@@ -120,6 +131,7 @@ export async function POST({ request, locals }: APIContext) {
       issuer: meta.issuer.trim(),
       issue_date: meta.issueDate,
       expiry_date: meta.expiryDate,
+      category: meta.category,
       credential_url: meta.credentialUrl,
       skills: meta.skills,
       file_url: path,
@@ -216,6 +228,7 @@ export async function PUT({ request, locals }: APIContext) {
         issuer: meta.issuer.trim(),
         issue_date: meta.issueDate,
         expiry_date: meta.expiryDate,
+        category: meta.category,
         credential_url: meta.credentialUrl,
         skills: meta.skills,
         file_url: path,

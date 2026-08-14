@@ -54,6 +54,15 @@ export interface Dictionary {
       softSkill: string;
     };
   };
+  certificates: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    all: string;
+    compliance: string;
+    training: string;
+    empty: string;
+  };
   projects: {
     eyebrow: string;
     title: string;

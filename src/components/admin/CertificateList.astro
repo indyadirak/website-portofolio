@@ -24,6 +24,9 @@ const { certificates, canWrite, isAdmin } = Astro.props;
             <h3 class="font-mono text-base font-bold text-white">{cert.title}</h3>
             <p class="mt-1 font-mono text-xs text-cyber-muted">
               {cert.issuer} — {cert.issue_date}
+              <span class="ml-2 rounded border border-cyber-border px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-cyber-accent">
+                {cert.category}
+              </span>
               {cert.credential_url && (
                 <a href={cert.credential_url} target="_blank" rel="noopener noreferrer" class="ml-2 text-cyber-accent hover:underline">
                   [ credential ]
@@ -91,6 +94,7 @@ const { certificates, canWrite, isAdmin } = Astro.props;
       issuer: string;
       issue_date: string;
       expiry_date?: string | null;
+      category?: "compliance" | "training";
       credential_url?: string | null;
       file_url?: string | null;
       skills: string[];
@@ -106,6 +110,7 @@ const { certificates, canWrite, isAdmin } = Astro.props;
               issuer: cert.issuer,
               issueDate: cert.issue_date,
               expiryDate: cert.expiry_date,
+              category: cert.category ?? "training",
               credentialUrl: cert.credential_url,
               fileUrl: cert.file_url,
               skills: cert.skills,

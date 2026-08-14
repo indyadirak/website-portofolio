@@ -69,6 +69,16 @@ export const en: Dictionary = {
       softSkill: "Soft Skill",
     },
   },
+  certificates: {
+    eyebrow: "$ cat ./certificates",
+    title: "Certificates & Training",
+    description:
+      "Security compliance certifications and technical training/courses.",
+    all: "All",
+    compliance: "Compliance",
+    training: "Training",
+    empty: '$ echo "No certificates in this category yet."',
+  },
   projects: {
     eyebrow: "$ ls -la ./projects",
     title: "All Projects",

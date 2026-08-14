@@ -1,4 +1,4 @@
-import type { Project, Skill } from "../types";
+import type { Certificate, Project, Skill } from "../types";
 
 /**
  * Demo data — dipakai sebagai fallback saat Supabase belum dikonfigurasi,
@@ -136,6 +136,73 @@ export const demoProjects: Project[] = [
     impact:
       "Audit lapangan menjadi one-shot boot & scan, mengurangi waktu persiapan di lokasi secara signifikan.",
     createdAt: "2023-08-30T00:00:00.000Z",
+  },
+];
+
+export const demoCertificates: Certificate[] = [
+  {
+    id: "c1",
+    title: "Certified Ethical Hacker (CEH)",
+    issuer: "EC-Council",
+    issueDate: "2024-03-10",
+    expiryDate: "2027-03-10",
+    category: "compliance",
+    credentialId: null,
+    credentialUrl: "https://www.eccouncil.org/",
+    skills: ["Penetration Testing", "Network Security", "Vulnerability Assessment"],
+    description: null,
+    fileUrl: null,
+    createdBy: null,
+    createdAt: "2024-03-10T00:00:00.000Z",
+    updatedAt: "2024-03-10T00:00:00.000Z",
+  },
+  {
+    id: "c2",
+    title: "CompTIA Security+",
+    issuer: "CompTIA",
+    issueDate: "2023-08-01",
+    expiryDate: "2026-08-01",
+    category: "compliance",
+    credentialId: null,
+    credentialUrl: null,
+    skills: ["Security Fundamentals", "Risk Management", "Incident Response"],
+    description: null,
+    fileUrl: null,
+    createdBy: null,
+    createdAt: "2023-08-01T00:00:00.000Z",
+    updatedAt: "2023-08-01T00:00:00.000Z",
+  },
+  {
+    id: "c3",
+    title: "Network & Cyber Security Technician",
+    issuer: "Balai Harta Peninggalan Surabaya",
+    issueDate: "2025-01-20",
+    expiryDate: null,
+    category: "training",
+    credentialId: null,
+    credentialUrl: null,
+    skills: ["Network Defense", "Infrastructure Security", "System Monitoring"],
+    description: null,
+    fileUrl: null,
+    createdBy: null,
+    createdAt: "2025-01-20T00:00:00.000Z",
+    updatedAt: "2025-01-20T00:00:00.000Z",
+  },
+  {
+    id: "c4",
+    title: "Cyber Security Awareness & SOC Operations",
+    issuer: "Laboratorium Jaringan Komputer",
+    issueDate: "2024-11-05",
+    expiryDate: null,
+    category: "training",
+    credentialId: null,
+    credentialUrl: null,
+    skills: ["SOC", "Security Monitoring", "Threat Detection"],
+    description: null,
+    fileUrl: null,
+    createdBy: null,
+    createdAt: "2024-11-05T00:00:00.000Z",
+    updatedAt: "2024-11-05T00:00:00.000Z",
   },
 ];
 

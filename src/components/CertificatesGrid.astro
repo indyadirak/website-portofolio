@@ -1,0 +1,128 @@
+---
+import type { Certificate } from "../lib/types";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+
+interface Props {
+  certificates: Certificate[];
+}
+
+const { certificates } = Astro.props;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const categoryLabels: Record<"compliance" | "training", string> = {
+  compliance: t.certificates.compliance,
+  training: t.certificates.training,
+};
+
+function formatDate(value: string): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString(locale === "en" ? "en-US" : "id-ID", {
+    year: "numeric",
+    month: "short",
+  });
+}
+---
+
+<div class="flex flex-wrap items-center gap-2">
+  <span class="mr-1 font-mono text-[11px] uppercase tracking-wider text-cyber-muted">
+    $ filter:
+  </span>
+  <button
+    type="button"
+    data-cert-filter="all"
+    aria-pressed="true"
+    class="cert-filter-btn rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+  >
+    {t.certificates.all}
+  </button>
+  {(["compliance", "training"] as const).map((category) => (
+    <button
+      type="button"
+      data-cert-filter={category}
+      aria-pressed="false"
+      class="cert-filter-btn rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+    >
+      {categoryLabels[category]}
+    </button>
+  ))}
+</div>
+
+<div id="cert-list" class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  {certificates.map((cert) => (
+    <article
+      data-cert-item
+      data-category={cert.category}
+      class="flex flex-col gap-3 rounded border border-cyber-border bg-cyber-card p-5"
+    >
+      <div class="flex items-start justify-between gap-2">
+        <h3 class="font-mono text-sm font-bold leading-snug text-white">{cert.title}</h3>
+        <span
+          class="shrink-0 rounded border border-cyber-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-cyber-accent"
+        >
+          {categoryLabels[cert.category]}
+        </span>
+      </div>
+      <p class="font-mono text-xs text-cyber-muted">
+        {cert.issuer} — {formatDate(cert.issueDate)}
+      </p>
+      {cert.skills.length > 0 && (
+        <div class="mt-auto flex flex-wrap gap-2 pt-1">
+          {cert.skills.map((skill) => (
+            <span class="font-mono text-[11px] text-cyber-primary/80">#{skill}</span>
+          ))}
+        </div>
+      )}
+      {cert.credentialUrl && (
+        <a
+          href={cert.credentialUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-mono text-xs text-cyber-accent transition-opacity hover:opacity-80"
+        >
+          [ credential ]
+        </a>
+      )}
+    </article>
+  ))}
+</div>
+
+<p id="cert-empty" hidden class="mt-6 rounded border border-cyber-border bg-cyber-card p-6 font-mono text-sm text-cyber-muted">
+  {t.certificates.empty}
+</p>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-cert-filter]");
+  const items = document.querySelectorAll<HTMLElement>("[data-cert-item]");
+  const emptyEl = document.getElementById("cert-empty") as HTMLParagraphElement;
+
+  const activeClasses = ["border-cyber-primary/60", "bg-cyber-primary/10", "text-cyber-primary"];
+  const idleClasses = ["border-cyber-border", "text-slate-300"];
+
+  function applyFilter(category: string): void {
+    let visible = 0;
+
+    items.forEach((item) => {
+      const match = category === "all" || item.dataset.category === category;
+      item.hidden = !match;
+      if (match) visible += 1;
+    });
+
+    if (emptyEl) emptyEl.hidden = visible > 0;
+
+    buttons.forEach((btn) => {
+      const active = btn.dataset.certFilter === category;
+      btn.setAttribute("aria-pressed", String(active));
+      btn.classList.remove(...activeClasses, ...idleClasses);
+      btn.classList.add(...(active ? activeClasses : idleClasses));
+    });
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      applyFilter(btn.dataset.certFilter ?? "all");
+    });
+  });
+</script>

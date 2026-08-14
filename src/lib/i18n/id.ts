@@ -69,6 +69,16 @@ export const id: Dictionary = {
       softSkill: "Soft Skill",
     },
   },
+  certificates: {
+    eyebrow: "$ cat ./certificates",
+    title: "Sertifikat & Pelatihan",
+    description:
+      "Kepatuhan standar keamanan (Compliance) dan sertifikat pelatihan/kursus teknis (Training).",
+    all: "Semua",
+    compliance: "Kepatuhan",
+    training: "Pelatihan",
+    empty: '$ echo "Belum ada sertifikat di kategori ini."',
+  },
   projects: {
     eyebrow: "$ ls -la ./projects",
     title: "Semua Proyek",

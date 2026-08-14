@@ -2,14 +2,17 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import SectionHeading from "../SectionHeading.astro";
 import EmailLink from "../EmailLink.astro";
+import CertificatesGrid from "../CertificatesGrid.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
 import { siteConfig } from "../../lib/config";
+import { getCertificates } from "../../lib/data/certificates";
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
 
 const { author, contact } = siteConfig;
 const available = contact.availabilityStatus === "open-to-work";
+const certificates = await getCertificates();
 ---
 
 <MainLayout title={t.about.title} description={t.meta.about}>
@@ -65,5 +68,16 @@ const available = contact.availabilityStatus === "open-to-work";
         </ul>
       </div>
     </div>
+
+    {certificates.length > 0 && (
+      <section id="certificates" class="mt-16">
+        <SectionHeading
+          eyebrow={t.certificates.eyebrow}
+          title={t.certificates.title}
+          description={t.certificates.description}
+        />
+        <CertificatesGrid certificates={certificates} />
+      </section>
+    )}
   </div>
 </MainLayout>
