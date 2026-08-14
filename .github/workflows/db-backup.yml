@@ -78,7 +78,7 @@ jobs:
       #      + secrets.GDRIVE_BACKUP_FOLDER_ID (tetap didukung, tidak wajib).
       # Step ini otomatis di-skip selama kedua sumber belum diset.
       - name: Upload encrypted backup to Google Drive (optional)
-        if: ${{ secrets.BACKUP_FETCH_TOKEN != '' || secrets.GDRIVE_SERVICE_ACCOUNT_KEY != '' }}
+        if: env.BACKUP_FETCH_TOKEN != '' || env.GDRIVE_SERVICE_ACCOUNT_KEY != ''
         continue-on-error: true
         env:
           BACKUP_FETCH_URL: ${{ vars.BACKUP_CONFIG_URL }}

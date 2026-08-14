@@ -68,48 +68,53 @@ jobs:
       # ini — tanpa rebuild/redeploy kode. Sekali ter-set, nilainya
       # tersimpan di Cloudflare (tidak muncul di log Actions).
       - name: Set Turnstile secret (runtime)
-        if: ${{ secrets.TURNSTILE_SECRET_KEY != '' }}
+        if: env.TURNSTILE_SECRET_KEY != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: echo "${{ secrets.TURNSTILE_SECRET_KEY }}" | npx wrangler secret put TURNSTILE_SECRET_KEY
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+        run: echo "$TURNSTILE_SECRET_KEY" | npx wrangler secret put TURNSTILE_SECRET_KEY
 
       # ===== Secrets runtime untuk Google Drive backup offload (3-2-1) =====
       # SUPABASE_URL hanya salinan dari PUBLIC_SUPABASE_URL (URL bukan rahasia,
       # tapi dipindah jadi runtime secret supaya tidak perlu masuk repo).
       - name: Set SUPABASE_URL secret (runtime)
-        if: ${{ secrets.PUBLIC_SUPABASE_URL != '' }}
+        if: env.PUBLIC_SUPABASE_URL != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: echo "${{ secrets.PUBLIC_SUPABASE_URL }}" | npx wrangler secret put SUPABASE_URL
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+        run: echo "$PUBLIC_SUPABASE_URL" | npx wrangler secret put SUPABASE_URL
 
       # service_role key — dipakai endpoint /api/backup-config (server-side)
       # untuk membaca konfigurasi Drive saat workflow backup menjalankan
       # db-backup.yml. Dari dashboard Supabase: Project Settings > API >
       # service_role (JANGAN dicampur dengan anon key).
       - name: Set SUPABASE_SERVICE_ROLE_KEY secret (runtime)
-        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: echo "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: echo "$SUPABASE_SERVICE_ROLE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 
       # Token pemanggilan /api/backup-config dari GitHub Actions. Nilai
       # HARUS sama dengan secrets.BACKUP_FETCH_TOKEN di repo (satu sumber
       # kebenaran: set sekali di GitHub, disalin otomatis ke Worker di sini).
       - name: Set BACKUP_FETCH_TOKEN secret (runtime)
-        if: ${{ secrets.BACKUP_FETCH_TOKEN != '' }}
+        if: env.BACKUP_FETCH_TOKEN != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: echo "${{ secrets.BACKUP_FETCH_TOKEN }}" | npx wrangler secret put BACKUP_FETCH_TOKEN
+          BACKUP_FETCH_TOKEN: ${{ secrets.BACKUP_FETCH_TOKEN }}
+        run: echo "$BACKUP_FETCH_TOKEN" | npx wrangler secret put BACKUP_FETCH_TOKEN
 
       # Kunci AES-256-GCM untuk enkripsi-at-rest JSON key Service Account
       # Drive di tabel backup_config (GUI admin). Harus acak & >= 32 byte.
       - name: Set GDRIVE_CONFIG_ENCRYPTION_SECRET secret (runtime)
-        if: ${{ secrets.GDRIVE_CONFIG_ENCRYPTION_SECRET != '' }}
+        if: env.GDRIVE_CONFIG_ENCRYPTION_SECRET != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: echo "${{ secrets.GDRIVE_CONFIG_ENCRYPTION_SECRET }}" | npx wrangler secret put GDRIVE_CONFIG_ENCRYPTION_SECRET
+          GDRIVE_CONFIG_ENCRYPTION_SECRET: ${{ secrets.GDRIVE_CONFIG_ENCRYPTION_SECRET }}
+        run: echo "$GDRIVE_CONFIG_ENCRYPTION_SECRET" | npx wrangler secret put GDRIVE_CONFIG_ENCRYPTION_SECRET
