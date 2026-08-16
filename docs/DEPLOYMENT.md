@@ -11,7 +11,12 @@
 > Sinkronisasi terakhir: sesi perbaikan pre-deploy — sertifikat kategori
 > (Compliance/Training), halaman `/certificates` terpisah, badge verifikasi
 > (`verification_url`), sitemap dinamis (`/sitemap.xml`), link Blog eksternal,
-> fix `assetsInlineLimit: 0` (CSP), nanoid 3.3.18 (CVE-2026-67213).
+> fix `assetsInlineLimit: 0` (CSP), nanoid 3.3.18 (CVE-2026-67213), fitur
+> sertifikat lengkap (`issue_date` default, `is_featured`, `expiry_date` badge
+> valid/kedaluwarsa, `short_description_id/en`), file gabungan
+> `supabase/00-full-migration.sql` (satu transaksi, fresh install) + koreksi
+> urutan migrasi: `rbac-mfa.sql` wajib sebelum `schema.sql` (policy schema
+> mereferensikan `public.profiles`).
 
 Versi infrastruktur saat ini:
 - Runtime: **Cloudflare Workers (Static Assets)** — adapter `@astrojs/cloudflare`
@@ -35,19 +40,24 @@ Versi infrastruktur saat ini:
 
 ## 1. Database (Supabase) — kerjakan PERTAMA
 
-- [ ] Jalankan SQL Editor **berurutan** (file di `supabase/`, semuanya idempotent — aman dijalankan ulang):
-  - [ ] `schema.sql` (tabel proyek/skills — fondasi)
-  - [ ] `rbac-mfa.sql` (profiles + certificates + RLS + trigger auto-profil — **wajib SEBELUM `storage.sql` & `cv.sql`**)
-  - [ ] `contact.sql` (contact_messages + RLS + insert policy)
+- [ ] **Opsi A — TERCEPAT (disarankan untuk fresh install / re-sync penuh):** jalankan SATU file `supabase/00-full-migration.sql` di SQL Editor. Isinya gabungan SEMUA migrasi + `BEGIN;`/`COMMIT;` — jika ada satu statement gagal, semua otomatis rollback (tidak ada perubahan setengah jalan). Idempotent penuh (CREATE IF NOT EXISTS, DROP POLICY IF EXISTS, `ON CONFLICT DO NOTHING`) — aman dijalankan berulang, termasuk di database yang sudah ter-migrasi sebagian.
+- [ ] **Opsi B — bertahap (untuk patch/migrasi tambahan di masa depan):** jalankan file terpisah SATU PER SATU **hanya yang belum pernah dijalankan** (semuanya idempotent — aman dijalankan ulang):
+  - [ ] `rbac-mfa.sql` (profiles + certificates + RLS + trigger auto-profil) — **WAJIB PALING AWAL**: `schema.sql`, `storage.sql`, `cv.sql`, `login-attempts.sql`, `backup-config.sql`, `backup-config-access-log.sql` dan `public-features.sql` semuanya membuat policy/subquery yang mereferensikan `public.profiles` — jika belum ada, `CREATE POLICY` gagal (42P01, ekspresi policy divalidasi saat dibuat)
+  - [ ] `schema.sql` (tabel proyek/skills/contact_messages — **SETELAH `rbac-mfa.sql`**: policy write projects mereferensikan `profiles`)
+  - [ ] `contact.sql` (migrasi kolom `subject` lama — **SETELAH `schema.sql`**)
   - [ ] `storage.sql` (bucket sertifikat — **SETELAH `rbac-mfa.sql`**)
-  - [ ] `login-attempts.sql` (audit login, RPC 5-param)
-  - [ ] `backup-config.sql` (konfigurasi Drive, RLS aal2+admin)
-  - [ ] `backup-config-access-log.sql` (audit endpoint backup-config)
-  - [ ] `cv.sql` (bucket publik `cv` + tabel `cv_files` untuk upload CV via admin GUI — **SETELAH `rbac-mfa.sql`**)
-  - [ ] `public-features.sql` (**migrasi fitur publik**: kolom `problem`/`solution`/`impact` di `projects`, kategori skills baru `Offensive Security`, RLS write projects untuk admin/editor — butuh `schema.sql` & `rbac-mfa.sql` sudah jalan; file ini wajib dijalankan bila memulai dari repo ini pasca commit `9e6da1b`)
+  - [ ] `login-attempts.sql` (audit login, RPC 5-param — **SETELAH `rbac-mfa.sql`**)
+  - [ ] `backup-config.sql` (konfigurasi Drive, RLS aal2+admin — **SETELAH `rbac-mfa.sql`**)
+  - [ ] `backup-config-access-log.sql` (audit endpoint backup-config — **SETELAH `rbac-mfa.sql`**)
+  - [ ] `cv.sql` (bucket publik `cv` + tabel `cv_files` — **SETELAH `rbac-mfa.sql`**)
+  - [ ] `public-features.sql` (kolom `problem`/`solution`/`impact` di projects, kategori skills, RLS write projects — **SETELAH `schema.sql` + `rbac-mfa.sql`**)
   - [ ] `certificates-category.sql` (kategori Compliance/Training — **butuh `rbac-mfa.sql`**; data lama otomatis `'training'`)
-  - [ ] `certificates-verification-url.sql` (kolom `verification_url` untuk badge verifikasi publik — **butuh `rbac-mfa.sql`**; NULL = tanpa badge)
-  - [ ] **Urutan = urutan eksekusi**. Jangan menukar: `storage.sql` & `cv.sql` mensyaratkan `rbac-mfa.sql`; `public-features.sql` mensyaratkan `schema.sql` + `rbac-mfa.sql`; dua migrasi `certificates-*` mensyaratkan `rbac-mfa.sql` (tabel certificates sudah ada).
+  - [ ] `certificates-verification-url.sql` (kolom `verification_url` — **butuh `rbac-mfa.sql`**; NULL = tanpa badge)
+  - [ ] `certificates-issue-date.sql` (kolom `issue_date` WAJIB + `DEFAULT CURRENT_DATE`; backfill NULL dari `created_at`)
+  - [ ] `certificates-expiry-date.sql` (kolom `expiry_date` nullable)
+  - [ ] `certificates-featured.sql` (kolom `is_featured boolean not null default false` — pola sama `featured` di `projects`)
+  - [ ] `certificates-short-description.sql` (kolom `short_description_id`/`short_description_en` nullable — pola dua-kolom-per-bahasa sama Problem/Solution/Impact di projects)
+  - [ ] **Urutan = urutan eksekusi** (urutan Opsi B = urutan section dalam `00-full-migration.sql`). Jangan menukar: semuanya mensyaratkan `rbac-mfa.sql` lebih dulu (tabel `profiles` & `certificates`); `public-features.sql` juga mensyaratkan `schema.sql`.
 - [ ] **Buat admin user**: Authentication → Users → Add user (email + password kuat). Wajib: set `role = 'admin'` di tabel `public.profiles` dan `mfa_enforced = true` (dashboard atau SQL) — tanpa role admin, GUI backup & audit tidak bisa diakses
 - [ ] Catat dari Project Settings → API: `URL` + `anon` key + `service_role` key
 - [ ] Catat dari Project Settings → Database → Connection string: **SESSION POOLER (port 5432)** — untuk pg_dump (jangan Transaction Pooler 6543), tambahkan `?sslmode=require`
@@ -163,7 +173,7 @@ npx wrangler secret put GDRIVE_CONFIG_ENCRYPTION_SECRET
 
 - [ ] `curl -I https://<worker-url>/` → 200 + header `Content-Security-Policy`, `Strict-Transport-Security` ada
 - [ ] `curl https://<worker-url>/sitemap.xml` → XML berisi halaman statis + detail project + `hreflang` id/en/x-default; pastikan `robots.txt` memuat baris `Sitemap:`
-- [ ] `/certificates` & `/en/certificates`: filter Compliance/Training berfungsi; sertifikat ber-`verification_url` menampilkan badge "Lihat Sertifikat Asli", sisanya tanpa link
+- [ ] `/certificates` & `/en/certificates`: filter Compliance/Training berfungsi; sertifikat ber-`verification_url` menampilkan badge "Lihat Sertifikat Asli", sisanya tanpa link; sertifikat `is_featured` tampil paling atas dengan badge "Featured"; sertifikat ber-`expiry_date` di masa depan menampilkan badge hijau "Berlaku hingga …", yang sudah lewat menampilkan badge amber "Kedaluwarsa …", tanpa `expiry_date` tidak ada badge; `short_description_id/en` tampil sebagai 1–2 baris di bawah judul (per locale)
 - [ ] Form kontak: submit dengan Turnstile → masuk ke `contact_messages`; tanpa Turnstile → ditolak
 - [ ] **Login lockout**: 3× password salah (IP+email sama) → ke-4 balas `429 too_many_attempts`; cek tabel `login_attempts` (status `blocked` + `blocked_reason`, email NULL)
 - [ ] **Backup-config rate limit**: 5× `curl -X POST -H "Authorization: Bearer salah" <worker>/api/backup-config` → ke-6 `429`; token benar → 200 `{configured:true}`; cek `backup_config_access_log`

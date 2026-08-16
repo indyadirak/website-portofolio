@@ -87,6 +87,9 @@ export const id: Dictionary = {
     training: "Pelatihan",
     empty: '$ echo "Belum ada sertifikat di kategori ini."',
     verify: "Lihat Sertifikat Asli",
+    featured: "Featured",
+    validUntil: "Berlaku hingga {date}",
+    expired: "Kedaluwarsa {date}",
   },
   projects: {
     eyebrow: "$ ls -la ./projects",

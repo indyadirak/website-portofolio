@@ -40,9 +40,38 @@
         class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
     </label>
     <label class="block">
-      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Expiry Date</span>
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">
+        Expiry Date <span class="text-cyber-muted">(opsional — kosongkan jika tidak ada masa berlaku)</span>
+      </span>
       <input id="f-expiry-date" type="date"
         class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
+    </label>
+  </div>
+
+  <label class="flex min-h-11 cursor-pointer items-center gap-3">
+    <input id="f-featured" type="checkbox"
+      class="h-5 w-5 rounded border-cyber-border bg-cyber-panel accent-cyber-primary" />
+    <span class="font-mono text-xs uppercase tracking-wider text-cyber-accent">Featured — sertifikat unggulan (badge + tampil paling atas)</span>
+  </label>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <label class="block">
+      <span class="mb-2 flex items-baseline justify-between font-mono text-xs uppercase tracking-wider text-cyber-accent">
+        Short Description (ID)
+        <span id="f-short-id-counter" class="text-[10px] text-cyber-muted">0/150</span>
+      </span>
+      <textarea id="f-short-id" rows={2} maxlength={150}
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="1-2 baris ringkas dalam Bahasa Indonesia (opsional)"></textarea>
+    </label>
+    <label class="block">
+      <span class="mb-2 flex items-baseline justify-between font-mono text-xs uppercase tracking-wider text-cyber-accent">
+        Short Description (EN)
+        <span id="f-short-en-counter" class="text-[10px] text-cyber-muted">0/150</span>
+      </span>
+      <textarea id="f-short-en" rows={2} maxlength={150}
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="1-2 concise lines in English (optional)"></textarea>
     </label>
   </div>
 
@@ -104,6 +133,11 @@
   const issuer = document.getElementById("f-issuer") as HTMLInputElement;
   const issueDate = document.getElementById("f-issue-date") as HTMLInputElement;
   const expiryDate = document.getElementById("f-expiry-date") as HTMLInputElement;
+  const featured = document.getElementById("f-featured") as HTMLInputElement;
+  const shortId = document.getElementById("f-short-id") as HTMLTextAreaElement;
+  const shortEn = document.getElementById("f-short-en") as HTMLTextAreaElement;
+  const shortIdCounter = document.getElementById("f-short-id-counter") as HTMLSpanElement;
+  const shortEnCounter = document.getElementById("f-short-en-counter") as HTMLSpanElement;
   const credentialUrl = document.getElementById("f-credential-url") as HTMLInputElement;
   const verificationUrl = document.getElementById("f-verification-url") as HTMLInputElement;
   const skills = document.getElementById("f-skills") as HTMLInputElement;
@@ -111,6 +145,12 @@
   const fileInput = document.getElementById("f-file") as HTMLInputElement;
   const fileCurrent = document.getElementById("f-file-current") as HTMLParagraphElement;
   const sizeEl = document.getElementById("f-file-size") as HTMLParagraphElement;
+
+  function updateCounter(input: HTMLTextAreaElement, counter: HTMLSpanElement): void {
+    counter.textContent = `${input.value.length}/150`;
+  }
+  shortId.addEventListener("input", () => updateCounter(shortId, shortIdCounter));
+  shortEn.addEventListener("input", () => updateCounter(shortEn, shortEnCounter));
 
   let editingId: string | null = null;
 
@@ -121,6 +161,9 @@
     issueDate: string;
     expiryDate?: string | null;
     category?: "compliance" | "training";
+    isFeatured?: boolean;
+    shortDescriptionId?: string | null;
+    shortDescriptionEn?: string | null;
     credentialUrl?: string | null;
     verificationUrl?: string | null;
     skills?: string[];
@@ -212,6 +255,11 @@
     issuer.value = detail.issuer;
     issueDate.value = detail.issueDate.slice(0, 10);
     expiryDate.value = toInput(detail.expiryDate?.slice(0, 10));
+    featured.checked = Boolean(detail.isFeatured);
+    shortId.value = toInput(detail.shortDescriptionId);
+    shortEn.value = toInput(detail.shortDescriptionEn);
+    updateCounter(shortId, shortIdCounter);
+    updateCounter(shortEn, shortEnCounter);
     credentialUrl.value = toInput(detail.credentialUrl);
     verificationUrl.value = toInput(detail.verificationUrl);
     skills.value = (detail.skills ?? []).join(", ");
@@ -243,6 +291,9 @@
       issueDate: issueDate.value,
       expiryDate: expiryDate.value || null,
       category: category.value as "compliance" | "training",
+      isFeatured: featured.checked,
+      shortDescriptionId: shortId.value.trim() || null,
+      shortDescriptionEn: shortEn.value.trim() || null,
       credentialUrl: credentialUrl.value.trim() || null,
       verificationUrl: verificationUrl.value.trim() || null,
       skills: skills.value.split(",").map((s) => s.trim()).filter(Boolean),
@@ -285,6 +336,9 @@
       formData.append("issuer", payload.issuer);
       formData.append("issueDate", payload.issueDate);
       if (payload.expiryDate) formData.append("expiryDate", payload.expiryDate);
+      if (payload.isFeatured) formData.append("isFeatured", "on");
+      if (payload.shortDescriptionId) formData.append("shortDescriptionId", payload.shortDescriptionId);
+      if (payload.shortDescriptionEn) formData.append("shortDescriptionEn", payload.shortDescriptionEn);
       if (payload.credentialUrl) formData.append("credentialUrl", payload.credentialUrl);
       if (payload.verificationUrl) formData.append("verificationUrl", payload.verificationUrl);
       formData.append("skills", payload.skills.join(", "));

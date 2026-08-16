@@ -38,6 +38,7 @@ const collectionJsonLd = {
         ...(cert.credentialUrl ? { url: cert.credentialUrl } : {}),
         issuer: { "@type": "Organization", name: cert.issuer },
         ...(cert.issueDate ? { dateIssued: cert.issueDate } : {}),
+        ...(cert.expiryDate ? { validUntil: cert.expiryDate } : {}),
       },
     })),
   },

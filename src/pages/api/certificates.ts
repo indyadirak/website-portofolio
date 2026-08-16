@@ -15,6 +15,9 @@ export interface CertificateInput {
   issueDate: string;
   expiryDate?: string | null;
   category?: CertificateCategory;
+  isFeatured?: boolean;
+  shortDescriptionId?: string | null;
+  shortDescriptionEn?: string | null;
   credentialId?: string | null;
   credentialUrl?: string | null;
   verificationUrl?: string | null;
@@ -24,6 +27,16 @@ export interface CertificateInput {
 }
 
 const CERTIFICATE_CATEGORIES: CertificateCategory[] = ["compliance", "training"];
+
+/** Maks karakter keterangan singkat (sama dengan counter di form admin). */
+const SHORT_DESC_MAX = 150;
+
+function sanitizeShortDesc(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, SHORT_DESC_MAX);
+}
 
 /** Konversi input (camelCase) -> kolom tabel (snake_case). */
 function toRow(input: CertificateInput) {
@@ -35,6 +48,9 @@ function toRow(input: CertificateInput) {
     category: (input.category === "compliance" || input.category === "training"
       ? input.category
       : "training") as CertificateCategory,
+    is_featured: input.isFeatured === true,
+    short_description_id: sanitizeShortDesc(input.shortDescriptionId),
+    short_description_en: sanitizeShortDesc(input.shortDescriptionEn),
     credential_id: input.credentialId ?? null,
     credential_url: input.credentialUrl ?? null,
     verification_url: input.verificationUrl ?? null,

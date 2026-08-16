@@ -87,6 +87,9 @@ export const en: Dictionary = {
     training: "Training",
     empty: '$ echo "No certificates in this category yet."',
     verify: "Verify",
+    featured: "Featured",
+    validUntil: "Valid until {date}",
+    expired: "Expired {date}",
   },
   projects: {
     eyebrow: "$ ls -la ./projects",

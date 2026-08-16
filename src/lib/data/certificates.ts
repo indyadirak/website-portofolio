@@ -11,6 +11,9 @@ function toCertificate(row: CertificatesRow): Certificate {
     issueDate: row.issue_date,
     expiryDate: row.expiry_date,
     category: row.category,
+    isFeatured: row.is_featured,
+    shortDescriptionId: row.short_description_id,
+    shortDescriptionEn: row.short_description_en,
     credentialId: row.credential_id,
     credentialUrl: row.credential_url,
     verificationUrl: row.verification_url,
@@ -23,21 +26,16 @@ function toCertificate(row: CertificatesRow): Certificate {
   };
 }
 
-/** Kategori sertifikat yang tersedia (dipakai untuk filter UI). */
-export const certificateCategories: Array<CertificateCategory | "all"> = [
-  "all",
-  "compliance",
-  "training",
-];
-
 /** Mengambil semua sertifikat dari Supabase (fallback: demo data). */
 export async function getCertificates(): Promise<Certificate[]> {
   const supabase = getSupabase();
   if (!supabase) return demoCertificates;
 
+  // Featured dulu, lalu terbitan terbaru — sertifikat unggulan selalu di atas.
   const { data, error } = await supabase
     .from("certificates")
     .select("*")
+    .order("is_featured", { ascending: false })
     .order("issue_date", { ascending: false });
 
   if (error) {
@@ -47,5 +45,12 @@ export async function getCertificates(): Promise<Certificate[]> {
 
   return (data ?? []).map(toCertificate);
 }
+
+/** Kategori sertifikat yang tersedia (dipakai untuk filter UI). */
+export const certificateCategories: Array<CertificateCategory | "all"> = [
+  "all",
+  "compliance",
+  "training",
+];
 
 export type { CertificateCategory };

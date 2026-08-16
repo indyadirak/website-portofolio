@@ -71,6 +71,11 @@ export interface Certificate {
   issueDate: string;
   expiryDate: string | null;
   category: CertificateCategory;
+  /** Sertifikat unggulan — badge "Featured" + diurutkan paling atas. */
+  isFeatured: boolean;
+  /** Keterangan singkat per bahasa (opsional, maks 150 karakter). */
+  shortDescriptionId: string | null;
+  shortDescriptionEn: string | null;
   credentialId: string | null;
   credentialUrl: string | null;
   /** URL halaman verifikasi resmi issuer (misal badge Credly). Null = tidak ada. */
@@ -140,6 +145,9 @@ export type CertificatesRow = {
   issue_date: string;
   expiry_date: string | null;
   category: CertificateCategory;
+  is_featured: boolean;
+  short_description_id: string | null;
+  short_description_en: string | null;
   credential_id: string | null;
   credential_url: string | null;
   verification_url: string | null;
@@ -273,6 +281,9 @@ export interface Database {
           issue_date: string;
           expiry_date?: string | null;
           category?: CertificateCategory;
+          is_featured?: boolean;
+          short_description_id?: string | null;
+          short_description_en?: string | null;
           credential_id?: string | null;
           credential_url?: string | null;
           verification_url?: string | null;
@@ -290,6 +301,9 @@ export interface Database {
           issue_date?: string;
           expiry_date?: string | null;
           category?: CertificateCategory;
+          is_featured?: boolean;
+          short_description_id?: string | null;
+          short_description_en?: string | null;
           credential_id?: string | null;
           credential_url?: string | null;
           verification_url?: string | null;

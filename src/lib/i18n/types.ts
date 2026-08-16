@@ -71,6 +71,10 @@ export interface Dictionary {
     training: string;
     empty: string;
     verify: string;
+    featured: string;
+    /** Template badge masa berlaku — placeholder {date} diganti format locale. */
+    validUntil: string;
+    expired: string;
   };
   projects: {
     eyebrow: string;

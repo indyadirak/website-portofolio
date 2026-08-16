@@ -16,12 +16,25 @@ interface CertificateMeta {
   issueDate: string;
   category: CertificateCategory;
   expiryDate?: string | null;
+  isFeatured: boolean;
+  shortDescriptionId?: string | null;
+  shortDescriptionEn?: string | null;
   credentialUrl?: string | null;
   verificationUrl?: string | null;
   skills: string[];
 }
 
 const CERTIFICATE_CATEGORIES: CertificateCategory[] = ["compliance", "training"];
+
+/** Maks karakter keterangan singkat (sama dengan counter di form admin). */
+const SHORT_DESC_MAX = 150;
+
+function sanitizeShortDesc(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, SHORT_DESC_MAX);
+}
 
 function parseMeta(formData: FormData): CertificateMeta | null {
   const title = formData.get("title");
@@ -38,6 +51,9 @@ function parseMeta(formData: FormData): CertificateMeta | null {
   const rawCategory = formData.get("category");
   const category =
     rawCategory === "compliance" || rawCategory === "training" ? rawCategory : "training";
+  const rawFeatured = formData.get("isFeatured");
+  const shortId = formData.get("shortDescriptionId");
+  const shortEn = formData.get("shortDescriptionEn");
 
   return {
     title,
@@ -45,6 +61,9 @@ function parseMeta(formData: FormData): CertificateMeta | null {
     issueDate,
     category,
     expiryDate: typeof expiry === "string" && expiry ? expiry : null,
+    isFeatured: rawFeatured === "on" || rawFeatured === "true" || rawFeatured === "1",
+    shortDescriptionId: sanitizeShortDesc(typeof shortId === "string" ? shortId : null),
+    shortDescriptionEn: sanitizeShortDesc(typeof shortEn === "string" ? shortEn : null),
     credentialUrl: typeof url === "string" && url ? url : null,
     verificationUrl: typeof verificationUrl === "string" && verificationUrl ? verificationUrl : null,
     skills:
@@ -135,6 +154,9 @@ export async function POST({ request, locals }: APIContext) {
       issue_date: meta.issueDate,
       expiry_date: meta.expiryDate,
       category: meta.category,
+      is_featured: meta.isFeatured,
+      short_description_id: meta.shortDescriptionId,
+      short_description_en: meta.shortDescriptionEn,
       credential_url: meta.credentialUrl,
       verification_url: meta.verificationUrl,
       skills: meta.skills,
@@ -233,6 +255,9 @@ export async function PUT({ request, locals }: APIContext) {
         issue_date: meta.issueDate,
         expiry_date: meta.expiryDate,
         category: meta.category,
+        is_featured: meta.isFeatured,
+        short_description_id: meta.shortDescriptionId,
+        short_description_en: meta.shortDescriptionEn,
         credential_url: meta.credentialUrl,
         verification_url: meta.verificationUrl,
         skills: meta.skills,
