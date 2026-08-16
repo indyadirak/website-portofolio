@@ -7,6 +7,7 @@ export interface Dictionary {
   nav: {
     home: string;
     projects: string;
+    certificates: string;
     about: string;
     contact: string;
     downloadCv: string;
@@ -157,6 +158,7 @@ export interface Dictionary {
   meta: {
     home: string;
     projects: string;
+    certificates: string;
     about: string;
     contact: string;
     projectDetail: string;

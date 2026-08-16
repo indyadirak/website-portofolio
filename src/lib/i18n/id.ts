@@ -5,6 +5,7 @@ export const id: Dictionary = {
   nav: {
     home: "Beranda",
     projects: "Proyek",
+    certificates: "Sertifikat",
     about: "Tentang",
     contact: "Kontak",
     downloadCv: "Unduh CV",
@@ -193,6 +194,7 @@ export const id: Dictionary = {
   meta: {
     home: "Portfolio Cyber Security — penetration testing, security research, dan blue team defense.",
     projects: "Portofolio project Cyber Security — diambil dinamis dari Supabase.",
+    certificates: "Sertifikat Compliance & Training — bukti sertifikasi keamanan dan pelatihan teknis.",
     about: "Tentang saya — cyber security specialist dengan fokus security by design.",
     contact: "Hubungi saya — permintaan security assessment, konsultasi, atau kolaborasi.",
     projectDetail: "Detail project Cyber Security.",

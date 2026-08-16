@@ -5,6 +5,7 @@ export const en: Dictionary = {
   nav: {
     home: "Home",
     projects: "Projects",
+    certificates: "Certificates",
     about: "About",
     contact: "Contact",
     downloadCv: "Download CV",
@@ -193,6 +194,7 @@ export const en: Dictionary = {
   meta: {
     home: "Cyber Security Portfolio — penetration testing, security research, and blue team defense.",
     projects: "Cyber Security project portfolio — loaded dynamically from Supabase.",
+    certificates: "Compliance & Training certificates — proof of security certifications and technical training.",
     about: "About me — cyber security specialist focused on secure-by-design systems.",
     contact: "Get in touch — security assessment requests, consulting, or collaboration.",
     projectDetail: "Cyber Security project details.",

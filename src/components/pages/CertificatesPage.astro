@@ -1,0 +1,62 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SectionHeading from "../SectionHeading.astro";
+import CertificatesGrid from "../CertificatesGrid.astro";
+import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { siteConfig } from "../../lib/config";
+import { getCertificates } from "../../lib/data/certificates";
+
+const locale = localeFromUrl(Astro.url);
+const t = getDictionary(locale);
+
+const certificates = await getCertificates();
+
+// ===== JSON-LD: CollectionPage (daftar sertifikat) — locale-aware =====
+// Mengikuti pola inline ld+json yang sama dengan personJsonLd di
+// MainLayout. Halaman ini diindeks sebagai halaman list — Child Pages
+// tidak dibuat terpisah (kredensial tidak punya halaman detail).
+const collectionUrl = new URL(getRelativeLocaleUrl(locale, "certificates"), siteConfig.url);
+const collectionJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": collectionUrl.href,
+  url: collectionUrl.href,
+  name: t.certificates.title,
+  description: t.meta.certificates,
+  inLanguage: locale,
+  about: { "@type": "Thing", name: t.certificates.title },
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: certificates.map((cert, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "EducationalOccupationalCredential",
+        name: cert.title,
+        credentialCategory: cert.category,
+        ...(cert.credentialUrl ? { url: cert.credentialUrl } : {}),
+        issuer: { "@type": "Organization", name: cert.issuer },
+        ...(cert.issueDate ? { dateIssued: cert.issueDate } : {}),
+      },
+    })),
+  },
+};
+---
+
+<MainLayout title={t.certificates.title} description={t.meta.certificates}>
+  <div class="mx-auto max-w-5xl px-6 py-16">
+    <SectionHeading
+      eyebrow={t.certificates.eyebrow}
+      title={t.certificates.title}
+      description={t.certificates.description}
+    />
+    <CertificatesGrid certificates={certificates} />
+  </div>
+</MainLayout>
+
+<script
+  is:inline
+  type="application/ld+json"
+  set:html={JSON.stringify(collectionJsonLd)}
+></script>
