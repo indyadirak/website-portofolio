@@ -10,6 +10,7 @@ export interface Dictionary {
     certificates: string;
     about: string;
     contact: string;
+    blog: string;
     downloadCv: string;
     menu: string;
   };
@@ -25,6 +26,12 @@ export interface Dictionary {
     downloadCv: string;
     statusOpen: string;
     statusClosed: string;
+    statsLabel: string;
+    statsProjects: string;
+    statsCertificates: string;
+    statsStatus: string;
+    statsOpen: string;
+    statsClosed: string;
   };
   opsLog: {
     eyebrow: string;
@@ -63,6 +70,7 @@ export interface Dictionary {
     compliance: string;
     training: string;
     empty: string;
+    verify: string;
   };
   projects: {
     eyebrow: string;

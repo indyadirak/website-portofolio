@@ -31,14 +31,17 @@ Portfolio website untuk profesional **Cyber Security**, dibangun di atas **Astro
 ## ✨ Fitur
 
 ### 🌐 Situs Publik
-- **Landing page portfolio** — hero, featured projects, skills, about, contact
+- **Landing page portfolio** — hero, featured projects, skills, about, contact, **halaman Sertifikat** (`/certificates`, `/en/certificates`) dengan filter kategori Compliance/Training
 - **Dukungan 2 bahasa (i18n)** — Indonesia (default, tanpa prefix) & English (`/en/*`)
+- **Sitemap dinamis** — `/sitemap.xml` (route statis + detail project dari Supabase, hreflang id/en/x-default) + `Sitemap:` di robots.txt
+- **Badge verifikasi sertifikat** — link "Lihat Sertifikat Asli" ke halaman verifikasi issuer (`verification_url`)
 - **Demo data bawaan** — situs tetap tampil utuh sebelum Supabase dikonfigurasi
 - **Form kontak anti-bot** — proteksi [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/)
+- **Link Blog eksternal** — `blog.indyadirak.my.id` (Blogger) di navbar & footer, tab baru + ikon external-link
 
 ### 🔐 Admin CMS (`/admin`)
 - **Login 3 langkah** — password → kode MFA 6 digit → enroll QR (TOTP)
-- **Manajemen sertifikat** — CRUD lengkap dengan upload file (PDF/PNG/JPG/WebP/GIF, maks 5 MB)
+- **Manajemen sertifikat** — CRUD lengkap dengan upload file (PDF/PNG/JPG/WebP/GIF, maks 5 MB), kategori Compliance/Training, dan URL verifikasi opsional (`verification_url`)
 - **Validasi upload server-side** — verifikasi *magic bytes*; file dengan ekstensi bohong ditolak
 - **RBAC** — `admin` / `editor` / `viewer`; akses menu menyesuaikan peran
 - **MFA wajib (`aal2`)** untuk role `admin`/`editor` — diberlakukan di RLS database, bukan hanya UI
@@ -86,7 +89,7 @@ Portfolio website untuk profesional **Cyber Security**, dibangun di atas **Astro
 │   ├── lib/                   # auth, supabase, rateLimit, i18n, config, storage, cv, audit, api, data
 │   ├── middleware.ts          # security headers + rate limit + validasi session + guard /admin
 │   ├── pages/
-│   │   ├── index.astro, about, projects, contact, 404/403/429/500   # publik (id & en/)
+│   │   ├── index.astro, about, certificates, projects, contact, 404/403/429/500   # publik (id & en/)
 │   │   ├── admin/             # login, dashboard, backup, cv
 │   │   └── api/               # auth/*, certificates (+upload), contact, projects, backup-config, admin/cv
 │   └── styles/global.css

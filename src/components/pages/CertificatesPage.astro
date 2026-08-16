@@ -52,11 +52,10 @@ const collectionJsonLd = {
       description={t.certificates.description}
     />
     <CertificatesGrid certificates={certificates} />
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(collectionJsonLd)}
+    ></script>
   </div>
 </MainLayout>
-
-<script
-  is:inline
-  type="application/ld+json"
-  set:html={JSON.stringify(collectionJsonLd)}
-></script>

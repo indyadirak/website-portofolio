@@ -30,6 +30,9 @@ export const siteConfig = {
     availabilityStatus: "open-to-work" satisfies AvailabilityStatus,
   },
 
+  /** Blog eksternal (Blogger) — domain terpisah dari site ini, dibuka di tab baru. */
+  blogUrl: "https://blog.indyadirak.my.id",
+
   /**
    * Path file CV per bahasa. Sediakan file di public/:
    *   - public/cv-id.pdf (Bahasa Indonesia)

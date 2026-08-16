@@ -96,6 +96,7 @@ const { certificates, canWrite, isAdmin } = Astro.props;
       expiry_date?: string | null;
       category?: "compliance" | "training";
       credential_url?: string | null;
+      verification_url?: string | null;
       file_url?: string | null;
       skills: string[];
     };
@@ -112,6 +113,7 @@ const { certificates, canWrite, isAdmin } = Astro.props;
               expiryDate: cert.expiry_date,
               category: cert.category ?? "training",
               credentialUrl: cert.credential_url,
+              verificationUrl: cert.verification_url,
               fileUrl: cert.file_url,
               skills: cert.skills,
             },

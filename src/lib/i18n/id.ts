@@ -8,6 +8,7 @@ export const id: Dictionary = {
     certificates: "Sertifikat",
     about: "Tentang",
     contact: "Kontak",
+    blog: "Blog",
     downloadCv: "Unduh CV",
     menu: "menu",
   },
@@ -24,6 +25,12 @@ export const id: Dictionary = {
     downloadCv: "Unduh CV",
     statusOpen: "● system: online — open to work",
     statusClosed: "● system: online — tidak menerima proyek baru",
+    statsLabel: "Ringkasan singkat profil",
+    statsProjects: "proyek",
+    statsCertificates: "sertifikat",
+    statsStatus: "status",
+    statsOpen: "OPEN",
+    statsClosed: "CLOSED",
   },
   opsLog: {
     eyebrow: "$ cat ./operations.log",
@@ -79,6 +86,7 @@ export const id: Dictionary = {
     compliance: "Kepatuhan",
     training: "Pelatihan",
     empty: '$ echo "Belum ada sertifikat di kategori ini."',
+    verify: "Lihat Sertifikat Asli",
   },
   projects: {
     eyebrow: "$ ls -la ./projects",

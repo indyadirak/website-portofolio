@@ -17,6 +17,7 @@ interface CertificateMeta {
   category: CertificateCategory;
   expiryDate?: string | null;
   credentialUrl?: string | null;
+  verificationUrl?: string | null;
   skills: string[];
 }
 
@@ -32,6 +33,7 @@ function parseMeta(formData: FormData): CertificateMeta | null {
 
   const expiry = formData.get("expiryDate");
   const url = formData.get("credentialUrl");
+  const verificationUrl = formData.get("verificationUrl");
   const rawSkills = formData.get("skills");
   const rawCategory = formData.get("category");
   const category =
@@ -44,6 +46,7 @@ function parseMeta(formData: FormData): CertificateMeta | null {
     category,
     expiryDate: typeof expiry === "string" && expiry ? expiry : null,
     credentialUrl: typeof url === "string" && url ? url : null,
+    verificationUrl: typeof verificationUrl === "string" && verificationUrl ? verificationUrl : null,
     skills:
       typeof rawSkills === "string"
         ? rawSkills.split(",").map((s) => s.trim()).filter(Boolean)
@@ -133,6 +136,7 @@ export async function POST({ request, locals }: APIContext) {
       expiry_date: meta.expiryDate,
       category: meta.category,
       credential_url: meta.credentialUrl,
+      verification_url: meta.verificationUrl,
       skills: meta.skills,
       file_url: path,
       created_by: user.id,
@@ -230,6 +234,7 @@ export async function PUT({ request, locals }: APIContext) {
         expiry_date: meta.expiryDate,
         category: meta.category,
         credential_url: meta.credentialUrl,
+        verification_url: meta.verificationUrl,
         skills: meta.skills,
         file_url: path,
       })

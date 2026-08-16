@@ -13,6 +13,7 @@ function toCertificate(row: CertificatesRow): Certificate {
     category: row.category,
     credentialId: row.credential_id,
     credentialUrl: row.credential_url,
+    verificationUrl: row.verification_url,
     skills: row.skills,
     description: row.description,
     fileUrl: row.file_url,

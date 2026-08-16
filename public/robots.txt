@@ -12,3 +12,6 @@ Disallow: /_astro/
 # Jalur bahasa eksplisit (kanonik)
 Allow: /id/
 Allow: /en/
+
+# Sitemap dinamis (generated saat build dari route + data Supabase)
+Sitemap: https://portfolio.indyadirak.my.id/sitemap.xml

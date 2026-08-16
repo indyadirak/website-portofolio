@@ -73,6 +73,8 @@ export interface Certificate {
   category: CertificateCategory;
   credentialId: string | null;
   credentialUrl: string | null;
+  /** URL halaman verifikasi resmi issuer (misal badge Credly). Null = tidak ada. */
+  verificationUrl: string | null;
   skills: string[];
   description: string | null;
   fileUrl: string | null;
@@ -140,6 +142,7 @@ export type CertificatesRow = {
   category: CertificateCategory;
   credential_id: string | null;
   credential_url: string | null;
+  verification_url: string | null;
   skills: string[];
   description: string | null;
   file_url: string | null;
@@ -272,6 +275,7 @@ export interface Database {
           category?: CertificateCategory;
           credential_id?: string | null;
           credential_url?: string | null;
+          verification_url?: string | null;
           skills?: string[];
           description?: string | null;
           file_url?: string | null;
@@ -288,6 +292,7 @@ export interface Database {
           category?: CertificateCategory;
           credential_id?: string | null;
           credential_url?: string | null;
+          verification_url?: string | null;
           skills?: string[];
           description?: string | null;
           file_url?: string | null;

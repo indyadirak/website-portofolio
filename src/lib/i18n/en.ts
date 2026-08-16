@@ -8,6 +8,7 @@ export const en: Dictionary = {
     certificates: "Certificates",
     about: "About",
     contact: "Contact",
+    blog: "Blog",
     downloadCv: "Download CV",
     menu: "menu",
   },
@@ -24,6 +25,12 @@ export const en: Dictionary = {
     downloadCv: "Download CV",
     statusOpen: "● system: online — open to work",
     statusClosed: "● system: online — not accepting new projects",
+    statsLabel: "Profile at a glance",
+    statsProjects: "projects",
+    statsCertificates: "certificates",
+    statsStatus: "status",
+    statsOpen: "OPEN",
+    statsClosed: "CLOSED",
   },
   opsLog: {
     eyebrow: "$ cat ./operations.log",
@@ -79,6 +86,7 @@ export const en: Dictionary = {
     compliance: "Compliance",
     training: "Training",
     empty: '$ echo "No certificates in this category yet."',
+    verify: "Verify",
   },
   projects: {
     eyebrow: "$ ls -la ./projects",

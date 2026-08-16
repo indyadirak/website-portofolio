@@ -54,6 +54,15 @@
   </label>
 
   <label class="block">
+    <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">
+      Verification URL <span class="text-cyber-muted">(opsional — halaman verifikasi resmi issuer)</span>
+    </span>
+    <input id="f-verification-url" type="url"
+      class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+      placeholder="https://www.credly.com/badges/.../public_url" />
+  </label>
+
+  <label class="block">
     <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Skills (koma)</span>
     <input id="f-skills" type="text"
       class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
@@ -96,6 +105,7 @@
   const issueDate = document.getElementById("f-issue-date") as HTMLInputElement;
   const expiryDate = document.getElementById("f-expiry-date") as HTMLInputElement;
   const credentialUrl = document.getElementById("f-credential-url") as HTMLInputElement;
+  const verificationUrl = document.getElementById("f-verification-url") as HTMLInputElement;
   const skills = document.getElementById("f-skills") as HTMLInputElement;
   const category = document.getElementById("f-category") as HTMLSelectElement;
   const fileInput = document.getElementById("f-file") as HTMLInputElement;
@@ -112,6 +122,7 @@
     expiryDate?: string | null;
     category?: "compliance" | "training";
     credentialUrl?: string | null;
+    verificationUrl?: string | null;
     skills?: string[];
     fileUrl?: string | null;
   }
@@ -202,6 +213,7 @@
     issueDate.value = detail.issueDate.slice(0, 10);
     expiryDate.value = toInput(detail.expiryDate?.slice(0, 10));
     credentialUrl.value = toInput(detail.credentialUrl);
+    verificationUrl.value = toInput(detail.verificationUrl);
     skills.value = (detail.skills ?? []).join(", ");
     category.value = detail.category ?? "training";
     fileInput.value = "";
@@ -232,6 +244,7 @@
       expiryDate: expiryDate.value || null,
       category: category.value as "compliance" | "training",
       credentialUrl: credentialUrl.value.trim() || null,
+      verificationUrl: verificationUrl.value.trim() || null,
       skills: skills.value.split(",").map((s) => s.trim()).filter(Boolean),
     };
 
@@ -273,6 +286,7 @@
       formData.append("issueDate", payload.issueDate);
       if (payload.expiryDate) formData.append("expiryDate", payload.expiryDate);
       if (payload.credentialUrl) formData.append("credentialUrl", payload.credentialUrl);
+      if (payload.verificationUrl) formData.append("verificationUrl", payload.verificationUrl);
       formData.append("skills", payload.skills.join(", "));
       formData.append("category", payload.category);
 

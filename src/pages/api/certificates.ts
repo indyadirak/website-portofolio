@@ -17,6 +17,7 @@ export interface CertificateInput {
   category?: CertificateCategory;
   credentialId?: string | null;
   credentialUrl?: string | null;
+  verificationUrl?: string | null;
   skills?: string[];
   description?: string | null;
   fileUrl?: string | null;
@@ -36,6 +37,7 @@ function toRow(input: CertificateInput) {
       : "training") as CertificateCategory,
     credential_id: input.credentialId ?? null,
     credential_url: input.credentialUrl ?? null,
+    verification_url: input.verificationUrl ?? null,
     skills: input.skills ?? [],
     description: input.description ?? null,
     file_url: input.fileUrl ?? null,
