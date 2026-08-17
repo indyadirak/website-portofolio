@@ -1,0 +1,75 @@
+# Data Retention — pembersihan terjadwal (kebijakan retensi, lihat
+# docs/SECURITY_COMPLIANCE_MAPPING.md G8 & halaman /privacy):
+#   - contact_messages            : hapus pesan > 12 bulan (PII pengunjung)
+#   - login_attempts              : hapus audit login > 90 hari
+#   - backup_config_access_log    : hapus audit akses kredensial > 90 hari
+#
+# Menggunakan service_role key via PostgREST (pola sama dengan workflow
+# db-backup) — secret sudah ada di GitHub (dipakai deploy.yml). Jalankan
+# Senin 03:00 UTC, terpisah dari backup (Minggu) agar beban tidak bertumpuk.
+#
+# Aman: filter ketat by timestamp; kegagalan satu tabel tidak menggagalkan
+# tabel lain (continue-on-error per step).
+
+name: Data Retention Cleanup
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+      SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Check required secrets
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SERVICE_ROLE" ]; then
+            echo "::error::PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY belum diset di GitHub Secrets."
+            exit 1
+          fi
+
+      # Hapus PII pesan kontak lebih tua dari 12 bulan (365 hari).
+      - name: Purge contact_messages (> 365 days)
+        continue-on-error: true
+        run: |
+          CUTOFF=$(date -d "365 days ago" +%Y-%m-%dT%H:%M:%SZ)
+          RESP=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE \
+            -H "apikey: $SERVICE_ROLE" \
+            -H "Authorization: Bearer $SERVICE_ROLE" \
+            -H "Prefer: return=minimal" \
+            "$SUPABASE_URL/rest/v1/contact_messages?created_at=lt.${CUTOFF}")
+          echo "DELETE contact_messages older than $CUTOFF -> HTTP $RESP"
+          [ "$RESP" = "204" ] || { echo "::warning::purge contact_messages gagal (HTTP $RESP)"; exit 1; }
+
+      # Audit login: 90 hari (konsisten dengan backup_config_access_log).
+      - name: Purge login_attempts (> 90 days)
+        continue-on-error: true
+        run: |
+          CUTOFF=$(date -d "90 days ago" +%Y-%m-%dT%H:%M:%SZ)
+          RESP=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE \
+            -H "apikey: $SERVICE_ROLE" \
+            -H "Authorization: Bearer $SERVICE_ROLE" \
+            -H "Prefer: return=minimal" \
+            "$SUPABASE_URL/rest/v1/login_attempts?attempted_at=lt.${CUTOFF}")
+          echo "DELETE login_attempts older than $CUTOFF -> HTTP $RESP"
+          [ "$RESP" = "204" ] || { echo "::warning::purge login_attempts gagal (HTTP $RESP)"; exit 1; }
+
+      # Audit akses kredensial backup: 90 hari.
+      - name: Purge backup_config_access_log (> 90 days)
+        continue-on-error: true
+        run: |
+          CUTOFF=$(date -d "90 days ago" +%Y-%m-%dT%H:%M:%SZ)
+          RESP=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE \
+            -H "apikey: $SERVICE_ROLE" \
+            -H "Authorization: Bearer $SERVICE_ROLE" \
+            -H "Prefer: return=minimal" \
+            "$SUPABASE_URL/rest/v1/backup_config_access_log?attempted_at=lt.${CUTOFF}")
+          echo "DELETE backup_config_access_log older than $CUTOFF -> HTTP $RESP"
+          [ "$RESP" = "204" ] || { echo "::warning::purge backup_config_access_log gagal (HTTP $RESP)"; exit 1; }

@@ -40,6 +40,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Audit kerentanan dependensi — gagalkan deploy bila ada kerentanan
+      # high/critical pada lockfile (lapis di atas dependency-review yang
+      # hanya berjalan di PR; ini menutup push langsung & workflow_dispatch).
+      - name: npm audit (high/critical gate)
+        run: npm audit --audit-level=high
+
       # ===== Build-time env =====
       # PUBLIC_* dibaca via import.meta.env dan di-INLINE saat build
       # (src/lib/supabase.ts, src/lib/config.ts). TURNSTILE_SECRET_KEY
@@ -85,6 +91,37 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
         run: echo "$PUBLIC_SUPABASE_URL" | npx wrangler secret put SUPABASE_URL
+
+      # ===== Verifikasi pasca-deploy: security headers di produksi =====
+      # Regresi CSP/header (mis. perubahan build config) hanya terdeteksi
+      # dengan benar di response SSR produksi — cek di sini, gagalkan run
+      # bila salah satu header wajib hilang. Retry untuk penyebaran edge.
+      - name: Verify security headers (production)
+        env:
+          PROD_URL: ${{ vars.PROD_URL || 'https://portfolio.indyadirak.my.id' }}
+        run: |
+          for i in 1 2 3 4 5; do
+            if curl -sS -o /dev/null -A "header-check" "$PROD_URL" && \
+               H="$(curl -sSI -A "header-check" "$PROD_URL")"; then
+              echo "attempt $i: fetch OK"; break
+            fi
+            [ "$i" -lt 5 ] && sleep 10
+          done
+          missing=0
+          assert() {
+            if ! printf '%s' "$H" | grep -qi "$1"; then
+              echo "::error::Header hilang: $1"; missing=1
+            else
+              echo "OK: $1"
+            fi
+          }
+          assert "content-security-policy"
+          assert "strict-transport-security"
+          assert "x-content-type-options: nosniff"
+          assert "x-frame-options: deny"
+          exit $missing
+
+      # ===== Secrets runtime untuk Google Drive backup offload (3-2-1) =====
 
       # service_role key — dipakai endpoint /api/backup-config (server-side)
       # untuk membaca konfigurasi Drive saat workflow backup menjalankan

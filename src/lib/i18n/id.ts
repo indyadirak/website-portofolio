@@ -175,6 +175,52 @@ export const id: Dictionary = {
     rights: "All rights reserved.",
     github: "GitHub",
     linkedin: "LinkedIn",
+    privacy: "Kebijakan Privasi",
+  },
+  privacy: {
+    eyebrow: "// privasi",
+    title: "Kebijakan Privasi",
+    lastUpdated: "Terakhir diperbarui: 17 Agustus 2026",
+    sections: {
+      collectedTitle: "1. Data yang dikumpulkan",
+      collected: [
+        "Form kontak: nama, alamat email, dan isi pesan yang Anda kirimkan. Data ini dikirimkan langsung ke server kami melalui endpoint /api/contact.",
+        "Situs ini TIDAK menggunakan cookie pelacakan, analitik pihak ketiga, atau pengumpul data iklan.",
+        "Halaman admin menggunakan cookie sesi (HttpOnly) — hanya saat Anda login sebagai admin/editor/viewer.",
+      ],
+      purposeTitle: "2. Tujuan penggunaan",
+      purpose: [
+        "Data dari form kontak hanya digunakan untuk merespons pesan Anda. Data tidak digunakan untuk pemasaran, profiling, atau kepentingan lain di luar itu.",
+      ],
+      storageTitle: "3. Penyimpanan & keamanan",
+      storage: [
+        "Data disimpan di Supabase (Postgres hosted) dengan enkripsi in-transit (TLS) dan kontrol akses berbasis peran (RLS) di level database.",
+        "Akses ke data pesan dibatasi pada pemilik situs (admin).",
+      ],
+      retentionTitle: "4. Retensi data",
+      retention: [
+        "Pesan kontak dihapus otomatis setelah 12 bulan sejak dikirim, oleh proses pembersihan terjadwal mingguan.",
+        "Log percobaan login & akses (audit trail) disimpan maksimal 90 hari.",
+        "Backup database dienkripsi (GPG/AES-256) dan disimpan maksimal 12 minggu di lokasi off-site.",
+      ],
+      sharingTitle: "5. Pembagian data",
+      sharing: [
+        "Data tidak dijual, tidak disewakan, dan tidak dibagikan ke pihak ketiga — kecuali penyedia infrastruktur yang wajib memprosesnya (Supabase, Cloudflare) dengan perjanjian layanan standar.",
+        "Halaman kontak memakai verifikasi anti-bot Cloudflare Turnstile; token diproses oleh Cloudflare sesuai kebijakannya sendiri.",
+      ],
+      cookiesTitle: "6. Cookie",
+      cookies: [
+        "Cookie sesi hanya dibuat saat login ke area admin (HttpOnly, tidak dapat dibaca JavaScript). Pengunjung situs publik tidak menerima cookie apa pun.",
+      ],
+      rightsTitle: "7. Hak Anda",
+      rights: [
+        "Anda berhak meminta akses, koreksi, atau penghapusan data pribadi Anda kapan saja — cukup hubungi kami melalui email di halaman kontak.",
+      ],
+      contactTitle: "8. Kontak",
+      contact: [
+        "Pertanyaan seputar kebijakan ini: silakan gunakan form kontak di situs ini.",
+      ],
+    },
   },
   notFound: {
     title: "404 — Not Found",

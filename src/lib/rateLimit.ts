@@ -46,6 +46,28 @@ const BACKUP_CONFIG_WINDOW_SEC = Math.max(
 
 /**
  * =====================================================================
+ * KONSTANTA RATE LIMIT VERIFIKASI MFA (mfa-verify & mfa-enroll-verify).
+ * Kode TOTP 6 digit mudah ditebak ulang; Supabase punya throttle bawaan,
+ * tapi lapisan aplikasi ditambah di sini supaya kendali & logika lockout
+ * konsisten dengan endpoint sensitif lain.
+ * =====================================================================
+ */
+export const MFA_VERIFY_LIMITS = {
+  /** Maks percobaan GAGAL (kode 6 digit salah) per-IP per window. */
+  IP_MAX_FAILURES: 10,
+  /** Jendela hitung (10 menit, sama dengan login). */
+  WINDOW_MS: 10 * 60 * 1000,
+  /** Buffer TTL key agar window sempat terbaca saat mau kedaluwarsa. */
+  TTL_BUFFER_SEC: 60,
+} as const;
+
+const MFA_VERIFY_WINDOW_SEC = Math.max(
+  1,
+  Math.ceil(MFA_VERIFY_LIMITS.WINDOW_MS / 1000)
+);
+
+/**
+ * =====================================================================
  * KONSTANTA RATE LIMIT NAVIGASI HALAMAN (middleware SSR).
  * Melindungi halaman HTML (bukan API — tiap endpoint punya guard sendiri)
  * dari hammering/scraping. Fail-OPEN: kalau KV tidak tersedia, navigasi
@@ -75,6 +97,7 @@ function lockoutDurationMs(level: number): number {
 //   ratelimit:loginc:<ip>:<email>             counter percobaan login per-IP+email (3x/10m)
 //   ratelimit:lockout:<ip>:<email>            state lockout progresif {level, until}
 //   ratelimit:backupcfg:<ip>                  counter token salah /api/backup-config (5x/10m)
+//   ratelimit:mfaip:<ip>                      counter kode MFA salah (10x/10m)
 //   ratelimit:pagenav:<ip>                    counter navigasi halaman HTML (60x/1m)
 const KEY = {
   contact: "ratelimit:contact:",
@@ -82,6 +105,7 @@ const KEY = {
   loginCred: "ratelimit:loginc:",
   loginLockout: "ratelimit:lockout:",
   backupConfig: "ratelimit:backupcfg:",
+  mfaIp: "ratelimit:mfaip:",
   pageNav: "ratelimit:pagenav:",
 } as const;
 
@@ -442,6 +466,118 @@ export const backupConfigAttemptGuard = {
       await kv.delete(storageKey);
     } catch (err) {
       console.error("[backupcfg-guard] KV delete gagal saat recordSuccess:", err);
+    }
+  },
+};
+
+// =====================================================================
+// MFA VERIFY GUARD — proteksi endpoint /api/auth/mfa-verify &
+// /api/auth/mfa-enroll-verify (verifikasi kode TOTP 6 digit).
+//   * Hanya menghitung percobaan GAGAL (kode salah) per-IP per window.
+//   * Sukses (kode benar) MERESET counter.
+//   * FAIL-CLOSED: kalau KV tidak tersedia/gagal saat CHECK, request
+//     DITOLAK (reason "kv_unavailable" -> endpoint balas 503).
+//     (Fallback in-memory hanya aktif di dev — tidak pernah di produksi.)
+// =====================================================================
+export type MfaBlockedReason = "rate_limited" | "kv_unavailable";
+
+export interface MfaRateDecision {
+  allowed: boolean;
+  reason?: MfaBlockedReason;
+  retryAfterSec?: number;
+}
+
+export const mfaVerifyGuard = {
+  // Fallback dev-only in-memory (identik behavior, tanpa KV).
+  _dev: new Map<string, Entry>(),
+
+  async check(ip: string): Promise<MfaRateDecision> {
+    const kv = env.RATE_LIMIT_KV;
+    const now = Date.now();
+    const storageKey = KEY.mfaIp + ip;
+    const windowMs = MFA_VERIFY_LIMITS.WINDOW_MS;
+
+    if (!kv) {
+      if (!import.meta.env.DEV) {
+        console.error(
+          "[mfa-guard] RATE_LIMIT_KV tidak tersedia — FAIL CLOSED: verifikasi ditolak."
+        );
+        return { allowed: false, reason: "kv_unavailable" };
+      }
+      const entry = this._dev.get(storageKey);
+      if (entry && inWindow(entry, now, windowMs) && entry.count >= MFA_VERIFY_LIMITS.IP_MAX_FAILURES) {
+        return {
+          allowed: false,
+          reason: "rate_limited",
+          retryAfterSec: Math.ceil((entry.windowStart + windowMs - now) / 1000),
+        };
+      }
+      return { allowed: true };
+    }
+
+    try {
+      const entry = parseEntry(await kv.get(storageKey));
+      if (entry && inWindow(entry, now, windowMs) && entry.count >= MFA_VERIFY_LIMITS.IP_MAX_FAILURES) {
+        return {
+          allowed: false,
+          reason: "rate_limited",
+          retryAfterSec: Math.ceil((entry.windowStart + windowMs - now) / 1000),
+        };
+      }
+      return { allowed: true };
+    } catch (err) {
+      console.error("[mfa-guard] KV read gagal — FAIL CLOSED:", err);
+      return { allowed: false, reason: "kv_unavailable" };
+    }
+  },
+
+  /** Panggil SETELAH kode MFA terbukti salah — increment counter per-IP. */
+  async recordFailure(ip: string): Promise<void> {
+    const kv = env.RATE_LIMIT_KV;
+    const now = Date.now();
+    const storageKey = KEY.mfaIp + ip;
+    const windowMs = MFA_VERIFY_LIMITS.WINDOW_MS;
+
+    if (!kv) {
+      if (import.meta.env.DEV) {
+        const entry = this._dev.get(storageKey);
+        this._dev.set(
+          storageKey,
+          entry && inWindow(entry, now, windowMs)
+            ? { count: entry.count + 1, windowStart: entry.windowStart }
+            : { count: 1, windowStart: now }
+        );
+      }
+      return;
+    }
+
+    try {
+      const entry = parseEntry(await kv.get(storageKey));
+      const next = entry && inWindow(entry, now, windowMs)
+        ? { count: entry.count + 1, windowStart: entry.windowStart }
+        : { count: 1, windowStart: now };
+      await kv.put(storageKey, JSON.stringify(next), {
+        expirationTtl: MFA_VERIFY_WINDOW_SEC + MFA_VERIFY_LIMITS.TTL_BUFFER_SEC,
+      });
+    } catch (err) {
+      console.error("[mfa-guard] KV write gagal saat recordFailure:", err);
+    }
+  },
+
+  /** Panggil SETELAH kode MFA terbukti benar — reset counter per-IP. */
+  async recordSuccess(ip: string): Promise<void> {
+    const kv = env.RATE_LIMIT_KV;
+    const storageKey = KEY.mfaIp + ip;
+
+    if (!kv) {
+      if (import.meta.env.DEV) this._dev.delete(storageKey);
+      return;
+    }
+
+    try {
+      await kv.delete(storageKey);
+    } catch (err) {
+      console.error("[mfa-guard] KV delete gagal saat recordSuccess:", err);
     }
   },
 };

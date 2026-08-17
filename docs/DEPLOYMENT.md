@@ -8,15 +8,11 @@
 > sinkronisasi dokumen ini bagian rutin dari setiap penambahan fitur besar,
 > bukan pekerjaan terpisah yang gampang terlupa.
 >
-> Sinkronisasi terakhir: sesi perbaikan pre-deploy — sertifikat kategori
-> (Compliance/Training), halaman `/certificates` terpisah, badge verifikasi
-> (`verification_url`), sitemap dinamis (`/sitemap.xml`), link Blog eksternal,
-> fix `assetsInlineLimit: 0` (CSP), nanoid 3.3.18 (CVE-2026-67213), fitur
-> sertifikat lengkap (`issue_date` default, `is_featured`, `expiry_date` badge
-> valid/kedaluwarsa, `short_description_id/en`), file gabungan
-> `supabase/00-full-migration.sql` (satu transaksi, fresh install) + koreksi
-> urutan migrasi: `rbac-mfa.sql` wajib sebelum `schema.sql` (policy schema
-> mereferensikan `public.profiles`).
+> Sinkronisasi terakhir: sesi audit keamanan (SECURITY_COMPLIANCE_MAPPING.md)
+> — halaman `/privacy` (id/en), rate limit MFA, step CI `npm audit` +
+> verifikasi security headers pasca-deploy, workflow SBOM, workflow retensi
+> data mingguan, dokumen RTO/RPO & retensi (§8), README urutan migrasi
+> dikoreksi (rbac-mfa pertama).
 
 Versi infrastruktur saat ini:
 - Runtime: **Cloudflare Workers (Static Assets)** — adapter `@astrojs/cloudflare`
@@ -181,8 +177,30 @@ npx wrangler secret put GDRIVE_CONFIG_ENCRYPTION_SECRET
 - [ ] File muncul di folder Drive (ber-timestamp, tidak menimpa); file > 12 minggu otomatis terhapus
 - [ ] **Restore test**: download artifact + file Drive → `gpg --decrypt --passphrase "<BACKUP_ENCRYPTION_KEY>"` menghasilkan `.sql` yang valid
 - [ ] Jadwal cron aktif: Minggu 02:00 UTC
+- [ ] **Security headers (CI otomatis)**: step "Verify security headers (production)" di deploy.yml lolos (CSP, HSTS, nosniff, X-Frame-Options wajib ada)
 
-## 8. Operasional
+## 8. Kebijakan pemulihan & retensi (RTO/RPO)
+
+Target yang dianut project ini (dokumentasi, bukan kontrak):
+
+| Metrik | Target | Basis |
+|---|---|---|
+| **RPO** (Recovery Point Objective) | ≤ 7 hari | Backup otomatis tiap Minggu 02:00 UTC; kehilangan data maksimal 1 minggu terakhir |
+| **RTO** (Recovery Time Objective) | ≤ 1 hari | Restore: `gpg --decrypt` + `psql` ke project Supabase baru + `npx wrangler deploy` — prosedur & runbook restore ada di §7 checklist ini |
+
+- [ ] **Drill restore (minimal 1× per 3 bulan)**: jalankan penuh langkah berikut ke **project Supabase sementara** lalu catat hasilnya di bawah:
+      1. Unduh artifact terbaru (`Actions → Database Backup → artifact`) atau file `.gpg` dari Drive
+      2. `gpg --batch --yes --decrypt --passphrase "<BACKUP_ENCRYPTION_KEY>" -o backup.sql backup.sql.gpg`
+      3. `psql "$SESSION_POOLER_URL_DUMP_TARGET" -f backup.sql` (bisa sebagian per-tabel bila perlu)
+      4. Verifikasi: jumlah baris `projects`/`certificates`/`contact_messages` > 0; tabel `profiles` isi ulang manual (backup skema `public` saja — user auth milik Supabase)
+      5. Catat tanggal drill & hasil: **drill terakhir: — / hasil: —**
+- [ ] **Retensi data** (ditegakkan otomatis oleh workflow `data-retention.yml`, Senin 03:00 UTC):
+      - `contact_messages` (PII pengunjung): **12 bulan** sejak `created_at`
+      - `login_attempts` & `backup_config_access_log` (audit): **90 hari** sejak `attempted_at`
+      - Backup artefak GitHub: **30 hari**; salinan Drive: **12 minggu**
+- [ ] Kebijakan privasi pengunjung dipublikasikan di `/privacy` & `/en/privacy` (link footer) — sinkronkan isi (retensi 12 bulan, 90 hari, 12 minggu) bila angka di atas berubah
+
+## 9. Operasional
 
 - [ ] Rotasi: `TURNSTILE_SECRET_KEY` / `BACKUP_FETCH_TOKEN` / `GDRIVE_CONFIG_ENCRYPTION_SECRET` → update GitHub secret → run deploy.yml (secret disalin otomatis ke Worker). **Catatan**: rotasi `GDRIVE_CONFIG_ENCRYPTION_SECRET` membuat key SA yang tersimpan tidak bisa didekripsi → simpan ulang via GUI setelah rotasi
 - [ ] Backup berjalan otomatis tiap Minggu — tidak perlu tindakan kecuali ada failure alert di Actions

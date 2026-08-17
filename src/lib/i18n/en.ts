@@ -175,6 +175,52 @@ export const en: Dictionary = {
     rights: "All rights reserved.",
     github: "GitHub",
     linkedin: "LinkedIn",
+    privacy: "Privacy Policy",
+  },
+  privacy: {
+    eyebrow: "// privacy",
+    title: "Privacy Policy",
+    lastUpdated: "Last updated: August 17, 2026",
+    sections: {
+      collectedTitle: "1. Data we collect",
+      collected: [
+        "Contact form: your name, email address, and the message you submit. This data is sent directly to our server via the /api/contact endpoint.",
+        "This site does NOT use tracking cookies, third-party analytics, or ad networks.",
+        "The admin area uses a session cookie (HttpOnly) — only when you log in as admin/editor/viewer.",
+      ],
+      purposeTitle: "2. Purpose of use",
+      purpose: [
+        "Contact form data is used solely to respond to your message. It is never used for marketing, profiling, or any other purpose.",
+      ],
+      storageTitle: "3. Storage & security",
+      storage: [
+        "Data is stored in Supabase (hosted Postgres) with TLS encryption in transit and role-based access control (RLS) enforced at the database level.",
+        "Access to message data is restricted to the site owner (admin).",
+      ],
+      retentionTitle: "4. Data retention",
+      retention: [
+        "Contact messages are automatically deleted 12 months after submission by a weekly scheduled cleanup job.",
+        "Login & access audit logs are kept for a maximum of 90 days.",
+        "Database backups are encrypted (GPG/AES-256) and kept off-site for a maximum of 12 weeks.",
+      ],
+      sharingTitle: "5. Data sharing",
+      sharing: [
+        "Data is never sold, rented, or shared with third parties — except the infrastructure providers required to process it (Supabase, Cloudflare) under standard service agreements.",
+        "The contact page uses Cloudflare Turnstile bot verification; tokens are processed by Cloudflare under its own policy.",
+      ],
+      cookiesTitle: "6. Cookies",
+      cookies: [
+        "Session cookies are only created when logging into the admin area (HttpOnly, unreadable by JavaScript). Public visitors receive no cookies.",
+      ],
+      rightsTitle: "7. Your rights",
+      rights: [
+        "You may request access, correction, or deletion of your personal data at any time — just reach out via the contact page email.",
+      ],
+      contactTitle: "8. Contact",
+      contact: [
+        "Questions about this policy: please use the contact form on this site.",
+      ],
+    },
   },
   notFound: {
     title: "404 — Not Found",

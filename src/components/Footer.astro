@@ -40,6 +40,12 @@ const t = getDictionary(locale);
       >
         [{t.footer.linkedin}]
       </a>
+      <a
+        href={locale === "en" ? "/en/privacy" : "/privacy"}
+        class="flex min-h-11 items-center rounded px-3 text-cyber-muted transition-colors hover:bg-cyber-card hover:text-cyber-primary"
+      >
+        [{t.footer.privacy}]
+      </a>
     </div>
   </div>
 </footer>

@@ -9,7 +9,7 @@ Portfolio website untuk profesional **Cyber Security**, dibangun di atas **Astro
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
-[![License](https://img.shields.io/badge/License-TBD-555?style=flat-square)]()
+[![License](https://img.shields.io/badge/License-MIT-brightgreen?style=flat-square)](LICENSE)
 
 </div>
 
@@ -120,7 +120,8 @@ cp .env.example .env
 
 # 3. Jalankan SQL di Supabase SQL Editor
 #    Urutan wajib — lihat docs/DEPLOYMENT.md §1
-#    (schema → rbac-mfa → storage → sisanya)
+#    (rbac-mfa PERTAMA → schema → storage → sisanya; atau sekali jalan
+#    pakai file gabungan supabase/00-full-migration.sql)
 
 # 4. Jalankan dev server
 npm run dev
@@ -208,7 +209,9 @@ Cara memverifikasi kunci secret TIDAK bocor ke bundle: `rg "SUPABASE_SERVICE_ROL
 
 ## 📄 Lisensi
 
-Belum ditentukan — silakan hubungi pemilik repository sebelum menggunakan ulang.
+Dilisensikan di bawah [MIT License](LICENSE) — boleh digunakan, dimodifikasi,
+dan didistribusikan ulang dengan syarat menyertakan lisensi & atribusi;
+tanpa jaminan apa pun (lihat LICENSE untuk detail).
 
 ---
 

@@ -1,0 +1,50 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SectionHeading from "../SectionHeading.astro";
+import { getDictionary, localeFromUrl } from "../../lib/i18n";
+
+const locale = localeFromUrl(Astro.url);
+const t = getDictionary(locale);
+
+const sections = [
+  { title: t.privacy.sections.collectedTitle, items: t.privacy.sections.collected },
+  { title: t.privacy.sections.purposeTitle, items: t.privacy.sections.purpose },
+  { title: t.privacy.sections.storageTitle, items: t.privacy.sections.storage },
+  { title: t.privacy.sections.retentionTitle, items: t.privacy.sections.retention },
+  { title: t.privacy.sections.sharingTitle, items: t.privacy.sections.sharing },
+  { title: t.privacy.sections.cookiesTitle, items: t.privacy.sections.cookies },
+  { title: t.privacy.sections.rightsTitle, items: t.privacy.sections.rights },
+  { title: t.privacy.sections.contactTitle, items: t.privacy.sections.contact },
+];
+---
+
+<MainLayout
+  title={t.privacy.title}
+  description={t.privacy.eyebrow}
+>
+  <div class="mx-auto max-w-3xl px-6 py-16">
+    <SectionHeading
+      eyebrow={t.privacy.eyebrow}
+      title={t.privacy.title}
+      description={t.privacy.lastUpdated}
+    />
+
+    <div class="mt-8 space-y-6">
+      {
+        sections.map((section) => (
+          <div class="rounded border border-cyber-border bg-cyber-card p-6 md:p-8">
+            <p class="font-mono text-sm text-cyber-accent">{section.title}</p>
+            <ul class="mt-3 space-y-2 font-mono text-sm text-slate-300">
+              {section.items.map((item) => (
+                <li class="flex gap-2">
+                  <span class="text-cyber-primary">$</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</MainLayout>

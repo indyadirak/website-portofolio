@@ -143,6 +143,30 @@ export interface Dictionary {
     rights: string;
     github: string;
     linkedin: string;
+    privacy: string;
+  };
+  privacy: {
+    eyebrow: string;
+    title: string;
+    lastUpdated: string;
+    sections: {
+      collectedTitle: string;
+      collected: string[];
+      purposeTitle: string;
+      purpose: string[];
+      storageTitle: string;
+      storage: string[];
+      retentionTitle: string;
+      retention: string[];
+      sharingTitle: string;
+      sharing: string[];
+      cookiesTitle: string;
+      cookies: string[];
+      rightsTitle: string;
+      rights: string[];
+      contactTitle: string;
+      contact: string[];
+    };
   };
   notFound: {
     title: string;
