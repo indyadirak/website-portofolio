@@ -21,7 +21,7 @@ export const prerender = true;
 const site = siteConfig.url.replace(/\/+$/, "");
 
 /** Halaman statis publik (path relatif; "" = beranda). */
-const STATIC_PATHS = ["", "projects", "certificates", "about", "contact", "privacy"] as const;
+const STATIC_PATHS = ["", "projects", "certificates", "about", "contact", "privacy", "security", "writeups"] as const;
 
 function escapeXml(value: string): string {
   return value

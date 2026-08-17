@@ -144,6 +144,8 @@ export interface Dictionary {
     github: string;
     linkedin: string;
     privacy: string;
+    security: string;
+    writeups: string;
   };
   privacy: {
     eyebrow: string;
@@ -167,6 +169,41 @@ export interface Dictionary {
       contactTitle: string;
       contact: string[];
     };
+  };
+  security: {
+    eyebrow: string;
+    title: string;
+    lastUpdated: string;
+    sections: {
+      architectureTitle: string;
+      architecture: string[];
+      headersTitle: string;
+      headers: string[];
+      authenticationTitle: string;
+      authentication: string[];
+      dataProtectionTitle: string;
+      dataProtection: string[];
+      decisionsTitle: string;
+      decisions: string[];
+      threatModelTitle: string;
+      threatModel: string[];
+      disclosureTitle: string;
+      disclosure: string[];
+    };
+  };
+  writeups: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    emptyNote: string;
+    cards: Array<{
+      title: string;
+      platform: string;
+      category: string;
+      date: string;
+      status: string;
+      link?: string;
+    }>;
   };
   notFound: {
     title: string;

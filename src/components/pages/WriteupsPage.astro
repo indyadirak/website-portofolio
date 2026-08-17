@@ -1,0 +1,61 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SectionHeading from "../SectionHeading.astro";
+import { getDictionary, localeFromUrl } from "../../lib/i18n";
+
+const locale = localeFromUrl(Astro.url);
+const t = getDictionary(locale);
+---
+
+<MainLayout title={t.writeups.title} description={t.writeups.eyebrow}>
+  <div class="mx-auto max-w-4xl px-6 py-16">
+    <SectionHeading
+      eyebrow={t.writeups.eyebrow}
+      title={t.writeups.title}
+      description={t.writeups.subtitle}
+    />
+
+    <div class="mt-8 grid gap-5 md:grid-cols-2">
+      {
+        t.writeups.cards.map((card) => {
+          const inner = (
+            <>
+              <p class="font-mono text-sm font-semibold text-slate-200">{card.title}</p>
+              <div class="mt-3 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-wider">
+                <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-cyber-primary">
+                  {card.platform}
+                </span>
+                <span class="rounded border border-cyber-border px-2 py-0.5 text-cyber-muted">
+                  {card.category}
+                </span>
+                <span class="rounded border border-cyber-border px-2 py-0.5 text-cyber-muted">
+                  {card.date}
+                </span>
+              </div>
+              <p class="mt-3 font-mono text-xs text-amber-300">{card.status}</p>
+            </>
+          );
+
+          return card.link ? (
+            <a
+              href={card.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex flex-col rounded border border-cyber-border bg-cyber-card p-6 transition-colors hover:border-cyber-accent"
+            >
+              {inner}
+            </a>
+          ) : (
+            <div class="flex flex-col rounded border border-cyber-border bg-cyber-card p-6">
+              {inner}
+            </div>
+          );
+        })
+      }
+    </div>
+
+    <p class="mt-8 rounded border border-cyber-border bg-cyber-card p-4 font-mono text-xs text-cyber-muted">
+      {t.writeups.emptyNote}
+    </p>
+  </div>
+</MainLayout>
