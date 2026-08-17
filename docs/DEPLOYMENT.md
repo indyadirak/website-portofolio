@@ -191,8 +191,9 @@ Target yang dianut project ini (dokumentasi, bukan kontrak):
 
 - [ ] **Drill restore (minimal 1× per 3 bulan)**: jalankan penuh langkah berikut ke **project Supabase sementara** lalu catat hasilnya di bawah:
       1. Unduh artifact terbaru (`Actions → Database Backup → artifact`) atau file `.gpg` dari Drive
-      2. `gpg --batch --yes --decrypt --passphrase "<BACKUP_ENCRYPTION_KEY>" -o backup.sql backup.sql.gpg`
-      3. `psql "$SESSION_POOLER_URL_DUMP_TARGET" -f backup.sql` (bisa sebagian per-tabel bila perlu)
+      2. Dekripsi + restore + verifikasi baris — otomatis oleh skrip:
+         `$env:BACKUP_ENCRYPTION_KEY="..."; $env:TARGET_DB_URL="postgresql://...scratch..."; .\scripts\restore-test.ps1` → target `RESTORE TEST: PASS`
+      3. Manual (alternatif bila tanpa skrip): `gpg --batch --yes --decrypt --passphrase "<BACKUP_ENCRYPTION_KEY>" -o backup.sql backup.sql.gpg` lalu `psql "$SESSION_POOLER_URL_DUMP_TARGET" -f backup.sql` (bisa sebagian per-tabel bila perlu)
       4. Verifikasi: jumlah baris `projects`/`certificates`/`contact_messages` > 0; tabel `profiles` isi ulang manual (backup skema `public` saja — user auth milik Supabase)
       5. Catat tanggal drill & hasil: **drill terakhir: — / hasil: —**
 - [ ] **Retensi data** (ditegakkan otomatis oleh workflow `data-retention.yml`, Senin 03:00 UTC):
