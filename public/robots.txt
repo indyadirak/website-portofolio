@@ -1,5 +1,5 @@
 # website-portofolio — robots.txt
-# Struktur URL dua bahasa: /id/ (Indonesia, default) & /en/ (Inggris)
+# Struktur URL dua bahasa: / (Indonesia, default, tanpa prefix) & /en/ (Inggris)
 
 User-agent: *
 Allow: /
@@ -9,8 +9,7 @@ Disallow: /admin
 Disallow: /api
 Disallow: /_astro/
 
-# Jalur bahasa eksplisit (kanonik)
-Allow: /id/
+# Jalur bahasa eksplisit (kanonik): id tanpa prefix, en dengan prefix
 Allow: /en/
 
 # Sitemap dinamis (generated saat build dari route + data Supabase)
