@@ -235,7 +235,7 @@ Kesimpulan:
    `dist/client/_headers` (2 rules; adapter meng-inject `/_astro/*`).
 3. Batasan jujur: pengujian dilakukan pada runtime local workerd (model
    pengiriman identik dengan produksi Workers Static Assets), bukan curl ke
-   domain live — domain `portfolio.indyadirak.my.id` tidak resolve dari mesin
+   domain live — domain `portofolio.indyadirak.my.id` tidak resolve dari mesin
    audit (DNS kustom belum/tdk terhubung dari jaringan ini). Verifikasi live
    final ada di CI: step **"Verify security headers (production)"** di
    `deploy.yml` kini memeriksa DUA jalur: `/` (SSR) dan `/certificates`

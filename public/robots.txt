@@ -14,4 +14,4 @@ Allow: /id/
 Allow: /en/
 
 # Sitemap dinamis (generated saat build dari route + data Supabase)
-Sitemap: https://portfolio.indyadirak.my.id/sitemap.xml
+Sitemap: https://portofolio.indyadirak.my.id/sitemap.xml

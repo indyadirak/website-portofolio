@@ -12,7 +12,7 @@ export const siteConfig = {
   /** Nama situs / brand. */
   name: "CyberSec",
   /** Domain produksi (ganti saat deploy; dipakai untuk canonical & og:url). */
-  url: "https://portfolio.indyadirak.my.id",
+  url: "https://portofolio.indyadirak.my.id",
 
   author: {
     name: "Indy Adira Khalfani",

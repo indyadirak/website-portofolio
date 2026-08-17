@@ -104,7 +104,7 @@ jobs:
       #   /certificates -> prerender (statis; header dari _headers)
       - name: Verify security headers (production)
         env:
-          PROD_URL: ${{ vars.PROD_URL || 'https://portfolio.indyadirak.my.id' }}
+          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.my.id' }}
         run: |
           for path in "/" "/certificates"; do
             ok=0

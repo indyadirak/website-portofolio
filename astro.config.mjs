@@ -7,7 +7,7 @@ import cloudflare from '@astrojs/cloudflare';
 // https://astro.build/config
 export default defineConfig({
   // Domain produksi (dipakai untuk canonical & og:url)
-  site: 'https://portfolio.indyadirak.my.id',
+  site: 'https://portofolio.indyadirak.my.id',
   output: 'server',
   // Cloudflare Pages (workerd). Bindings (KV, secrets) diakses via
   // `import { env } from "cloudflare:workers"` — lihat src/env.d.ts.
