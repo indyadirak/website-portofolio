@@ -202,6 +202,24 @@ Target yang dianut project ini (dokumentasi, bukan kontrak):
       - Backup artefak GitHub: **30 hari**; salinan Drive: **12 minggu**
 - [ ] Kebijakan privasi pengunjung dipublikasikan di `/privacy` & `/en/privacy` (link footer) — sinkronkan isi (retensi 12 bulan, 90 hari, 12 minggu) bila angka di atas berubah
 
+### 8.1 Pemulihan akses admin — ponsel (TOTP) hilang/rusak
+
+Skenario: aplikasi authenticator tidak bisa diakses → login admin terkunci di lapisan MFA aplikasi.
+
+**Yang TIDAK hilang**: akses ke **data** tetap terbuka lewat jalur alternatif — Dashboard Supabase (login email/password, tanpa MFA aplikasi) dan backup GPG terenkripsi. Runbook ini hanya memulihkan **akses ke CMS/Worker app**.
+
+- [ ] **Jalur GUI** (disarankan): `https://supabase.com/dashboard` → project → **Authentication → Users** → pilih user admin → tab **Factors** → hapus faktor TOTP yang ada
+      → logout/login ulang di `/admin/login` → **enroll MFA baru** (QR baru) di `/admin/mfa`
+- [ ] **Jalur SQL** (bila GUI faktor tidak tersedia): SQL Editor →
+      ```sql
+      select id, user_id, factor_type, created_at from auth.mfa_factors;
+      -- lalu hapus faktor baris admin (ganti <factor-id>):
+      delete from auth.mfa_factors where id = '<factor-id>';
+      ```
+      lalu login ulang + enroll ulang seperti jalur GUI
+- [ ] **Pencegahan**: simpan QR/secret TOTP cadangan di password manager saat enroll pertama — **recovery codes belum diimplementasikan** (gap terbuka, lihat laporan §4.1)
+- [ ] Role `viewer` tidak terpengaruh (tidak butuh MFA); rate limiter Worker tidak membatasi jalur pemulihan ini karena lewat Dashboard, bukan Worker
+
 ## 9. Operasional
 
 - [ ] Rotasi: `TURNSTILE_SECRET_KEY` / `BACKUP_FETCH_TOKEN` / `GDRIVE_CONFIG_ENCRYPTION_SECRET` → update GitHub secret → run deploy.yml (secret disalin otomatis ke Worker). **Catatan**: rotasi `GDRIVE_CONFIG_ENCRYPTION_SECRET` membuat key SA yang tersimpan tidak bisa didekripsi → simpan ulang via GUI setelah rotasi

@@ -188,6 +188,7 @@ Rekomendasi di atas yang telah dieksekusi (commit/sesi berikutnya, lihat git log
 | 7. Lisensi (G7) | ✅ Selesai — LICENSE MIT + README diperbarui |
 | 8. Branch protection (G6) | ⏳ Tergantung pengaturan GitHub — verifikasi read-only, bukan bagian repo |
 | 9. Kebijakan retensi tertulis + purge (G8) | ✅ Selesai — workflow `data-retention.yml` (contact_messages 12 bulan, audit 90 hari) + dokumen §8 DEPLOYMENT.md |
+| 10. Pemulihan MFA tanpa ponsel (temuan stress-test) | ✅ Runbook pemulihan di `docs/DEPLOYMENT.md` §8.1 (GUI + SQL, bagaimana jalur Dashboard tidak terpengaruh rate limiter) — **recovery codes tetap gap terbuka** (tidak diimplementasikan; mitigasi: simpan QR cadangan di password manager) |
 
 Catatan: evaluasi ulang disarankan setelah **drill restore pertama** dilakukan (§8 DEPLOYMENT.md).
 

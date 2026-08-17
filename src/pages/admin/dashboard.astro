@@ -28,6 +28,22 @@ const { data: certificates } = await supabase
   .select("*")
   .order("issue_date", { ascending: false });
 
+// ===== Peringatan kedaluwarsa: 90 hari ke depan, urut terdekat =====
+const today = new Date();
+const todayUtc = new Date(
+  Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()),
+);
+const soonUtc = new Date(todayUtc.getTime() + 90 * 86_400_000);
+const expiringSoon = (certificates ?? [])
+  .filter((c) => c.expiry_date != null)
+  .map((c) => ({ cert: c, expiry: new Date(`${c.expiry_date}T00:00:00Z`) }))
+  .filter(({ expiry }) => expiry >= todayUtc && expiry <= soonUtc)
+  .sort((a, b) => a.expiry.getTime() - b.expiry.getTime());
+const expiredCount = (certificates ?? []).filter(
+  (c) =>
+    c.expiry_date != null && new Date(`${c.expiry_date}T00:00:00Z`) < todayUtc,
+).length;
+
 // ===== Data projects (SELECT publik, aman untuk semua role) =====
 const { data: projects } = await supabase
   .from("projects")
@@ -90,6 +106,46 @@ const isAdminProjects = canDeleteProjects(profile); // admin saja
         </button>
       </div>
     </div>
+
+    <!-- ===== PERINGATAN KEDALUWARSA SERTIFIKAT ===== -->
+    {
+      (expiringSoon.length > 0 || expiredCount > 0) && (
+        <section class="mt-10">
+          <div class="mb-6 flex items-center justify-between">
+            <h2 class="font-mono text-lg font-bold text-white">
+              Expiry<span class="text-cyber-primary">_alerts</span>
+            </h2>
+            <span class="font-mono text-xs text-cyber-muted">
+              {expiringSoon.length} expiring{expiredCount > 0 && ` / ${expiredCount} expired`}
+            </span>
+          </div>
+          <div class="space-y-4">
+            {expiringSoon.map(({ cert, expiry }) => (
+              <div class="flex flex-wrap items-center justify-between gap-3 rounded border border-amber-400/40 bg-cyber-card p-5">
+                <div>
+                  <p class="font-mono text-sm font-semibold text-amber-300">
+                    {cert.title}
+                  </p>
+                  <p class="mt-1 font-mono text-xs text-cyber-muted">
+                    {cert.issuer} — masa berlaku {cert.expiry_date}
+                  </p>
+                </div>
+                <span class="rounded border border-amber-400/40 px-2 py-1 font-mono text-xs text-amber-300">
+                  {Math.ceil((expiry.getTime() - todayUtc.getTime()) / 86_400_000)} hari lagi
+                </span>
+              </div>
+            ))}
+            {
+              expiredCount > 0 && (
+                <p class="rounded border border-cyber-danger/50 bg-cyber-card p-4 font-mono text-xs text-cyber-danger">
+                  $ warning: {expiredCount} sertifikat sudah lewat masa berlaku — verifikasi ulang atau perbarui expiry_date.
+                </p>
+              )
+            }
+          </div>
+        </section>
+      )
+    }
 
     <!-- ===== FORM PROJECT (tambah/edit): hanya admin & editor ===== -->
     {
