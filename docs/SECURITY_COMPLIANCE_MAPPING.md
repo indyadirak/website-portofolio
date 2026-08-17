@@ -183,13 +183,66 @@ Rekomendasi di atas yang telah dieksekusi (commit/sesi berikutnya, lihat git log
 | 2. Halaman `/privacy` + `/en/privacy` (G1) | ✅ Selesai — `src/pages/privacy.astro`, i18n, link footer, sitemap |
 | 3. Dokumentasi RTO/RPO (G2) | ✅ Dokumen siap di `docs/DEPLOYMENT.md` §8 — **drill restore masih menunggu dieksekusi** (checklist `drill terakhir: —`) |
 | 4. Rate limit aplikasi endpoint MFA (G3) | ✅ Selesai — `mfaVerifyGuard` di `src/lib/rateLimit.ts`, dipakai `mfa-verify.ts` & `mfa-enroll-verify.ts` (10 gagal/IP/10 menit, fail-closed) |
-| 5. CI gate keamanan (G4) | ✅ Selesai — `deploy.yml`: step `npm audit --audit-level=high` + verifikasi security headers pasca-deploy |
+| 5. CI gate keamanan (G4) | ✅ Selesai — `deploy.yml`: step `npm audit --audit-level=high` + verifikasi security headers pasca-deploy pada **dua jalur**: `/` (SSR/middleware) dan `/certificates` (statis/`_headers`) — lihat §4.2 |
 | 6. SBOM & secret scanning (G4, G7) | ⏳ SBOM: workflow `sbom.yml` ditambahkan. Secret scanning push protection: tergantung pengaturan GitHub (lihat catatan §3.1 G4) |
 | 7. Lisensi (G7) | ✅ Selesai — LICENSE MIT + README diperbarui |
 | 8. Branch protection (G6) | ⏳ Tergantung pengaturan GitHub — verifikasi read-only, bukan bagian repo |
 | 9. Kebijakan retensi tertulis + purge (G8) | ✅ Selesai — workflow `data-retention.yml` (contact_messages 12 bulan, audit 90 hari) + dokumen §8 DEPLOYMENT.md |
 
 Catatan: evaluasi ulang disarankan setelah **drill restore pertama** dilakukan (§8 DEPLOYMENT.md).
+
+---
+
+## 4.2 Verifikasi Empiris — Security Headers pada Halaman Statis (Prerender)
+
+Konteks: klaim lama "middleware men-set header pada SETIAP response" baru benar
+untuk halaman SSR. Halaman `prerender = true` (termasuk `/certificates`) dilayani
+sebagai **static asset** — middleware Worker TIDAK dijalankan, header bergantung
+pada `_headers`. Diverifikasi tanggal 17 Agustus 2026 dengan simulasi model
+pengiriman produksi yang sama (workerd + ASSETS binding + `_headers` dari build):
+
+```
+$ wrangler dev -c <config assets=dist/client>   # wrangler 4.120.0
+[wrangler:info] Parsed 2 valid header rules.     # _headers dibaca oleh runtime
+
+$ curl -sSI http://127.0.0.1:8801/certificates/
+HTTP/1.1 307 Temporary Redirect     # normalisasi direktori; header TETAP ada
+content-security-policy: default-src 'self'; ... object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-frame-options: DENY
+
+$ curl -sSI http://127.0.0.1:8801/certificates/   # final 200
+HTTP/1.1 200 OK
+content-security-policy: ... ; upgrade-insecure-requests   # SAMA lengkap
+strict-transport-security: ...; preload
+x-content-type-options: nosniff
+x-frame-options: DENY
+
+$ curl -sSI http://127.0.0.1:8801/_astro/<hash>.css
+Cache-Control: public, max-age=31536000, immutable    # rule adapter juga jalan
+```
+
+Kesimpulan:
+1. **CSP/HSTS/nosniff/XFO TERBUKTI muncul di halaman `/certificates` (statis)**
+   — via `_headers` (`public/_headers` → `dist/client/_headers`, rule `/*`),
+   bukan middleware. Kekhawatiran "middleware ter-skip → halaman tanpa header"
+   **tidak terjadi**; sebaliknya, `_headers` adalah mekanisme utama untuk
+   halaman prerender (konsisten dengan komentar desain di `middleware.ts`).
+2. Bukti kode yang mendukung: `src/pages/certificates.astro:4`
+   (`prerender = true`), `astro.config.mjs:11` (`output: 'server'`),
+   `dist/client/_headers` (2 rules; adapter meng-inject `/_astro/*`).
+3. Batasan jujur: pengujian dilakukan pada runtime local workerd (model
+   pengiriman identik dengan produksi Workers Static Assets), bukan curl ke
+   domain live — domain `portfolio.indyadirak.my.id` tidak resolve dari mesin
+   audit (DNS kustom belum/tdk terhubung dari jaringan ini). Verifikasi live
+   final ada di CI: step **"Verify security headers (production)"** di
+   `deploy.yml` kini memeriksa DUA jalur: `/` (SSR) dan `/certificates`
+   (statis) — regresi di salah satu jalur akan menggagalkan deploy.
+4. Klaim "badge valid/expired ikut zaman setelah deploy ulang" DIVERIFIKASI ke
+   kode: `CertificatesPage.astro:13` memanggil `getCertificates()` saat
+   prerender → status vs tanggal sekarang dihitung pada build → benar bahwa
+   badge baru ter-update setelah deploy berikutnya.
 
 ---
 

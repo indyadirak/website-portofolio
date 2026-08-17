@@ -93,33 +93,38 @@ jobs:
         run: echo "$PUBLIC_SUPABASE_URL" | npx wrangler secret put SUPABASE_URL
 
       # ===== Verifikasi pasca-deploy: security headers di produksi =====
-      # Regresi CSP/header (mis. perubahan build config) hanya terdeteksi
-      # dengan benar di response SSR produksi — cek di sini, gagalkan run
-      # bila salah satu header wajib hilang. Retry untuk penyebaran edge.
+      # Regresi CSP/header hanya terdeteksi dengan benar di response
+      # produksi — cek di sini, gagalkan run bila salah satu header wajib
+      # hilang. Retry untuk penyebaran edge.
+      #
+      # Diperiksa DUA jalur pengiriman (dibuktikan saat audit Section A:
+      # wrangler dev workerd — /certificates dilayani sebagai static asset,
+      # header berasal dari _headers, middleware TIDAK jalan):
+      #   /             -> SSR (middleware men-set header programatik)
+      #   /certificates -> prerender (statis; header dari _headers)
       - name: Verify security headers (production)
         env:
           PROD_URL: ${{ vars.PROD_URL || 'https://portfolio.indyadirak.my.id' }}
         run: |
-          for i in 1 2 3 4 5; do
-            if curl -sS -o /dev/null -A "header-check" "$PROD_URL" && \
-               H="$(curl -sSI -A "header-check" "$PROD_URL")"; then
-              echo "attempt $i: fetch OK"; break
+          for path in "/" "/certificates"; do
+            ok=0
+            for i in 1 2 3 4 5; do
+              H="$(curl -sSI -A "header-check" "${PROD_URL}${path}")"
+              if [ -n "$H" ] && printf '%s' "$H" | grep -qi "^HTTP/2 200"; then ok=1; break; fi
+              [ "$i" -lt 5 ] && sleep 10
+            done
+            if [ "$ok" != "1" ]; then
+              echo "::error::fetch gagal untuk ${path}"; exit 1
             fi
-            [ "$i" -lt 5 ] && sleep 10
+            echo "=== ${path} (HTTP OK) ==="
+            for h in "content-security-policy" "strict-transport-security" "x-content-type-options: nosniff" "x-frame-options: deny"; do
+              if printf '%s' "$H" | grep -qi "$h"; then
+                echo "OK: $h"
+              else
+                echo "::error::Header hilang pada ${path}: $h"; exit 1
+              fi
+            done
           done
-          missing=0
-          assert() {
-            if ! printf '%s' "$H" | grep -qi "$1"; then
-              echo "::error::Header hilang: $1"; missing=1
-            else
-              echo "OK: $1"
-            fi
-          }
-          assert "content-security-policy"
-          assert "strict-transport-security"
-          assert "x-content-type-options: nosniff"
-          assert "x-frame-options: deny"
-          exit $missing
 
       # ===== Secrets runtime untuk Google Drive backup offload (3-2-1) =====
 

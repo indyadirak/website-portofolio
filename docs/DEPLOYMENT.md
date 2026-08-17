@@ -168,6 +168,7 @@ npx wrangler secret put GDRIVE_CONFIG_ENCRYPTION_SECRET
 ## 7. Verifikasi end-to-end
 
 - [ ] `curl -I https://<worker-url>/` → 200 + header `Content-Security-Policy`, `Strict-Transport-Security` ada
+- [ ] `curl -I https://<worker-url>/certificates/` → 200 + header CSP/HSTS/nosniff/XFO **juga** ada (halaman prerender dilayani sebagai static asset — header dari `_headers`, bukan middleware; diverifikasi 17-08-2026 via workerd lokal)
 - [ ] `curl https://<worker-url>/sitemap.xml` → XML berisi halaman statis + detail project + `hreflang` id/en/x-default; pastikan `robots.txt` memuat baris `Sitemap:`
 - [ ] `/certificates` & `/en/certificates`: filter Compliance/Training berfungsi; sertifikat ber-`verification_url` menampilkan badge "Lihat Sertifikat Asli", sisanya tanpa link; sertifikat `is_featured` tampil paling atas dengan badge "Featured"; sertifikat ber-`expiry_date` di masa depan menampilkan badge hijau "Berlaku hingga …", yang sudah lewat menampilkan badge amber "Kedaluwarsa …", tanpa `expiry_date` tidak ada badge; `short_description_id/en` tampil sebagai 1–2 baris di bawah judul (per locale)
 - [ ] Form kontak: submit dengan Turnstile → masuk ke `contact_messages`; tanpa Turnstile → ditolak
