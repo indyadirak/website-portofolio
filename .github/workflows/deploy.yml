@@ -70,17 +70,22 @@ jobs:
         run: npm run build
 
       # Config lengkap (main, assets, KV binding, compatibility flags)
-      # di-generate adapter ke dist/server/wrangler.json saat build.
+      # di-generate adapter ke dist/server/wrangler.json saat build, dan
+      # adapter juga menulis .wrangler/deploy/config.json (config-redirect,
+      # fitur wrangler >=3.101: berguna untuk build tools). Karena itu
+      # deploy dipanggil TANPA argumen config — wrangler mengikuti redirect
+      # menuju dist/server/wrangler.json. Meneruskan path config di CLI
+      # sekaligus membuat wrangler 4.1xx error "user configuration file
+      # dan deploy configuration file tidak share base path".
       # NOTE: dipakai npx wrangler langsung (bukan wrangler-action@v3 —
       # action tersebut internal wrangler 3.x untuk Node 20 & sering gagal
-      # dengan config static-assets wrangler 4.x; deploy manual via npx
-      # wrangler terbukti berhasil). wrangler terinstall dari
+      # dengan config static-assets wrangler 4.x). wrangler terinstall dari
       # devDependencies (package.json), versi deterministik.
       - name: Deploy to Cloudflare Workers
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler deploy dist/server/wrangler.json
+        run: npx wrangler deploy
 
       # Turnstile secret -> runtime secret Worker (bukan build artifact).
       # Rotasi cukup dengan mengganti nilai secret & run ulang workflow
