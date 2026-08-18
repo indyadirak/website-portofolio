@@ -81,7 +81,7 @@ export const en: Dictionary = {
     eyebrow: "$ cat ./certificates",
     title: "Competency & Training Certificates",
     description:
-      "Competency certificates and technical training certificates earned by me personally (issued to an individual — not a company).",
+      "Competency and training certificates in network & cyber security.",
     all: "All",
     compliance: "Competency Certificate",
     training: "Training Certificate",
@@ -340,7 +340,7 @@ export const en: Dictionary = {
   meta: {
     home: "Network & Cyber Security Portfolio — network defense, penetration testing, security research, and blue team defense.",
     projects: "Network & Cyber Security project portfolio — network defense, penetration testing, and security research.",
-    certificates: "Competency & Training certificates — proof of security certifications earned personally.",
+    certificates: "Competency & Training certificates — proof of competency and technical training in network & cyber security.",
     about: "About me — network & cyber security specialist focused on secure-by-design systems.",
     contact: "Get in touch — security assessment requests, consulting, or collaboration.",
     projectDetail: "Network & Cyber Security project details.",

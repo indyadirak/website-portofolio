@@ -81,7 +81,7 @@ export const id: Dictionary = {
     eyebrow: "$ cat ./certificates",
     title: "Sertifikat Kompetensi & Pelatihan",
     description:
-      "Sertifikat kompetensi dan sertifikat pelatihan teknis yang saya raih secara pribadi (atas nama perorangan — bukan perusahaan).",
+      "Sertifikat kompetensi dan pelatihan teknis di bidang network & cyber security.",
     all: "Semua",
     compliance: "Sertifikat Kompetensi",
     training: "Sertifikat Pelatihan",
@@ -340,7 +340,7 @@ export const id: Dictionary = {
   meta: {
     home: "Portfolio Network & Cyber Security — network defense, penetration testing, security research, dan blue team defense.",
     projects: "Portofolio project Network & Cyber Security — network defense, penetration testing, dan security research.",
-    certificates: "Sertifikat Kompetensi & Pelatihan — bukti sertifikasi keamanan atas nama pribadi.",
+    certificates: "Sertifikat Kompetensi & Pelatihan — bukti kompetensi dan pelatihan teknis di bidang network & cyber security.",
     about: "Tentang saya — network & cyber security specialist dengan fokus security by design.",
     contact: "Hubungi saya — permintaan security assessment, konsultasi, atau kolaborasi.",
     projectDetail: "Detail project Network & Cyber Security.",
