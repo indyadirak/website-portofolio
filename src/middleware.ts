@@ -1,4 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
+import type { AstroCookies } from "astro";
 import {
   ADMIN_BASE,
   ADMIN_DASHBOARD,
@@ -59,7 +60,31 @@ function clientIp(request: Request): string {
   );
 }
 
-function withSecurityHeaders(response: Response): Response {
+/**
+ * ===== Commit Set-Cookie secara manual (FIX penting) =====
+ *
+ * Astro 7 hanya mengeluarkan Set-Cookie bila `App.render()` dipanggil dengan
+ * `addCookieHeader: true` (prepare-response.js). Entry worker hasil build
+ * @astrojs/cloudflare 14.x TIDAK mengirim flag itu (lihat dist/server/entry.mjs
+ * hasil build: panggilan app.render() tanpa addCookieHeader, dan fallback
+ * `app.setCookieHeaders ... || false` tidak pernah aktif). Akibatnya cookie
+ * yang di-set route handler (mis. sesi Supabase via `auth.setSession`) tidak
+ * pernah sampai ke browser -> login/mfa-verify gagal dengan 401 "unauthorized"
+ * di request berikutnya.
+ *
+ * Solusi di sini: karena `context.cookies` di middleware adalah instance yang
+ * SAMA dengan yang dipakai route handler (dan AstroCookies.headers() tidak
+ * mengonsumsi state), kita dapatkan nilai Set-Cookie SETELAH `next()` selesai
+ * dan tempel manual ke response. Jika kelak Astro/adapter mengirim
+ * addCookieHeader: true, `prepareResponse` tetap berjalan tanpa duplikasi
+ * visual karena headers() di sini tidak menandai consumed.
+ */
+function withSecurityHeaders(response: Response, cookies?: AstroCookies): Response {
+  if (cookies) {
+    for (const setCookie of cookies.headers()) {
+      response.headers.append("set-cookie", setCookie);
+    }
+  }
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(name, value);
   }
@@ -75,7 +100,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     path === "/favicon.svg" ||
     path === "/favicon.ico"
   ) {
-    return withSecurityHeaders(await next());
+    return withSecurityHeaders(await next(), context.cookies);
   }
 
   const isApi = path.startsWith("/api/");
@@ -90,7 +115,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (!isApi && !isErrorPage) {
     const pageDecision = await pageNavigationGuard.check(clientIp(context.request));
     if (!pageDecision.allowed) {
-      return withSecurityHeaders(await context.rewrite("/429"));
+      return withSecurityHeaders(await context.rewrite("/429"), context.cookies);
     }
   }
 
@@ -100,7 +125,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       path.startsWith(ADMIN_BASE) && path !== ADMIN_LOGIN
         ? context.redirect(ADMIN_LOGIN + "?error=supabase_not_configured")
         : await next();
-    return withSecurityHeaders(response);
+    return withSecurityHeaders(response, context.cookies);
   }
 
   const supabase = createServerSupabase(context.cookies, context.request);
@@ -140,5 +165,5 @@ export const onRequest = defineMiddleware(async (context, next) => {
     response = await next();
   }
 
-  return withSecurityHeaders(response);
+  return withSecurityHeaders(response, context.cookies);
 });
