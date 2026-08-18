@@ -36,7 +36,12 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
 
-  if (!(await adminMutationGuard.check(user.id)).allowed) {
+  const mutationDecision = await adminMutationGuard.check(user.id);
+  if (mutationDecision.reason === "kv_unavailable") {
+    // FAIL-CLOSED: KV limiter tidak terjangkau -> tolak, jangan proses tanpa proteksi.
+    return json({ ok: false, error: "service_unavailable" }, 503);
+  }
+  if (!mutationDecision.allowed) {
     return json({ ok: false, error: "too_many_requests" }, 429);
   }
 
@@ -117,7 +122,12 @@ export async function DELETE({ request, locals }: APIContext) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
 
-  if (!(await adminMutationGuard.check(user.id)).allowed) {
+  const mutationDecision = await adminMutationGuard.check(user.id);
+  if (mutationDecision.reason === "kv_unavailable") {
+    // FAIL-CLOSED: KV limiter tidak terjangkau -> tolak, jangan proses tanpa proteksi.
+    return json({ ok: false, error: "service_unavailable" }, 503);
+  }
+  if (!mutationDecision.allowed) {
     return json({ ok: false, error: "too_many_requests" }, 429);
   }
 

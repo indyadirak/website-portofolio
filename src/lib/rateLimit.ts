@@ -683,6 +683,8 @@ const ADMIN_MUTATION_WINDOW_SEC = Math.max(
 
 export interface AdminMutationDecision {
   allowed: boolean;
+  /** Alasan penolakan saat !allowed (konsisten dengan guard login). */
+  reason?: "kv_unavailable";
   /** Estimasi detik hingga boleh mutasi lagi (hanya saat ditolak). */
   retryAfterSec?: number;
 }
@@ -691,7 +693,7 @@ export const adminMutationGuard = {
   // Fallback dev-only in-memory (identik behavior, tanpa KV).
   _dev: new Map<string, Entry>(),
 
-  /** Cek + hitung setiap mutasi (increment per panggilan). Fail-open. */
+  /** Cek + hitung setiap mutasi (increment per panggilan). FAIL-CLOSED. */
   async check(identifier: string): Promise<AdminMutationDecision> {
     const kv = env.RATE_LIMIT_KV;
     const now = Date.now();
@@ -714,8 +716,12 @@ export const adminMutationGuard = {
         }
         return { allowed: true };
       }
-      // Production tanpa binding KV: fail-open (mutasi tetap dilayani).
-      return { allowed: true };
+      // Production tanpa binding KV: FAIL CLOSED — tolak, jangan biarkan
+      // mutasi diproses tanpa proteksi (konsisten dengan loginAttemptGuard).
+      console.error(
+        "[adminmut-guard] RATE_LIMIT_KV tidak tersedia — FAIL CLOSED: mutasi ditolak."
+      );
+      return { allowed: false, reason: "kv_unavailable" };
     }
 
     try {
@@ -739,10 +745,10 @@ export const adminMutationGuard = {
       });
       return { allowed: true };
     } catch (err) {
-      // KV read/write gagal — fail-open: jangan pernah menolak admin sah
-      // karena infra limiter bermasalah (auth berlapis tetap melindungi).
-      console.error("[adminmut-guard] KV gagal — fail-open:", err);
-      return { allowed: true };
+      // KV read/write gagal — FAIL CLOSED: tolak daripada memproses mutasi
+      // tanpa proteksi (konsisten dengan loginAttemptGuard).
+      console.error("[adminmut-guard] KV gagal — FAIL CLOSED:", err);
+      return { allowed: false, reason: "kv_unavailable" };
     }
   },
 };
