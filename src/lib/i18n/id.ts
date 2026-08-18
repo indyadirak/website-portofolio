@@ -79,12 +79,12 @@ export const id: Dictionary = {
   },
   certificates: {
     eyebrow: "$ cat ./certificates",
-    title: "Sertifikat & Pelatihan",
+    title: "Sertifikat Kompetensi & Pelatihan",
     description:
-      "Kepatuhan standar keamanan (Compliance) dan sertifikat pelatihan/kursus teknis (Training).",
+      "Sertifikat kompetensi dan sertifikat pelatihan teknis yang saya raih secara pribadi (atas nama perorangan — bukan perusahaan).",
     all: "Semua",
-    compliance: "Kepatuhan",
-    training: "Pelatihan",
+    compliance: "Sertifikat Kompetensi",
+    training: "Sertifikat Pelatihan",
     empty: '$ echo "Belum ada sertifikat di kategori ini."',
     verify: "Lihat Sertifikat Asli",
     featured: "Featured",
@@ -340,7 +340,7 @@ export const id: Dictionary = {
   meta: {
     home: "Portfolio Network & Cyber Security — network defense, penetration testing, security research, dan blue team defense.",
     projects: "Portofolio project Network & Cyber Security — network defense, penetration testing, dan security research.",
-    certificates: "Sertifikat Compliance & Training — bukti sertifikasi keamanan dan pelatihan teknis.",
+    certificates: "Sertifikat Kompetensi & Pelatihan — bukti sertifikasi keamanan atas nama pribadi.",
     about: "Tentang saya — network & cyber security specialist dengan fokus security by design.",
     contact: "Hubungi saya — permintaan security assessment, konsultasi, atau kolaborasi.",
     projectDetail: "Detail project Network & Cyber Security.",
