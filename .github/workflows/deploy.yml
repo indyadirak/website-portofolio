@@ -74,7 +74,7 @@ jobs:
       # ini — tanpa rebuild/redeploy kode. Sekali ter-set, nilainya
       # tersimpan di Cloudflare (tidak muncul di log Actions).
       - name: Set Turnstile secret (runtime)
-        if: env.TURNSTILE_SECRET_KEY != ''
+        if: ${{ secrets.TURNSTILE_SECRET_KEY != '' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -85,7 +85,7 @@ jobs:
       # SUPABASE_URL hanya salinan dari PUBLIC_SUPABASE_URL (URL bukan rahasia,
       # tapi dipindah jadi runtime secret supaya tidak perlu masuk repo).
       - name: Set SUPABASE_URL secret (runtime)
-        if: env.PUBLIC_SUPABASE_URL != ''
+        if: ${{ secrets.PUBLIC_SUPABASE_URL != '' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -133,7 +133,7 @@ jobs:
       # db-backup.yml. Dari dashboard Supabase: Project Settings > API >
       # service_role (JANGAN dicampur dengan anon key).
       - name: Set SUPABASE_SERVICE_ROLE_KEY secret (runtime)
-        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
+        if: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -144,7 +144,7 @@ jobs:
       # HARUS sama dengan secrets.BACKUP_FETCH_TOKEN di repo (satu sumber
       # kebenaran: set sekali di GitHub, disalin otomatis ke Worker di sini).
       - name: Set BACKUP_FETCH_TOKEN secret (runtime)
-        if: env.BACKUP_FETCH_TOKEN != ''
+        if: ${{ secrets.BACKUP_FETCH_TOKEN != '' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -154,7 +154,7 @@ jobs:
       # Kunci AES-256-GCM untuk enkripsi-at-rest JSON key Service Account
       # Drive di tabel backup_config (GUI admin). Harus acak & >= 32 byte.
       - name: Set GDRIVE_CONFIG_ENCRYPTION_SECRET secret (runtime)
-        if: env.GDRIVE_CONFIG_ENCRYPTION_SECRET != ''
+        if: ${{ secrets.GDRIVE_CONFIG_ENCRYPTION_SECRET != '' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
