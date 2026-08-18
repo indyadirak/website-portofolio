@@ -1,7 +1,9 @@
-# SBOM (Software Bill of Materials) — export dependency graph ke GitHub
-# Dependency Graph. Dari sana GitHub menampilkan SBOM (Security > Dependency
-# graph) dan bisa diekspor (Actions > SBOM export). Menutup gap kepatuhan
-# A.5.21 / rantai pasokan: daftar dependency + lisensinya selalu terkini.
+# SBOM (Software Bill of Materials) — generate dari lockfile via Syft
+# (anchore/sbom-action, menggantikan sbom-generator-action yang sudah
+# deprecated) lalu unggah ke GitHub Dependency Graph (Security > Dependency
+# graph > SBOM). Menutup gap kepatuhan A.5.21 / rantai pasokan: daftar
+# dependency + lisensinya selalu terkini.
+
 name: "SBOM Export"
 
 on:
@@ -10,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # diperlukan action untuk menulis ke Dependency Submission API
+  contents: write   # diperlukan untuk unggah ke Dependency Submission API
 
 jobs:
   sbom:
@@ -19,7 +21,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Generate SBOM for npm dependencies
-        uses: advanced-security/sbom-generator-action@v0.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate SBOM (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./
+          format: cyclonedx-json
+          artifact-name: sbom-results
+
+      - name: Upload SBOM ke GitHub Dependency Graph
+        uses: anchore/sbom-action/publish-sbom@v0
+        with:
+          artifact: sbom-results
