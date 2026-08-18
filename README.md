@@ -35,6 +35,7 @@ Portfolio website untuk profesional **Cyber Security**, dibangun di atas **Astro
 - **Dukungan 2 bahasa (i18n)** — Indonesia (default, tanpa prefix) & English (`/en/*`)
 - **Sitemap dinamis** — `/sitemap.xml` (route statis + detail project dari Supabase, hreflang id/en/x-default) + `Sitemap:` di robots.txt
 - **Badge verifikasi sertifikat** — link "Lihat Sertifikat Asli" ke halaman verifikasi issuer (`verification_url`)
+- **Badge masa berlaku (Berlaku/Kedaluwarsa)** — dihitung **saat build** (halaman sertifikat di-prerender, `prerender = true`): akurasi badge = tanggal build/deploy terakhir, bukan waktu kunjungan pengunjung. Deploy ulang untuk memperbarui status.
 - **Demo data bawaan** — situs tetap tampil utuh sebelum Supabase dikonfigurasi
 - **Form kontak anti-bot** — proteksi [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/)
 - **Link Blog eksternal** — `blog.indyadirak.my.id` (Blogger) di navbar & footer, tab baru + ikon external-link
