@@ -142,6 +142,12 @@ jobs:
                 echo "::error::Header hilang pada ${path}: $h"; exit 1
               fi
             done
+            # HSTS khusus: kalau Cloudflare edge overwrite jadi max-age=0
+            # (dashboard zone HSTS off), ingatkan — browser tidak akan
+            # meng-cache HSTS sama sekali.
+            if printf '%s' "$H" | grep -qi "strict-transport-security: max-age=0"; then
+              echo "::warning::HSTS dikembalikan max-age=0 (Cloudflare edge override). Aktifkan HSTS di Cloudflare dashboard: SSL/TLS > Edge Certificates > HSTS (enable + include subdomains + preload)."
+            fi
           done
 
       # ===== Secrets runtime untuk Google Drive backup offload (3-2-1) =====

@@ -45,7 +45,16 @@ async function resolveCredentials() {
   if (fetchUrl && fetchToken) {
     const res = await fetch(`${fetchUrl.replace(/\/+$/, "")}/api/backup-config`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${fetchToken}` },
+      // Content-Type JSON diperlukan: Astro 7 origin-check (CSRF) menolak
+      // POST tanpa Origin BILA tidak ada Content-Type ("Cross-site POST
+      // form submissions are forbidden", origin-check.js) — dan request
+      // dari runner Node tidak punya Origin. Content-Type non-form
+      // (application/json) dilewati origin-check.
+      headers: {
+        Authorization: `Bearer ${fetchToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
       signal: AbortSignal.timeout(20_000),
     });
 

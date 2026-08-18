@@ -1,0 +1,10 @@
+---
+// /admin (tanpa trailing slash → middleware hanya menangani route yang
+// ada; /admin tidak punya route sehingga jatuh ke 404 asset). Halaman ini
+// memastikan pengunjung /admin diarahkan ke login/dashboard.
+import { ADMIN_DASHBOARD, ADMIN_LOGIN } from "../../lib/auth";
+
+const user = Astro.locals.user;
+const target = user ? ADMIN_DASHBOARD : ADMIN_LOGIN;
+return Astro.redirect(target);
+---
