@@ -80,25 +80,42 @@ Portfolio website untuk profesional **Cyber Security**, dibangun di atas **Astro
 ```
 .
 ├── .env.example               # contoh variabel environment
-├── astro.config.mjs           # konfigurasi Astro (adapter, i18n, build)
-├── wrangler.toml              # konfigurasi Cloudflare Workers (KV, deploy)
+├── astro.config.mjs           # konfigurasi Astro (adapter, i18n, build, CSP)
+├── wrangler.toml              # konfigurasi Cloudflare Workers (KV namespace)
 ├── public/
 │   └── _headers               # security headers fallback (aset statis)
 ├── src/
-│   ├── components/            # Navbar, Hero, SkillGrid, ProjectGrid, admin/, ...
+│   ├── components/            # Navbar, Hero, SkillGrid, ProjectGrid, Footer,
+│   │   │                      # ContactForm, CertificatesGrid, TerminalLog,
+│   │   │                      # ImageZoomModal, LanguageSwitcher, admin/, pages/
 │   ├── layouts/               # MainLayout (head, nav, footer)
-│   ├── lib/                   # auth, supabase, rateLimit, i18n, config, storage, cv, audit, api, data
+│   ├── lib/                   # auth, supabase, rateLimit, i18n/ (id|en), config,
+│   │   │                      # storage, cv, audit, api, types, email, data/
 │   ├── middleware.ts          # security headers + rate limit + validasi session + guard /admin
 │   ├── pages/
 │   │   ├── index.astro, about, certificates, projects, contact, 404/403/429/500   # publik (id & en/)
-│   │   ├── admin/             # login, dashboard, backup, cv
-│   │   └── api/               # auth/*, certificates (+upload), contact, projects, backup-config, admin/cv
+│   │   ├── admin/             # index (redirect), login, dashboard, backup, cv
+│   │   └── api/               # auth/*, certificates (+upload), contact, projects,
+│   │                          # backup-config, admin/backup-config, admin/cv
 │   └── styles/global.css
 ├── supabase/
-│   └── *.sql                  # skema, RLS/RBAC+MFA, storage, audit
+│   └── *.sql                  # skema, RLS/RBAC+MFA, storage, audit, 00-full-migration.sql
 ├── docs/
-│   └── DEPLOYMENT.md          # checklist deploy lengkap (SQL → secrets → verifikasi)
-└── .github/workflows/         # deploy, codeql, dependency-review, db-backup
+│   ├── DEPLOYMENT.md          # checklist deploy lengkap (SQL → secrets → verifikasi)
+│   ├── SECURITY_COMPLIANCE_MAPPING.md   # pemetaan kontrol ke standar (ISO 27001 dll.)
+│   └── PENDING_REVIEW_CHECKLIST.md      # checklist audit manual berkala
+└── .github/
+    ├── dependabot.yml         # update dependency bulanan (npm + actions, grouped)
+    ├── CODEOWNERS             # review wajib path sensitif (SQL, admin, workflows)
+    ├── scripts/
+    │   └── gdrive-backup.mjs  # offload backup terenkripsi ke Google Drive (3-2-1)
+    └── workflows/
+        ├── deploy.yml             # build + deploy Cloudflare Workers + runtime secrets
+        ├── codeql.yml             # CodeQL code scanning (push, PR, mingguan)
+        ├── sbom.yml               # SBOM (Syft) + upload ke Dependency Graph
+        ├── dependency-review.yml  # gate kerentanan dependency di PR
+        ├── db-backup.yml          # pg_dump mingguan (GPG AES-256, artifact 30 hari)
+        └── data-retention.yml     # purge PII terjadwal (contact, login, audit)
 ```
 
 ---
