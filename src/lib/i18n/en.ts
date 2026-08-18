@@ -17,7 +17,7 @@ export const en: Dictionary = {
     title: "Network & Cyber Security Technician",
     badge: "ONLINE: OPEN TO WORK",
     role: "Network & Cyber Security Technician",
-    tagline: "Cyber Security Portfolio",
+    tagline: "Network & Cyber Security Portfolio",
     description:
       "Penetration testing, security research, and blue team defense — building secure systems from the start.",
     viewProjects: "View Projects",
@@ -338,11 +338,11 @@ export const en: Dictionary = {
     },
   },
   meta: {
-    home: "Cyber Security Portfolio — penetration testing, security research, and blue team defense.",
-    projects: "Cyber Security project portfolio — penetration testing, security research, and blue team defense.",
+    home: "Network & Cyber Security Portfolio — network defense, penetration testing, security research, and blue team defense.",
+    projects: "Network & Cyber Security project portfolio — network defense, penetration testing, and security research.",
     certificates: "Compliance & Training certificates — proof of security certifications and technical training.",
-    about: "About me — cyber security specialist focused on secure-by-design systems.",
+    about: "About me — network & cyber security specialist focused on secure-by-design systems.",
     contact: "Get in touch — security assessment requests, consulting, or collaboration.",
-    projectDetail: "Cyber Security project details.",
+    projectDetail: "Network & Cyber Security project details.",
   },
 };

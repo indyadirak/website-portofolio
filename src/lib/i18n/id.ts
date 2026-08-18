@@ -17,7 +17,7 @@ export const id: Dictionary = {
     title: "Network & Cyber Security Technician",
     badge: "ONLINE: OPEN TO WORK",
     role: "Network & Cyber Security Technician",
-    tagline: "Cyber Security Portfolio",
+    tagline: "Network & Cyber Security Portfolio",
     description:
       "Penetration testing, security research, dan blue team defense — membangun sistem yang aman sejak awal.",
     viewProjects: "Lihat Proyek",
@@ -338,11 +338,11 @@ export const id: Dictionary = {
     },
   },
   meta: {
-    home: "Portfolio Cyber Security — penetration testing, security research, dan blue team defense.",
-    projects: "Portofolio project Cyber Security — penetration testing, security research, dan blue team defense.",
+    home: "Portfolio Network & Cyber Security — network defense, penetration testing, security research, dan blue team defense.",
+    projects: "Portofolio project Network & Cyber Security — network defense, penetration testing, dan security research.",
     certificates: "Sertifikat Compliance & Training — bukti sertifikasi keamanan dan pelatihan teknis.",
-    about: "Tentang saya — cyber security specialist dengan fokus security by design.",
+    about: "Tentang saya — network & cyber security specialist dengan fokus security by design.",
     contact: "Hubungi saya — permintaan security assessment, konsultasi, atau kolaborasi.",
-    projectDetail: "Detail project Cyber Security.",
+    projectDetail: "Detail project Network & Cyber Security.",
   },
 };
