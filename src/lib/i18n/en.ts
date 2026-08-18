@@ -58,11 +58,11 @@ export const en: Dictionary = {
     featuredEyebrow: "$ ls ./projects",
     featuredTitle: "Featured Projects",
     featuredDescription:
-      "Hand-picked projects — loaded directly from the projects table in Supabase.",
+      "Hand-picked projects — managed dynamically.",
     viewAllProjects: "View All Projects →",
     skillsEyebrow: "$ cat ./skills",
     skillsTitle: "Skills & Expertise",
-    skillsDescription: "Skills managed dynamically from the skills table in Supabase.",
+    skillsDescription: "Skills managed dynamically.",
   },
   skills: {
     all: "All",
@@ -94,8 +94,8 @@ export const en: Dictionary = {
   projects: {
     eyebrow: "$ ls -la ./projects",
     title: "All Projects",
-    description: "Every project registered in the projects table (Supabase).",
-    noProjects: '$ echo "No projects found — no data in Supabase yet."',
+    description: "Every project I have worked on.",
+    noProjects: '$ echo "No projects found — no data yet."',
     details: "Details",
     repo: "Repository",
     live: "Live",
@@ -152,7 +152,7 @@ export const en: Dictionary = {
     eyebrow: "$ nc -lvp 443",
     title: "Contact",
     description:
-      "Messages are stored in the contact_messages table in Supabase (never exposed to the public).",
+      "Messages are stored securely in the database — only admins can read them.",
     formName: "Name",
     formEmail: "Email",
     formMessage: "Message",
@@ -339,7 +339,7 @@ export const en: Dictionary = {
   },
   meta: {
     home: "Cyber Security Portfolio — penetration testing, security research, and blue team defense.",
-    projects: "Cyber Security project portfolio — loaded dynamically from Supabase.",
+    projects: "Cyber Security project portfolio — penetration testing, security research, and blue team defense.",
     certificates: "Compliance & Training certificates — proof of security certifications and technical training.",
     about: "About me — cyber security specialist focused on secure-by-design systems.",
     contact: "Get in touch — security assessment requests, consulting, or collaboration.",

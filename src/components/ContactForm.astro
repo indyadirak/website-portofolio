@@ -61,11 +61,6 @@ const t = getDictionary(locale);
     ></textarea>
   </label>
 
-  <!--
-    Honeypot: field palsu dengan nama umum "website", disembunyikan
-    off-screen (bukan display:none) agar bot tidak curiga. Jika terisi,
-    server menolak submission diam-diam (respons sukses palsu).
-  -->
   <label class="hp-trap" aria-hidden="true">
     <span>Website</span>
     <input type="text" name="website" tabindex="-1" autocomplete="off" />

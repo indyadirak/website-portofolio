@@ -58,11 +58,11 @@ export const id: Dictionary = {
     featuredEyebrow: "$ ls ./projects",
     featuredTitle: "Proyek Unggulan",
     featuredDescription:
-      "Seleksi project pilihan — diambil langsung dari tabel projects di Supabase.",
+      "Seleksi project pilihan — dikelola secara dinamis.",
     viewAllProjects: "Lihat Semua Proyek →",
     skillsEyebrow: "$ cat ./skills",
     skillsTitle: "Skills & Expertise",
-    skillsDescription: "Skill yang dikelola secara dinamis dari tabel skills di Supabase.",
+    skillsDescription: "Skill yang dikelola secara dinamis.",
   },
   skills: {
     all: "Semua",
@@ -94,8 +94,8 @@ export const id: Dictionary = {
   projects: {
     eyebrow: "$ ls -la ./projects",
     title: "Semua Proyek",
-    description: "Seluruh project yang terdaftar di tabel projects (Supabase).",
-    noProjects: '$ echo "No projects found — belum ada data di Supabase."',
+    description: "Seluruh project yang pernah saya kerjakan.",
+    noProjects: '$ echo "No projects found — belum ada data."',
     details: "Detail",
     repo: "Repositori",
     live: "Live",
@@ -152,7 +152,7 @@ export const id: Dictionary = {
     eyebrow: "$ nc -lvp 443",
     title: "Kontak",
     description:
-      "Pesan akan tersimpan ke tabel contact_messages di Supabase (tanpa membocorkan data ke publik).",
+      "Pesan akan tersimpan aman di database — hanya admin yang dapat membacanya.",
     formName: "Nama",
     formEmail: "Email",
     formMessage: "Pesan",
@@ -339,7 +339,7 @@ export const id: Dictionary = {
   },
   meta: {
     home: "Portfolio Cyber Security — penetration testing, security research, dan blue team defense.",
-    projects: "Portofolio project Cyber Security — diambil dinamis dari Supabase.",
+    projects: "Portofolio project Cyber Security — penetration testing, security research, dan blue team defense.",
     certificates: "Sertifikat Compliance & Training — bukti sertifikasi keamanan dan pelatihan teknis.",
     about: "Tentang saya — cyber security specialist dengan fokus security by design.",
     contact: "Hubungi saya — permintaan security assessment, konsultasi, atau kolaborasi.",
