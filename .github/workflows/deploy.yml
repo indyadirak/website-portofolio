@@ -24,7 +24,7 @@ jobs:
       GDRIVE_CONFIG_ENCRYPTION_SECRET: ${{ secrets.GDRIVE_CONFIG_ENCRYPTION_SECRET }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # GUARD: RATE_LIMIT_KV id wajib ASLI sebelum deploy.
       # Dengan id placeholder (00000000-...), kv.get() selalu null —
