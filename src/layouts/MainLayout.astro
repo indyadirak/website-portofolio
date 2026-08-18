@@ -56,6 +56,11 @@ const personJsonLd = {
     : {}),
   knowsAbout: t.about.knowsAbout,
 };
+
+// JSON-LD di-inline via set:html — escape `<` menjadi \u003c (konsisten
+// dengan CertificatesPage): JSON string tidak boleh memuat karakter yang
+// bisa menutup tag <script>.
+const personJsonLdJson = JSON.stringify(personJsonLd).replace(/</g, "\\u003c");
 ---
 
 <!doctype html>
@@ -91,7 +96,7 @@ const personJsonLd = {
     <script
       is:inline
       type="application/ld+json"
-      set:html={JSON.stringify(personJsonLd)}
+      set:html={personJsonLdJson}
     ></script>
   </head>
   <body class="min-h-screen flex flex-col bg-cyber-bg">

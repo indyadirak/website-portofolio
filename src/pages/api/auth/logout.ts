@@ -13,7 +13,8 @@ export async function POST({ locals }: APIContext) {
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    return json({ ok: false, error: error.message }, 500);
+    console.error("[auth/logout] signOut gagal:", error.message);
+    return json({ ok: false, error: "signout_failed" }, 500);
   }
 
   return json({ ok: true });

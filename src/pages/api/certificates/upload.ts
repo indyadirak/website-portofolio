@@ -1,6 +1,7 @@
 import type { APIContext } from "astro";
 import { getSupabaseFromLocals, json } from "../../../lib/api";
 import { canManageCertificates } from "../../../lib/auth";
+import { adminMutationGuard } from "../../../lib/rateLimit";
 import {
   removeCertificateFile,
   uploadCertificateFile,
@@ -111,6 +112,10 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
 
+  if (!(await adminMutationGuard.check(user.id)).allowed) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
+  }
+
   const formData = await request.formData().catch(() => null);
   if (!formData) return json({ ok: false, error: "invalid_multipart" }, 400);
 
@@ -169,7 +174,7 @@ export async function POST({ request, locals }: APIContext) {
       console.error("[upload] INSERT gagal, rollback file:", insertError.message);
       await removeCertificateFile(supabase, uploadedPath);
       uploadedPath = null;
-      return json({ ok: false, error: insertError.message }, 403);
+      return json({ ok: false, error: "db_operation_failed" }, 403);
     }
 
     return json({ ok: true, path }, 201);
@@ -200,6 +205,10 @@ export async function PUT({ request, locals }: APIContext) {
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
   if (!canManageCertificates(profile)) {
     return json({ ok: false, error: "forbidden_role" }, 403);
+  }
+
+  if (!(await adminMutationGuard.check(user.id)).allowed) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
   }
 
   const url = new URL(request.url);
@@ -270,7 +279,7 @@ export async function PUT({ request, locals }: APIContext) {
       console.error("[upload] UPDATE gagal, rollback file baru:", updateError.message);
       await removeCertificateFile(supabase, uploadedPath);
       uploadedPath = null;
-      return json({ ok: false, error: updateError.message }, 403);
+      return json({ ok: false, error: "db_operation_failed" }, 403);
     }
 
     // UPDATE sukses -> file lama boleh dihapus (jika memang ada & beda path).

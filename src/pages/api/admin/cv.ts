@@ -1,6 +1,7 @@
 import type { APIContext } from "astro";
 import { getSupabaseFromLocals, json } from "../../../lib/api";
 import { canManageCv } from "../../../lib/auth";
+import { adminMutationGuard } from "../../../lib/rateLimit";
 import { removeCvFile, uploadCvFile, validateCvFile, type CvLocale } from "../../../lib/storage";
 
 export const prerender = false;
@@ -33,6 +34,10 @@ export async function POST({ request, locals }: APIContext) {
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
   if (!canManageCv(profile)) {
     return json({ ok: false, error: "forbidden_role" }, 403);
+  }
+
+  if (!(await adminMutationGuard.check(user.id)).allowed) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
   }
 
   const formData = await request.formData().catch(() => null);
@@ -81,7 +86,7 @@ export async function POST({ request, locals }: APIContext) {
       console.error("[cv] upsert gagal, rollback file:", upsertError.message);
       await removeCvFile(supabase, locale);
       uploaded = false;
-      return json({ ok: false, error: upsertError.message }, 403);
+      return json({ ok: false, error: "db_operation_failed" }, 403);
     }
 
     return json({ ok: true, path }, 200);
@@ -112,6 +117,10 @@ export async function DELETE({ request, locals }: APIContext) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
 
+  if (!(await adminMutationGuard.check(user.id)).allowed) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
+  }
+
   const url = new URL(request.url);
   const locale = parseLocale(url.searchParams.get("locale"));
   if (!locale) return json({ ok: false, error: "locale_invalid" }, 400);
@@ -119,7 +128,8 @@ export async function DELETE({ request, locals }: APIContext) {
   try {
     const { error } = await supabase.from("cv_files").delete().eq("locale", locale);
     if (error) {
-      return json({ ok: false, error: error.message }, 403);
+      console.error("[cv] DELETE gagal:", error.message);
+      return json({ ok: false, error: "db_operation_failed" }, 403);
     }
 
     await removeCvFile(supabase, locale);

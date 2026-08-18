@@ -4,6 +4,7 @@ import {
   canDeleteProjects,
   canManageProjects,
 } from "../../lib/auth";
+import { adminMutationGuard } from "../../lib/rateLimit";
 import type { ProjectCategory, ProjectStatus } from "../../lib/types";
 
 export const prerender = false;
@@ -90,6 +91,10 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
 
+  if (!(await adminMutationGuard.check(user.id)).allowed) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
+  }
+
   const input = await readInput(request);
   if (!input) return json({ ok: false, error: "invalid_json" }, 400);
 
@@ -104,10 +109,11 @@ export async function POST({ request, locals }: APIContext) {
 
   if (error) {
     // RLS (aal2) / unique slug / constraint DB menolak -> ditangkap di sini.
+    console.error("[projects] POST insert gagal:", error.message);
     if (error.code === "23505") {
       return json({ ok: false, error: "slug_sudah_dipakai" }, 409);
     }
-    return json({ ok: false, error: error.message }, 403);
+    return json({ ok: false, error: "db_operation_failed" }, 403);
   }
 
   return json({ ok: true, id: data.id }, 201);
@@ -128,6 +134,10 @@ export async function PUT({ request, locals }: APIContext) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
 
+  if (!(await adminMutationGuard.check(user.id)).allowed) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
+  }
+
   const input = await readInput(request);
   if (!input) return json({ ok: false, error: "invalid_json" }, 400);
 
@@ -144,10 +154,11 @@ export async function PUT({ request, locals }: APIContext) {
     .eq("id", id);
 
   if (error) {
+    console.error("[projects] PUT update gagal:", error.message);
     if (error.code === "23505") {
       return json({ ok: false, error: "slug_sudah_dipakai" }, 409);
     }
-    return json({ ok: false, error: error.message }, 403);
+    return json({ ok: false, error: "db_operation_failed" }, 403);
   }
 
   return json({ ok: true });
@@ -168,6 +179,10 @@ export async function DELETE({ request, locals }: APIContext) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
 
+  if (!(await adminMutationGuard.check(user.id)).allowed) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
+  }
+
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   if (!id) return json({ ok: false, error: "id_wajib_ada" }, 400);
@@ -177,7 +192,10 @@ export async function DELETE({ request, locals }: APIContext) {
     .delete()
     .eq("id", id);
 
-  if (error) return json({ ok: false, error: error.message }, 403);
+  if (error) {
+    console.error("[projects] DELETE gagal:", error.message);
+    return json({ ok: false, error: "db_operation_failed" }, 403);
+  }
 
   return json({ ok: true });
 }

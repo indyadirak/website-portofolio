@@ -656,6 +656,97 @@ export const pageNavigationGuard = {
   },
 };
 
+// =====================================================================
+// ADMIN MUTATION GUARD — proteksi endpoint CRUD admin
+// (api/projects, api/certificates, api/certificates/upload, api/admin/cv).
+//   * Defense-in-depth DI ATAS MFA+RBAC+RLS: bila sesi admin ter-kompromi,
+//     limiter ini membatasi kecepatan spam mutasi (POST/PUT/DELETE).
+//   * Kunci identifier = user.id (stabil & spesifik per akun).
+//   * FAIL-OPEN: kalau KV tidak tersedia, mutasi diizinkan — mengganggu
+//     admin sah karena infra limiter bermasalah lebih buruk daripada
+//     membiarkan permukaan yang sudah dilindungi auth berlapis berjalan
+//     tanpa lapisan ini (berbeda dengan login yang fail-closed).
+// =====================================================================
+export const ADMIN_MUTATION_LIMITS = {
+  /** Maks mutasi (POST/PUT/DELETE) per user per menit. */
+  MAX_PER_MINUTE: 30,
+  /** Jendela hitung (1 menit, sama dengan pagenav). */
+  WINDOW_MS: 60 * 1000,
+  /** Buffer TTL key agar window sempat terbaca saat mau kedaluwarsa. */
+  TTL_BUFFER_SEC: 60,
+} as const;
+
+const ADMIN_MUTATION_WINDOW_SEC = Math.max(
+  1,
+  Math.ceil(ADMIN_MUTATION_LIMITS.WINDOW_MS / 1000)
+);
+
+export interface AdminMutationDecision {
+  allowed: boolean;
+  /** Estimasi detik hingga boleh mutasi lagi (hanya saat ditolak). */
+  retryAfterSec?: number;
+}
+
+export const adminMutationGuard = {
+  // Fallback dev-only in-memory (identik behavior, tanpa KV).
+  _dev: new Map<string, Entry>(),
+
+  /** Cek + hitung setiap mutasi (increment per panggilan). Fail-open. */
+  async check(identifier: string): Promise<AdminMutationDecision> {
+    const kv = env.RATE_LIMIT_KV;
+    const now = Date.now();
+    const storageKey = `ratelimit:adminmut:${identifier}`;
+    const windowMs = ADMIN_MUTATION_LIMITS.WINDOW_MS;
+
+    if (!kv) {
+      if (import.meta.env.DEV) {
+        const entry = this._dev.get(storageKey);
+        if (entry && inWindow(entry, now, windowMs)) {
+          if (entry.count >= ADMIN_MUTATION_LIMITS.MAX_PER_MINUTE) {
+            return {
+              allowed: false,
+              retryAfterSec: Math.ceil((entry.windowStart + windowMs - now) / 1000),
+            };
+          }
+          entry.count += 1;
+        } else {
+          this._dev.set(storageKey, { count: 1, windowStart: now });
+        }
+        return { allowed: true };
+      }
+      // Production tanpa binding KV: fail-open (mutasi tetap dilayani).
+      return { allowed: true };
+    }
+
+    try {
+      const entry = parseEntry(await kv.get(storageKey));
+      if (entry && inWindow(entry, now, windowMs)) {
+        if (entry.count >= ADMIN_MUTATION_LIMITS.MAX_PER_MINUTE) {
+          return {
+            allowed: false,
+            retryAfterSec: Math.ceil((entry.windowStart + windowMs - now) / 1000),
+          };
+        }
+        entry.count += 1;
+        await kv.put(storageKey, JSON.stringify(entry), {
+          expirationTtl: ADMIN_MUTATION_WINDOW_SEC + ADMIN_MUTATION_LIMITS.TTL_BUFFER_SEC,
+        });
+        return { allowed: true };
+      }
+
+      await kv.put(storageKey, JSON.stringify({ count: 1, windowStart: now }), {
+        expirationTtl: ADMIN_MUTATION_WINDOW_SEC + ADMIN_MUTATION_LIMITS.TTL_BUFFER_SEC,
+      });
+      return { allowed: true };
+    } catch (err) {
+      // KV read/write gagal — fail-open: jangan pernah menolak admin sah
+      // karena infra limiter bermasalah (auth berlapis tetap melindungi).
+      console.error("[adminmut-guard] KV gagal — fail-open:", err);
+      return { allowed: true };
+    }
+  },
+};
+
 // ===== Fallback dev-only in-memory (identik behavior, tanpa KV) =====
 const devGuard = (() => {
   const credMap = new Map<string, Entry>();

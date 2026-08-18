@@ -43,6 +43,10 @@ const collectionJsonLd = {
     })),
   },
 };
+
+// JSON-LD di-inline via set:html — escape `<` menjadi \u003c agar nilai
+// dari DB (title/issuer, diinput admin) tidak bisa menutup tag <script>.
+const collectionJsonLdJson = JSON.stringify(collectionJsonLd).replace(/</g, "\\u003c");
 ---
 
 <MainLayout title={t.certificates.title} description={t.meta.certificates}>
@@ -56,7 +60,7 @@ const collectionJsonLd = {
     <script
       is:inline
       type="application/ld+json"
-      set:html={JSON.stringify(collectionJsonLd)}
+      set:html={collectionJsonLdJson}
     ></script>
   </div>
 </MainLayout>
