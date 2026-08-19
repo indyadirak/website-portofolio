@@ -44,6 +44,17 @@ export const siteConfig = {
     id: "/cv-id.pdf",
     en: "/cv-en.pdf",
   },
+
+  /**
+   * Kontak & referensi keamanan untuk security.txt (RFC 9116) dan halaman
+   * keamanan. Contact sengaja mengarah ke form kontak (bukan email polos)
+   * supaya email tidak terscrape dari security.txt — email tetap dilindungi
+   * anti-scrape di UI (EmailLink).
+   */
+  security: {
+    contactUrl: "/contact",
+    pgpKeyUrl: "/.well-known/pgp.txt",
+  },
 } as const;
 
 export type SiteConfig = typeof siteConfig;

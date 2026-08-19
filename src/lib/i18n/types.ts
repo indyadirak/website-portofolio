@@ -146,6 +146,7 @@ export interface Dictionary {
     privacy: string;
     security: string;
     writeups: string;
+    securityArchitecture: string;
   };
   privacy: {
     eyebrow: string;
@@ -190,6 +191,24 @@ export interface Dictionary {
       disclosureTitle: string;
       disclosure: string[];
     };
+  };
+  securityArch: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    lastUpdated: string;
+    diagramTitle: string;
+    diagram: string[];
+    postureTitle: string;
+    posture: string[];
+    disclosureTitle: string;
+    disclosureIntro: string;
+    scopeTitle: string;
+    scope: string[];
+    outOfScopeTitle: string;
+    outOfScope: string[];
+    safeHarborTitle: string;
+    safeHarbor: string[];
   };
   writeups: {
     eyebrow: string;

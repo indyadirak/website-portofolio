@@ -53,6 +53,12 @@ const t = getDictionary(locale);
         [{t.footer.security}]
       </a>
       <a
+        href={locale === "en" ? "/en/security-architecture" : "/security-architecture"}
+        class="flex min-h-11 items-center rounded px-3 text-cyber-muted transition-colors hover:bg-cyber-card hover:text-cyber-primary"
+      >
+        [{t.footer.securityArchitecture}]
+      </a>
+      <a
         href={locale === "en" ? "/en/writeups" : "/writeups"}
         class="flex min-h-11 items-center rounded px-3 text-cyber-muted transition-colors hover:bg-cyber-card hover:text-cyber-primary"
       >
