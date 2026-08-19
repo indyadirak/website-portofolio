@@ -169,10 +169,11 @@ const errorParam = Astro.url.searchParams.get("error");
         loginForm.hidden = true;
         enrollStep.hidden = false;
         showStatus("enrollment_required", true);
-        // Panel berisi logika enrollment; beri tahu ia untuk mulai
-        // (jangan dijalankan otomatis saat page load — saat itu belum ada
-        // sesi, lihat MfaEnrollPanel.astro).
-        document.dispatchEvent(new CustomEvent("admin:enroll-request"));
+        // Panel berisi logika enrollment; kirim event dengan payload
+        // (dijalankan hanya saat step enroll tampil — lihat MfaEnrollPanel.astro).
+        document.dispatchEvent(
+          new CustomEvent("admin:enroll-request", { detail: { step: "enroll" } })
+        );
         break;
       default:
         showStatus("unexpected_response");

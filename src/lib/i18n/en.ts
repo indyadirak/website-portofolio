@@ -118,6 +118,12 @@ export const en: Dictionary = {
   imageZoom: {
     closeLabel: "close image",
   },
+  cv: {
+    noticeTitle: "[!] SYSTEM NOTICE",
+    noticeMessage:
+      "CV document is currently under construction. Will be available soon.",
+    closeLabel: "[ ok ]",
+  },
   about: {
     eyebrow: "$ cat ./about.txt",
     title: "About Me",
@@ -170,6 +176,8 @@ export const en: Dictionary = {
     orVia: "or via",
     note: "The form above posts to the /api/contact endpoint with rate limiting and honeypot protection.",
     captchaRequired: "Please complete the Turnstile verification first.",
+    captchaUnavailable:
+      "Turnstile widget failed to load — please reload the page and try again.",
   },
   footer: {
     rights: "All rights reserved.",

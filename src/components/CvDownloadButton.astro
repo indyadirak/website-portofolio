@@ -1,0 +1,57 @@
+---
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+import { siteConfig } from "../lib/config";
+import { resolveCvUrl } from "../lib/cv";
+
+interface Props {
+  /** "nav" = tombol kecil di navbar; "hero" = tombol utama di hero. */
+  variant: "nav" | "hero";
+}
+
+const { variant } = Astro.props;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const cv = siteConfig.cv;
+
+const label = variant === "nav" ? `[${t.nav.downloadCv}]` : t.hero.downloadCv;
+
+const common =
+  "inline-flex min-h-11 items-center rounded font-mono text-sm transition-colors disabled:cursor-not-allowed";
+const navClass =
+  "border border-cyber-primary/40 px-3 text-cyber-primary hover:bg-cyber-primary/10";
+const heroClass =
+  "border border-cyber-accent/60 bg-cyber-accent/10 px-4 text-cyber-accent hover:bg-cyber-accent hover:text-cyber-bg md:px-5";
+---
+{
+  cv.available ? (
+    <a
+      href={resolveCvUrl(locale)}
+      download
+      class={`${common} ${variant === "nav" ? navClass : heroClass}`}
+    >
+      {label}
+    </a>
+  ) : (
+    <button
+      type="button"
+      data-cv-unavailable
+      aria-haspopup="dialog"
+      title={t.cv.noticeMessage}
+      class={`${common} ${variant === "nav" ? navClass : heroClass}`}
+    >
+      {label}
+    </button>
+  )
+}
+
+<script>
+  // Satu pendengar global untuk semua tombol CV (desktop & mobile).
+  // Modul script ini di-bundle Astro — file eksternal, aman untuk CSP.
+  document.querySelectorAll<HTMLButtonElement>("[data-cv-unavailable]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.dispatchEvent(new CustomEvent("cv:unavailable"));
+    });
+  });
+</script>

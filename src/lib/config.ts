@@ -39,10 +39,16 @@ export const siteConfig = {
    *   - public/cv-en.pdf (English)
    * NOTE: jangan cantumkan nomor telepon di CV — cukup email & LinkedIn,
    * dan bersihkan metadata PDF (exiftool) sebelum di-upload.
+   *
+   * `available: false` — selama CV belum di-upload, tombol unduh di navbar
+   * & hero menampilkan modal "under construction" (tanpa request sia-sia
+   * yang berujung 404 NoSuchKey). Set `available: true` setelah file CV
+   * tersedia via /admin/cv (storage Supabase) atau public/cv-*.pdf.
    */
   cv: {
     id: "/cv-id.pdf",
     en: "/cv-en.pdf",
+    available: false,
   },
 
   /**

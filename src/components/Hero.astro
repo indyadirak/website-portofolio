@@ -2,7 +2,7 @@
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { getDictionary, localeFromPathname } from "../lib/i18n";
 import { siteConfig } from "../lib/config";
-import { resolveCvUrl } from "../lib/cv";
+import CvDownloadButton from "./CvDownloadButton.astro";
 import { getCertificates } from "../lib/data/certificates";
 import { getProjects } from "../lib/data/projects";
 
@@ -84,13 +84,7 @@ const typeSteps = t.hero.title.length + 8;
       >
         {t.hero.contactMe}
       </a>
-      <a
-        href={resolveCvUrl(locale)}
-        download
-        class="inline-flex min-h-11 items-center rounded border border-cyber-accent/60 bg-cyber-accent/10 px-4 text-cyber-accent transition-colors hover:bg-cyber-accent hover:text-cyber-bg md:px-5"
-      >
-        {t.hero.downloadCv}
-      </a>
+      <CvDownloadButton variant="hero" />
       <a
         href={siteConfig.contact.githubUrl}
         target="_blank"

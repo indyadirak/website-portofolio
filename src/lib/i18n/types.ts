@@ -102,6 +102,11 @@ export interface Dictionary {
   imageZoom: {
     closeLabel: string;
   };
+  cv: {
+    noticeTitle: string;
+    noticeMessage: string;
+    closeLabel: string;
+  };
   about: {
     eyebrow: string;
     title: string;
@@ -138,6 +143,7 @@ export interface Dictionary {
     orVia: string;
     note: string;
     captchaRequired: string;
+    captchaUnavailable: string;
   };
   footer: {
     rights: string;

@@ -15,6 +15,7 @@ const t = getDictionary(locale);
   data-i18n-noconfig={t.contact.notConfigured}
   data-i18n-fail={t.contact.sendFailed}
   data-i18n-captcha={t.contact.captchaRequired}
+  data-i18n-captcha-unavailable={t.contact.captchaUnavailable}
 >
   <div class="grid gap-5 md:grid-cols-2">
     <label class="block">
@@ -102,6 +103,7 @@ const t = getDictionary(locale);
     noconfig: form?.dataset.i18nNoconfig ?? "not configured",
     fail: form?.dataset.i18nFail ?? "failed",
     captcha: form?.dataset.i18nCaptcha ?? "complete the captcha first",
+    captchaUnavailable: form?.dataset.i18nCaptchaUnavailable ?? "captcha widget failed to load",
   };
 
   function show(text: string, ok: boolean): void {
@@ -113,38 +115,95 @@ const t = getDictionary(locale);
 
   // ===== Turnstile (widget dirender eksplisit; callback global dipanggil
   // oleh api.js dari challenges.cloudflare.com) =====
+  // Anti-race: api.js dimuat async — window.turnstile bisa belum siap saat
+  // script modul ini jalan. Kita poll sampai siap (bukan andalkan event
+  // `load` saja), lalu render SEKALI. widgetId disimpan agar widget bisa
+  // di-reset setelah submit (wajib: `form.reset()` hanya membersihkan
+  // hidden input, bukan state visual widget — tanpa reset, user yang sudah
+  // "solve" lalu submit lagi akan memakai token lama/basi).
   const widgetEl = document.getElementById("turnstile-widget");
   const tokenInput = document.getElementById("turnstile-token") as HTMLInputElement | null;
 
   type TurnstileApi = {
-    render: (el: HTMLElement, opts: Record<string, unknown>) => void;
+    render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+    reset(id: string): void;
   };
+
+  let widgetId: string | null = null;
+  let renderStarted = false;
+  let apiFailed = false;
+
+  function clearToken(): void {
+    if (tokenInput) tokenInput.value = "";
+  }
 
   (window as unknown as { onTurnstileSuccess?: (token: string) => void }).onTurnstileSuccess =
     (token: string) => {
       if (tokenInput) tokenInput.value = token;
     };
 
-  let rendered = false;
   function renderTurnstile(): void {
+    if (renderStarted || !widgetEl) return;
     const api = (window as unknown as { turnstile?: TurnstileApi }).turnstile;
-    if (!widgetEl || !api || rendered) return;
-    rendered = true;
-    api.render(widgetEl, {
-      sitekey: widgetEl.dataset.sitekey,
-      theme: "dark",
-      language: widgetEl.dataset.language,
-      callback: "onTurnstileSuccess",
+    if (!api) return;
+    renderStarted = true;
+    try {
+      widgetId = api.render(widgetEl, {
+        sitekey: widgetEl.dataset.sitekey,
+        theme: "dark",
+        language: widgetEl.dataset.language,
+        callback: "onTurnstileSuccess",
+        "expired-callback": clearToken,
+        "error-callback": clearToken,
+      });
+    } catch (err) {
+      console.error("[contact] Gagal render Turnstile:", err);
+      apiFailed = true;
+    }
+  }
+
+  // Tunggu API Turnstile siap (poll 200ms, maks 10 detik). Dev tanpa
+  // siteKey: widgetEl tidak ada — fungsi langsung no-op.
+  function waitForTurnstile(maxMs = 10_000): Promise<boolean> {
+    return new Promise((resolve) => {
+      if (!widgetEl) return resolve(true);
+      const started = Date.now();
+      const timer = window.setInterval(() => {
+        if ((window as unknown as { turnstile?: unknown }).turnstile) {
+          renderTurnstile();
+          window.clearInterval(timer);
+          resolve(!apiFailed);
+        } else if (Date.now() - started > maxMs) {
+          window.clearInterval(timer);
+          apiFailed = true;
+          resolve(false);
+        }
+      }, 200);
     });
   }
-  renderTurnstile();
-  window.addEventListener("load", renderTurnstile);
+
+  // Mulai render sesegera mungkin (jangan menunggu `load`).
+  void waitForTurnstile();
 
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    // Wajib selesaikan CAPTCHA sebelum submit (bila widget ada).
+    // Anti-race render vs submit: beri widget kesempatan render dulu
+    // (max 3 detik setelah klik), baru evaluasi token.
+    if (widgetEl && tokenInput) {
+      if ((window as unknown as { turnstile?: unknown }).turnstile) renderTurnstile();
+      else if (!(await waitForTurnstile(3_000))) {
+        show(`${messages.errorPrefix} ${messages.captchaUnavailable}`, false);
+        return;
+      }
+    }
+
+    // Wajib selesaikan CAPTCHA sebelum submit (bila widget ada & sehat).
     if (widgetEl && (!tokenInput || !tokenInput.value)) {
+      if (apiFailed) {
+        show(`${messages.errorPrefix} ${messages.captchaUnavailable}`, false);
+        return;
+      }
       show(`${messages.errorPrefix} ${messages.captcha}`, false);
       return;
     }
@@ -180,6 +239,11 @@ const t = getDictionary(locale);
       show(messages.success, true);
       form.reset();
       if (tokenInput) tokenInput.value = "";
+      // Reset widget: state visual & token internal Turnstile ikut dibersihkan
+      // (form.reset() hanya membersihkan input hidden, bukan widget).
+      if (widgetId) {
+        (window as unknown as { turnstile?: TurnstileApi }).turnstile?.reset(widgetId);
+      }
       return;
     }
 

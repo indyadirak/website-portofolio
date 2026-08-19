@@ -12,6 +12,14 @@
     class="rounded border border-cyber-border bg-cyber-card p-6 font-mono text-sm text-cyber-muted"
   >
     $ generating_qr_code...
+    <button
+      id="enroll-retry"
+      type="button"
+      hidden
+      class="mt-4 block rounded border border-cyber-danger/60 bg-cyber-danger/10 px-4 py-2 text-xs text-cyber-danger transition-colors hover:bg-cyber-danger hover:text-cyber-bg"
+    >
+      [ retry ]
+    </button>
   </div>
 
   <div id="enroll-content" hidden class="space-y-5">
@@ -76,6 +84,7 @@
 
   // Elemen dijamin ada (didefinisikan di komponen ini).
   const loading = document.getElementById("enroll-loading") as HTMLDivElement;
+  const retryBtn = document.getElementById("enroll-retry") as HTMLButtonElement;
   const content = document.getElementById("enroll-content") as HTMLDivElement;
   const qrImg = document.getElementById("enroll-qr") as HTMLImageElement;
   const secretEl = document.getElementById("enroll-secret") as HTMLElement;
@@ -83,13 +92,34 @@
   const verifyBtn = document.getElementById("enroll-verify") as HTMLButtonElement;
   const statusEl = document.getElementById("enroll-status") as HTMLParagraphElement;
 
+  const FAIL_MESSAGES: Record<string, string> = {
+    unauthorized:
+      "Sesi tidak valid atau kedaluwarsa — silakan login ulang, lalu coba lagi.",
+    enroll_gagal:
+      "Enrollment gagal (mungkin faktor TOTP lama belum diverifikasi) — coba [ retry ]. Jika berulang, hubungi admin.",
+  };
+
   async function enroll(): Promise<void> {
+    loading.hidden = false;
+    content.hidden = true;
+    retryBtn.hidden = true;
     loading.textContent = "$ generating_qr_code...";
-    const res = await fetch("/api/auth/mfa-enroll", { method: "POST" });
+
+    let res: Response;
+    try {
+      res = await fetch("/api/auth/mfa-enroll", { method: "POST" });
+    } catch {
+      loading.textContent = "$ error: jaringan tidak tersedia.";
+      retryBtn.hidden = false;
+      return;
+    }
+
     const data = await res.json();
 
     if (!res.ok || !data.ok) {
-      loading.textContent = `$ error: ${data.error ?? "enroll gagal"}`;
+      const code = (data.error as string) ?? "unknown";
+      loading.textContent = `$ error: ${FAIL_MESSAGES[code] ?? "enroll gagal. Coba lagi."}`;
+      retryBtn.hidden = false;
       return;
     }
 
@@ -99,6 +129,11 @@
     loading.hidden = true;
     content.hidden = false;
   }
+
+  retryBtn.addEventListener("click", () => {
+    enrollStarted = false;
+    void enroll();
+  });
 
   verifyBtn.addEventListener("click", async () => {
     const code = codeInput.value.trim();
@@ -134,6 +169,6 @@
   document.addEventListener("admin:enroll-request", () => {
     if (enrollStarted) return;
     enrollStarted = true;
-    enroll();
+    void enroll();
   });
 </script>

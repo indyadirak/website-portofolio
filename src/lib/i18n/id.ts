@@ -118,6 +118,12 @@ export const id: Dictionary = {
   imageZoom: {
     closeLabel: "tutup gambar",
   },
+  cv: {
+    noticeTitle: "[!] SYSTEM NOTICE",
+    noticeMessage:
+      "Dokumen CV sedang dalam proses penyusunan — akan segera tersedia.",
+    closeLabel: "[ ok ]",
+  },
   about: {
     eyebrow: "$ cat ./about.txt",
     title: "Tentang Saya",
@@ -170,6 +176,8 @@ export const id: Dictionary = {
     orVia: "atau via",
     note: "Form di atas menggunakan API endpoint /api/contact dengan rate limiting dan proteksi honeypot.",
     captchaRequired: "Selesaikan verifikasi Turnstile terlebih dahulu.",
+    captchaUnavailable:
+      "Widget Turnstile gagal dimuat — muat ulang halaman lalu coba lagi.",
   },
   footer: {
     rights: "All rights reserved.",
