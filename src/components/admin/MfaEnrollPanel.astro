@@ -72,6 +72,7 @@
 
 <script>
   let factorId: string | null = null;
+  let enrollStarted = false;
 
   // Elemen dijamin ada (didefinisikan di komponen ini).
   const loading = document.getElementById("enroll-loading") as HTMLDivElement;
@@ -83,6 +84,7 @@
   const statusEl = document.getElementById("enroll-status") as HTMLParagraphElement;
 
   async function enroll(): Promise<void> {
+    loading.textContent = "$ generating_qr_code...";
     const res = await fetch("/api/auth/mfa-enroll", { method: "POST" });
     const data = await res.json();
 
@@ -124,5 +126,14 @@
     window.location.href = "/admin/dashboard";
   });
 
-  enroll();
+  // PENTING: enrollment TIDAK boleh dijalankan saat page load. Panel ini
+  // selalu ada di DOM halaman login (tersembunyi), dan saat load belum ada
+  // sesi -> /api/auth/mfa-enroll pasti 401 "unauthorized", lalu error basi
+  // itu tertinggal tampil di panel saat step "enroll" muncul setelah login.
+  // Sebagai gantinya, login.astro mengirim event saat step enroll tampil.
+  document.addEventListener("admin:enroll-request", () => {
+    if (enrollStarted) return;
+    enrollStarted = true;
+    enroll();
+  });
 </script>
