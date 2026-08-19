@@ -120,6 +120,13 @@ jobs:
       # header berasal dari _headers, middleware TIDAK jalan):
       #   /             -> SSR (middleware men-set header programatik)
       #   /certificates -> prerender (statis; header dari _headers)
+      #
+      # CATATAN (fix 2026-08-19): verifikasi sebelumnya gagal karena
+      # (1) `curl -sSI` + grep "^HTTP/2 200" — di runner curl merundingkan
+      # HTTP/1.1 sehingga grep tidak pernah match, dan (2) /certificates
+      # kini 307 -> /certificates/ (trailing slash). Gunakan `-L` untuk
+      # mengikuti redirect dan `-D -` untuk menangkap header respons final,
+      # lalu periksa status dengan pola toleran versi HTTP.
       - name: Verify security headers (production)
         env:
           PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.my.id' }}
@@ -127,8 +134,8 @@ jobs:
           for path in "/" "/certificates"; do
             ok=0
             for i in 1 2 3 4 5; do
-              H="$(curl -sSI -A "header-check" "${PROD_URL}${path}")"
-              if [ -n "$H" ] && printf '%s' "$H" | grep -qi "^HTTP/2 200"; then ok=1; break; fi
+              H="$(curl -sSL -o /dev/null -D - -A "header-check" "${PROD_URL}${path}")"
+              if [ -n "$H" ] && printf '%s' "$H" | grep -qiE "^HTTP/[12] 200"; then ok=1; break; fi
               [ "$i" -lt 5 ] && sleep 10
             done
             if [ "$ok" != "1" ]; then
