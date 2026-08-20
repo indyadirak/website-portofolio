@@ -1,0 +1,316 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import { canDeleteSiteContent, canManageSiteContent } from "../../lib/auth";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
+import type { SocialLinkRow } from "../../lib/types";
+
+export const prerender = false;
+
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+if (!canManageSiteContent(profile)) {
+  return Astro.redirect("/403");
+}
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const { data: rawLinks } = await supabase
+  .from("social_links")
+  .select("*")
+  .order("sort_order", { ascending: true })
+  .order("platform", { ascending: true });
+
+const links = (rawLinks ?? []) as SocialLinkRow[];
+const canDelete = canDeleteSiteContent(profile);
+const role = profile?.role ?? "viewer";
+
+const quickActions = [
+  { label: "[ dashboard ]", href: "/admin/dashboard" },
+  { label: "[ site settings ]", href: "/admin/settings" },
+  { label: "[ experiences ]", href: "/admin/experiences" },
+  { label: "[ writeups ]", href: "/admin/writeups" },
+  { label: "[ cv ]", href: "/admin/cv" },
+  { label: "[ backup ]", href: "/admin/backup" },
+];
+---
+
+<MainLayout title="Social Links — Admin" description={t.adminSocialLinks.title}>
+  <div class="mx-auto max-w-5xl px-6 py-14">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">{t.adminSocialLinks.eyebrow}</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          {t.adminSocialLinks.title}<span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <a
+          href="/admin/dashboard"
+          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+        >
+          {t.adminSocialLinks.back}
+        </a>
+        <span class="rounded border border-cyber-primary/50 px-2 py-1 font-mono text-xs uppercase tracking-wider text-cyber-primary">
+          role: {role}
+        </span>
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-center gap-2 font-mono text-xs">
+      {quickActions.map((a) => (
+        <a
+          href={a.href}
+          class="rounded border border-cyber-border px-3 py-1.5 text-cyber-muted transition-colors hover:text-cyber-primary"
+        >
+          {a.label}
+        </a>
+      ))}
+    </div>
+
+    <form
+      id="link-form"
+      data-i18n-delete-confirm={t.adminSocialLinks.deleteConfirm}
+      data-i18n-error-prefix={t.adminSocialLinks.errorPrefix}
+      data-i18n-saved={t.adminSocialLinks.saved}
+      data-i18n-new-mode={t.adminSocialLinks.newMode}
+      data-i18n-edit-mode={t.adminSocialLinks.editMode}
+      data-i18n-save-new={t.adminSocialLinks.saveNew}
+      data-i18n-save-edit={t.adminSocialLinks.saveEdit}
+      class="mt-8 space-y-5 rounded border border-cyber-border bg-cyber-panel p-6"
+    >
+      <p id="link-form-mode" class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
+        {t.adminSocialLinks.newMode}
+      </p>
+
+      <div class="grid gap-5 md:grid-cols-2">
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSocialLinks.platform} *</span>
+          <input id="l-platform" type="text" required minlength={2} maxlength={40} pattern="[a-z0-9-_]+"
+            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+            list="platform-list" placeholder="github | linkedin | blog" />
+          <datalist id="platform-list">
+            <option value="github"></option>
+            <option value="linkedin"></option>
+            <option value="blog"></option>
+          </datalist>
+        </label>
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSocialLinks.url} *</span>
+          <input id="l-url" type="url" required maxlength={500}
+            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+            placeholder="https://github.com/indyadirak" />
+        </label>
+      </div>
+
+      <div class="grid gap-5 md:grid-cols-2">
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSocialLinks.icon}</span>
+          <input id="l-icon" type="text" maxlength={40}
+            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+            placeholder="github" />
+        </label>
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSocialLinks.sortOrder}</span>
+          <input id="l-sort" type="number" min={0} max={9999} value="10"
+            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
+        </label>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button type="submit" id="l-submit"
+          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50">
+          {t.adminSocialLinks.saveNew}
+        </button>
+        <button type="button" id="l-cancel" hidden
+          class="rounded border border-cyber-border px-5 py-2.5 font-mono text-sm text-slate-300 hover:border-cyber-accent hover:text-cyber-accent">
+          {t.adminSocialLinks.cancelEdit}
+        </button>
+        <p id="l-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
+      </div>
+    </form>
+
+    <section class="mt-10">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-mono text-lg font-bold text-white">{t.adminSocialLinks.title}</h2>
+        <span class="font-mono text-xs text-cyber-muted">{t.adminSocialLinks.total}: {links.length}</span>
+      </div>
+
+      {
+        links.length === 0 ? (
+          <div class="rounded border border-cyber-border bg-cyber-card p-6 font-mono text-xs text-cyber-muted">
+            <p>{t.adminSocialLinks.emptyNote}</p>
+          </div>
+        ) : (
+          <div class="overflow-x-auto rounded border border-cyber-border bg-cyber-card">
+            <table class="w-full min-w-[720px] text-left font-mono text-sm">
+              <thead class="border-b border-cyber-border/60 text-[11px] uppercase tracking-wider text-cyber-muted">
+                <tr>
+                  <th class="px-4 py-3">#</th>
+                  <th class="px-4 py-3">Platform</th>
+                  <th class="px-4 py-3">URL</th>
+                  <th class="px-4 py-3">Icon</th>
+                  <th class="px-4 py-3">Sort</th>
+                  <th class="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {links.map((s, i) => (
+                  <tr class="border-b border-cyber-border/40 transition-colors hover:bg-cyber-panel">
+                    <td class="px-4 py-3 text-cyber-muted">{String(i + 1).padStart(2, "0")}</td>
+                    <td class="px-4 py-3">
+                      <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-primary">{s.platform}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="max-w-xs truncate text-slate-200 underline decoration-cyber-border underline-offset-4 transition-colors hover:text-cyber-primary"
+                      >
+                        {s.url}
+                      </a>
+                    </td>
+                    <td class="px-4 py-3 text-cyber-muted">{s.icon ?? "-"}</td>
+                    <td class="px-4 py-3 text-cyber-muted">{s.sort_order}</td>
+                    <td class="px-4 py-3">
+                      <div class="flex justify-end gap-2 text-[11px]">
+                        <button
+                          type="button"
+                          data-link-edit={s.id}
+                          data-link-platform={s.platform}
+                          data-link-url={s.url}
+                          data-link-icon={s.icon ?? ""}
+                          data-link-sort={s.sort_order}
+                          class="rounded border border-cyber-border px-2 py-1 text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+                        >
+                          {t.adminSocialLinks.edit}
+                        </button>
+                        {canDelete && (
+                          <button
+                            type="button"
+                            data-link-delete={s.id}
+                            data-link-platform={s.platform}
+                            class="rounded border border-cyber-border px-2 py-1 text-cyber-muted transition-colors hover:border-cyber-danger hover:text-cyber-danger"
+                          >
+                            {t.adminSocialLinks.delete}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
+    </section>
+  </div>
+</MainLayout>
+
+<script>
+  const form = document.getElementById("link-form") as HTMLFormElement;
+  const tDeleteConfirm = form.dataset.i18nDeleteConfirm ?? "";
+  const errorPrefix = form.dataset.i18nErrorPrefix ?? "";
+  const savedMsg = form.dataset.i18nSaved ?? "";
+  const newMode = form.dataset.i18nNewMode ?? "";
+  const editMode = form.dataset.i18nEditMode ?? "";
+  const saveNew = form.dataset.i18nSaveNew ?? "";
+  const saveEdit = form.dataset.i18nSaveEdit ?? "";
+  const modeEl = document.getElementById("link-form-mode") as HTMLParagraphElement;
+  const submitBtn = document.getElementById("l-submit") as HTMLButtonElement;
+  const cancelBtn = document.getElementById("l-cancel") as HTMLButtonElement;
+  const statusEl = document.getElementById("l-status") as HTMLParagraphElement;
+
+  const platformInput = document.getElementById("l-platform") as HTMLInputElement;
+  const urlInput = document.getElementById("l-url") as HTMLInputElement;
+  const iconInput = document.getElementById("l-icon") as HTMLInputElement;
+  const sortInput = document.getElementById("l-sort") as HTMLInputElement;
+
+  let editingId: string | null = null;
+
+  function setMode(editing: boolean): void {
+    modeEl.textContent = editing ? editMode : newMode;
+    submitBtn.textContent = editing ? saveEdit : saveNew;
+    cancelBtn.hidden = !editing;
+  }
+
+  document.querySelectorAll<HTMLButtonElement>("[data-link-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.linkEdit as string;
+      editingId = id;
+      platformInput.value = btn.dataset.linkPlatform ?? "";
+      urlInput.value = btn.dataset.linkUrl ?? "";
+      iconInput.value = btn.dataset.linkIcon ?? "";
+      sortInput.value = String(btn.dataset.linkSort ?? "10");
+      setMode(true);
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+      platformInput.focus();
+    });
+  });
+
+  cancelBtn.addEventListener("click", () => {
+    editingId = null;
+    form.reset();
+    sortInput.value = "10";
+    setMode(false);
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    statusEl.textContent = "";
+    submitBtn.disabled = true;
+
+    const payload = {
+      platform: platformInput.value.trim().toLowerCase(),
+      url: urlInput.value.trim(),
+      icon: iconInput.value.trim() || null,
+      sortOrder: Number(sortInput.value) || 0,
+    };
+
+    const res = await fetch(
+      editingId ? `/api/admin/social-links?id=${encodeURIComponent(editingId)}` : "/api/admin/social-links",
+      {
+        method: editingId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    ).catch(() => null);
+
+    if (!res) {
+      statusEl.textContent = `${errorPrefix} jaringan gagal`;
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const data = await res.json().catch(() => ({ ok: false, error: "invalid_response" }));
+
+    submitBtn.disabled = false;
+
+    if (!res.ok || !data.ok) {
+      statusEl.textContent = `${errorPrefix} ${data.error ?? "gagal menyimpan"}`;
+      return;
+    }
+
+    statusEl.textContent = savedMsg;
+    window.location.reload();
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-link-delete]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.linkDelete as string;
+      const platform = btn.dataset.linkPlatform ?? "";
+      const msg = tDeleteConfirm.replace("{platform}", platform);
+      if (!window.confirm(msg)) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/social-links?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
+      if (res && res.ok) window.location.reload();
+      else btn.disabled = false;
+    });
+  });
+</script>

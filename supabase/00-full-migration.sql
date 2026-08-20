@@ -1324,6 +1324,276 @@ grant insert, update, delete on public.project_categories to authenticated;
 -- dari nama kategori FK saat kategori dipilih).
 
 -- ============================================================
+-- 17. SITE SETTINGS: identitas dinamis key/value
+--     (supabase/site-settings.sql)
+--     FASE 2 — hero_title, hero_tagline, short_bio,
+--     availability_status. Public read, admin/editor (AAL2) write.
+-- ============================================================
+
+create table if not exists public.site_settings (
+  id         uuid primary key default gen_random_uuid(),
+  key        text not null,
+  value      text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.site_settings
+  drop constraint if exists site_settings_key_key;
+alter table public.site_settings
+  add constraint site_settings_key_key unique (key);
+
+insert into public.site_settings (key, value) values
+  ('hero_title',          'Network & Cyber Security Technician'),
+  ('hero_tagline',        'Network & Cyber Security Portfolio'),
+  ('short_bio',           'Penetration testing, security research, dan blue team defense — membangun sistem yang aman sejak awal.'),
+  ('availability_status', 'open-to-work')
+on conflict (key) do nothing;
+
+create or replace function public.set_updated_at_site_settings()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists site_settings_set_updated_at on public.site_settings;
+create trigger site_settings_set_updated_at
+  before update on public.site_settings
+  for each row execute function public.set_updated_at_site_settings();
+
+alter table public.site_settings enable row level security;
+
+drop policy if exists "site_settings_public_read" on public.site_settings;
+create policy "site_settings_public_read" on public.site_settings
+  for select using (true);
+
+drop policy if exists "site_settings_auth_manage_read" on public.site_settings;
+create policy "site_settings_auth_manage_read" on public.site_settings
+  for select to authenticated
+  using (true);
+
+drop policy if exists "site_settings_insert_mfa_admin_editor" on public.site_settings;
+create policy "site_settings_insert_mfa_admin_editor" on public.site_settings
+  for insert to authenticated
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "site_settings_update_mfa_admin_editor" on public.site_settings;
+create policy "site_settings_update_mfa_admin_editor" on public.site_settings
+  for update to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "site_settings_delete_mfa_admin" on public.site_settings;
+create policy "site_settings_delete_mfa_admin" on public.site_settings
+  for delete to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role = 'admin'
+    )
+  );
+
+grant select on public.site_settings to anon, authenticated;
+grant insert, update, delete on public.site_settings to authenticated;
+
+-- ============================================================
+-- 18. EXPERIENCES: Career Timeline
+--     (supabase/experiences.sql)
+--     FASE 2 — role, company, periode, is_current, sort_order.
+--     Public read, admin/editor (AAL2) write.
+-- ============================================================
+
+create table if not exists public.experiences (
+  id          uuid primary key default gen_random_uuid(),
+  role        text not null,
+  company     text not null,
+  start_date  date not null,
+  end_date    date,
+  is_current  boolean not null default false,
+  description text not null default '',
+  sort_order  integer not null default 0,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+drop index if exists experiences_sort_order_idx;
+create index experiences_sort_order_idx on public.experiences (sort_order);
+
+create or replace function public.set_updated_at_experiences()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists experiences_set_updated_at on public.experiences;
+create trigger experiences_set_updated_at
+  before update on public.experiences
+  for each row execute function public.set_updated_at_experiences();
+
+alter table public.experiences enable row level security;
+
+drop policy if exists "experiences_public_read" on public.experiences;
+create policy "experiences_public_read" on public.experiences
+  for select using (true);
+
+drop policy if exists "experiences_auth_manage_read" on public.experiences;
+create policy "experiences_auth_manage_read" on public.experiences
+  for select to authenticated
+  using (true);
+
+drop policy if exists "experiences_insert_mfa_admin_editor" on public.experiences;
+create policy "experiences_insert_mfa_admin_editor" on public.experiences
+  for insert to authenticated
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "experiences_update_mfa_admin_editor" on public.experiences;
+create policy "experiences_update_mfa_admin_editor" on public.experiences
+  for update to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "experiences_delete_mfa_admin" on public.experiences;
+create policy "experiences_delete_mfa_admin" on public.experiences
+  for delete to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role = 'admin'
+    )
+  );
+
+grant select on public.experiences to anon, authenticated;
+grant insert, update, delete on public.experiences to authenticated;
+
+-- ============================================================
+-- 19. SOCIAL LINKS: tautan sosial dinamis
+--     (supabase/social-links.sql)
+--     FASE 2 — github/linkedin/blog. Public read,
+--     admin/editor (AAL2) write.
+-- ============================================================
+
+create table if not exists public.social_links (
+  id         uuid primary key default gen_random_uuid(),
+  platform   text not null,
+  url        text not null,
+  icon       text,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.social_links
+  drop constraint if exists social_links_platform_key;
+alter table public.social_links
+  add constraint social_links_platform_key unique (platform);
+
+drop index if exists social_links_sort_order_idx;
+create index social_links_sort_order_idx on public.social_links (sort_order);
+
+insert into public.social_links (platform, url, icon, sort_order) values
+  ('github',   'https://github.com/indyadirak',         'github',   10),
+  ('linkedin', 'https://www.linkedin.com/in/indyadirak', 'linkedin', 20),
+  ('blog',     'https://blog.indyadirak.my.id',          'blog',     30)
+on conflict (platform) do nothing;
+
+create or replace function public.set_updated_at_social_links()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists social_links_set_updated_at on public.social_links;
+create trigger social_links_set_updated_at
+  before update on public.social_links
+  for each row execute function public.set_updated_at_social_links();
+
+alter table public.social_links enable row level security;
+
+drop policy if exists "social_links_public_read" on public.social_links;
+create policy "social_links_public_read" on public.social_links
+  for select using (true);
+
+drop policy if exists "social_links_auth_manage_read" on public.social_links;
+create policy "social_links_auth_manage_read" on public.social_links
+  for select to authenticated
+  using (true);
+
+drop policy if exists "social_links_insert_mfa_admin_editor" on public.social_links;
+create policy "social_links_insert_mfa_admin_editor" on public.social_links
+  for insert to authenticated
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "social_links_update_mfa_admin_editor" on public.social_links;
+create policy "social_links_update_mfa_admin_editor" on public.social_links
+  for update to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "social_links_delete_mfa_admin" on public.social_links;
+create policy "social_links_delete_mfa_admin" on public.social_links
+  for delete to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role = 'admin'
+    )
+  );
+
+grant select on public.social_links to anon, authenticated;
+grant insert, update, delete on public.social_links to authenticated;
+
+-- ============================================================
 -- SELESAI -- SEMUA MIGRASI DITERAPKAN DALAM SATU TRANSAKSI.
 -- ============================================================
 commit;

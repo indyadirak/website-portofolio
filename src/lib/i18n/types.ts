@@ -98,6 +98,9 @@ export interface Dictionary {
     newProject: string;
     newWriteup: string;
     manageCategories: string;
+    manageSettings: string;
+    manageExperiences: string;
+    manageSocialLinks: string;
     viewCertificates: string;
     systemStatus: string;
     statusDb: string;
@@ -279,6 +282,72 @@ export interface Dictionary {
       published: string;
       updated: string;
     };
+  };
+  /** FASE 2: Admin — edit identitas situs (site_settings). */
+  adminSettings: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    heroTitle: string;
+    heroTagline: string;
+    shortBio: string;
+    availability: string;
+    availabilityOpen: string;
+    availabilityClosed: string;
+    save: string;
+    saved: string;
+    errorPrefix: string;
+    back: string;
+    keyColumn: string;
+    valueColumn: string;
+  };
+  /** FASE 2: Admin — kelola Career Timeline (experiences). */
+  adminExperiences: {
+    eyebrow: string;
+    title: string;
+    newMode: string;
+    editMode: string;
+    saveNew: string;
+    saveEdit: string;
+    cancelEdit: string;
+    role: string;
+    company: string;
+    startDate: string;
+    endDate: string;
+    isCurrent: string;
+    description: string;
+    sortOrder: string;
+    currentBadge: string;
+    total: string;
+    emptyNote: string;
+    edit: string;
+    delete: string;
+    deleteConfirm: string;
+    back: string;
+    saved: string;
+    errorPrefix: string;
+  };
+  /** FASE 2: Admin — kelola tautan sosial (social_links). */
+  adminSocialLinks: {
+    eyebrow: string;
+    title: string;
+    newMode: string;
+    editMode: string;
+    saveNew: string;
+    saveEdit: string;
+    cancelEdit: string;
+    platform: string;
+    url: string;
+    icon: string;
+    sortOrder: string;
+    total: string;
+    emptyNote: string;
+    edit: string;
+    delete: string;
+    deleteConfirm: string;
+    back: string;
+    saved: string;
+    errorPrefix: string;
   };
   notFound: {
     title: string;

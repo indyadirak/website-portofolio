@@ -160,6 +160,52 @@ export type ProjectCategoryRow = {
   updated_at: string;
 };
 
+/** Nilai yang diizinkan untuk key site_settings.availability_status. */
+export type AvailabilityStatus = "open-to-work" | "not-available";
+
+/** Kunci identitas dinamis (tabel public.site_settings) — FASE 2. */
+export const SITE_SETTING_KEYS = [
+  "hero_title",
+  "hero_tagline",
+  "short_bio",
+  "availability_status",
+] as const;
+export type SiteSettingKey = (typeof SITE_SETTING_KEYS)[number];
+
+/** Baris tabel public.site_settings — identitas utama (key/value). */
+export type SiteSettingRow = {
+  id: string;
+  key: SiteSettingKey;
+  value: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Baris tabel public.experiences — Career Timeline (FASE 2). */
+export type ExperienceRow = {
+  id: string;
+  role: string;
+  company: string;
+  start_date: string;
+  end_date: string | null;
+  is_current: boolean;
+  description: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Baris tabel public.social_links — tautan sosial dinamis (FASE 2). */
+export type SocialLinkRow = {
+  id: string;
+  platform: string;
+  url: string;
+  icon: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type SkillsRow = {
   id: string;
   name: string;
@@ -493,6 +539,74 @@ export interface Database {
           remediation?: string;
           is_published?: boolean;
           created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      site_settings: {
+        Row: SiteSettingRow;
+        Insert: {
+          id?: string;
+          key: SiteSettingKey;
+          value: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          key?: SiteSettingKey;
+          value?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      experiences: {
+        Row: ExperienceRow;
+        Insert: {
+          id?: string;
+          role: string;
+          company: string;
+          start_date: string;
+          end_date?: string | null;
+          is_current?: boolean;
+          description?: string;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          role?: string;
+          company?: string;
+          start_date?: string;
+          end_date?: string | null;
+          is_current?: boolean;
+          description?: string;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      social_links: {
+        Row: SocialLinkRow;
+        Insert: {
+          id?: string;
+          platform: string;
+          url: string;
+          icon?: string | null;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          platform?: string;
+          url?: string;
+          icon?: string | null;
+          sort_order?: number;
           created_at?: string;
           updated_at?: string;
         };

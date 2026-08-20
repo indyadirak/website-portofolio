@@ -105,6 +105,16 @@ export function canManageCv(profile: Profile | null): boolean {
   return hasRole(profile, "admin");
 }
 
+/** Manajemen identitas situs (site_settings, experiences, social_links) — FASE 2. */
+export function canManageSiteContent(profile: Profile | null): boolean {
+  return hasRole(profile, "admin", "editor");
+}
+
+/** Hapus data identitas situs: admin saja (selaras policy RLS delete admin). */
+export function canDeleteSiteContent(profile: Profile | null): boolean {
+  return hasRole(profile, "admin");
+}
+
 export interface AuthContext {
   supabase: SupabaseClient<Database>;
   user: User | null;

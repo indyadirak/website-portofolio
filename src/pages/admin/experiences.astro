@@ -1,0 +1,379 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import { canDeleteSiteContent, canManageSiteContent } from "../../lib/auth";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
+import type { ExperienceRow } from "../../lib/types";
+
+export const prerender = false;
+
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+if (!canManageSiteContent(profile)) {
+  return Astro.redirect("/403");
+}
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const { data: rawExperiences } = await supabase
+  .from("experiences")
+  .select("*")
+  .order("sort_order", { ascending: true })
+  .order("start_date", { ascending: false });
+
+const experiences = (rawExperiences ?? []) as ExperienceRow[];
+const canDelete = canDeleteSiteContent(profile);
+const role = profile?.role ?? "viewer";
+
+const quickActions = [
+  { label: "[ dashboard ]", href: "/admin/dashboard" },
+  { label: "[ site settings ]", href: "/admin/settings" },
+  { label: "[ social links ]", href: "/admin/social-links" },
+  { label: "[ writeups ]", href: "/admin/writeups" },
+  { label: "[ cv ]", href: "/admin/cv" },
+  { label: "[ backup ]", href: "/admin/backup" },
+];
+---
+
+<MainLayout title="Experiences — Admin" description={t.adminExperiences.title}>
+  <div class="mx-auto max-w-5xl px-6 py-14">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">{t.adminExperiences.eyebrow}</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          {t.adminExperiences.title}<span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <a
+          href="/admin/dashboard"
+          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+        >
+          {t.adminExperiences.back}
+        </a>
+        <span class="rounded border border-cyber-primary/50 px-2 py-1 font-mono text-xs uppercase tracking-wider text-cyber-primary">
+          role: {role}
+        </span>
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-center gap-2 font-mono text-xs">
+      {quickActions.map((a) => (
+        <a
+          href={a.href}
+          class="rounded border border-cyber-border px-3 py-1.5 text-cyber-muted transition-colors hover:text-cyber-primary"
+        >
+          {a.label}
+        </a>
+      ))}
+    </div>
+
+    <form
+      id="experience-form"
+      data-i18n-delete-confirm={t.adminExperiences.deleteConfirm}
+      data-i18n-error-prefix={t.adminExperiences.errorPrefix}
+      data-i18n-saved={t.adminExperiences.saved}
+      data-i18n-new-mode={t.adminExperiences.newMode}
+      data-i18n-edit-mode={t.adminExperiences.editMode}
+      data-i18n-save-new={t.adminExperiences.saveNew}
+      data-i18n-save-edit={t.adminExperiences.saveEdit}
+      class="mt-8 space-y-5 rounded border border-cyber-border bg-cyber-panel p-6"
+    >
+      <p id="experience-form-mode" class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
+        {t.adminExperiences.newMode}
+      </p>
+
+      <div class="grid gap-5 md:grid-cols-2">
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.role} *</span>
+          <input id="e-role" type="text" required maxlength={120}
+            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+            placeholder="Network & Cyber Security Technician" />
+        </label>
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.company} *</span>
+          <input id="e-company" type="text" required maxlength={120}
+            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+            placeholder="Balai Harta Peninggalan Surabaya" />
+        </label>
+      </div>
+
+      <div class="grid gap-5 md:grid-cols-3">
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.startDate} *</span>
+          <input id="e-start" type="date" required
+            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
+        </label>
+        <label class="block">
+          <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.endDate}</span>
+          <input id="e-end" type="date"
+            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary disabled:opacity-40" />
+        </label>
+        <div class="flex min-h-11 items-end pb-1">
+          <label class="flex cursor-pointer items-center gap-3">
+            <input id="e-current" type="checkbox"
+              class="h-5 w-5 rounded border-cyber-border bg-cyber-panel accent-cyber-primary" />
+            <span class="font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.isCurrent}</span>
+          </label>
+        </div>
+      </div>
+
+      <label class="block">
+        <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.description}</span>
+        <textarea id="e-description" rows={3} maxlength={1000}
+          class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+          placeholder="Ringkasan tanggung jawab / pencapaian"></textarea>
+      </label>
+
+      <label class="block">
+        <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.sortOrder}</span>
+        <input id="e-sort" type="number" min={0} max={9999} value="0"
+          class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
+      </label>
+
+      <div class="flex items-center gap-4">
+        <button type="submit" id="e-submit"
+          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50">
+          {t.adminExperiences.saveNew}
+        </button>
+        <button type="button" id="e-cancel" hidden
+          class="rounded border border-cyber-border px-5 py-2.5 font-mono text-sm text-slate-300 hover:border-cyber-accent hover:text-cyber-accent">
+          {t.adminExperiences.cancelEdit}
+        </button>
+        <p id="e-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
+      </div>
+    </form>
+
+    <section class="mt-10">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-mono text-lg font-bold text-white">{t.adminExperiences.title}</h2>
+        <span class="font-mono text-xs text-cyber-muted">{t.adminExperiences.total}: {experiences.length}</span>
+      </div>
+
+      {
+        experiences.length === 0 ? (
+          <div class="rounded border border-cyber-border bg-cyber-card p-6 font-mono text-xs text-cyber-muted">
+            <p>{t.adminExperiences.emptyNote}</p>
+          </div>
+        ) : (
+          <div class="overflow-x-auto rounded border border-cyber-border bg-cyber-card">
+            <table class="w-full min-w-[720px] text-left font-mono text-sm">
+              <thead class="border-b border-cyber-border/60 text-[11px] uppercase tracking-wider text-cyber-muted">
+                <tr>
+                  <th class="px-4 py-3">#</th>
+                  <th class="px-4 py-3">Period</th>
+                  <th class="px-4 py-3">Role</th>
+                  <th class="px-4 py-3">Company</th>
+                  <th class="px-4 py-3">Sort</th>
+                  <th class="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {experiences.map((e, i) => (
+                  <tr class="border-b border-cyber-border/40 transition-colors hover:bg-cyber-panel">
+                    <td class="px-4 py-3 text-cyber-muted">{String(i + 1).padStart(2, "0")}</td>
+                    <td class="px-4 py-3">
+                      <p class="text-slate-200">{e.start_date} → {e.is_current ? t.adminExperiences.currentBadge : (e.end_date ?? "-")}</p>
+                      {e.is_current && (
+                        <p class="text-[11px] uppercase tracking-wider text-cyber-primary">{t.adminExperiences.currentBadge}</p>
+                      )}
+                    </td>
+                    <td class="px-4 py-3">
+                      <p class="font-semibold text-slate-200">{e.role}</p>
+                      {e.description && <p class="max-w-xs truncate text-[11px] text-cyber-muted">{e.description}</p>}
+                    </td>
+                    <td class="px-4 py-3 text-cyber-muted">{e.company}</td>
+                    <td class="px-4 py-3 text-cyber-muted">{e.sort_order}</td>
+                    <td class="px-4 py-3">
+                      <div class="flex justify-end gap-2 text-[11px]">
+                        <button
+                          type="button"
+                          data-exp-edit={e.id}
+                          data-exp-role={e.role}
+                          data-exp-company={e.company}
+                          data-exp-start={e.start_date}
+                          data-exp-end={e.end_date ?? ""}
+                          data-exp-current={String(e.is_current)}
+                          data-exp-desc={e.description}
+                          data-exp-sort={e.sort_order}
+                          class="rounded border border-cyber-border px-2 py-1 text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+                        >
+                          {t.adminExperiences.edit}
+                        </button>
+                        {canDelete && (
+                          <button
+                            type="button"
+                            data-exp-delete={e.id}
+                            data-exp-role={e.role}
+                            data-exp-company={e.company}
+                            class="rounded border border-cyber-border px-2 py-1 text-cyber-muted transition-colors hover:border-cyber-danger hover:text-cyber-danger"
+                          >
+                            {t.adminExperiences.delete}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
+    </section>
+  </div>
+</MainLayout>
+
+<script>
+  const form = document.getElementById("experience-form") as HTMLFormElement;
+  const tDeleteConfirm = form.dataset.i18nDeleteConfirm ?? "";
+  const errorPrefix = form.dataset.i18nErrorPrefix ?? "";
+  const savedMsg = form.dataset.i18nSaved ?? "";
+  const newMode = form.dataset.i18nNewMode ?? "";
+  const editMode = form.dataset.i18nEditMode ?? "";
+  const saveNew = form.dataset.i18nSaveNew ?? "";
+  const saveEdit = form.dataset.i18nSaveEdit ?? "";
+  const modeEl = document.getElementById("experience-form-mode") as HTMLParagraphElement;
+  const submitBtn = document.getElementById("e-submit") as HTMLButtonElement;
+  const cancelBtn = document.getElementById("e-cancel") as HTMLButtonElement;
+  const statusEl = document.getElementById("e-status") as HTMLParagraphElement;
+
+  const roleInput = document.getElementById("e-role") as HTMLInputElement;
+  const companyInput = document.getElementById("e-company") as HTMLInputElement;
+  const startInput = document.getElementById("e-start") as HTMLInputElement;
+  const endInput = document.getElementById("e-end") as HTMLInputElement;
+  const currentInput = document.getElementById("e-current") as HTMLInputElement;
+  const descInput = document.getElementById("e-description") as HTMLTextAreaElement;
+  const sortInput = document.getElementById("e-sort") as HTMLInputElement;
+
+  let editingId: string | null = null;
+
+  function setMode(editing: boolean): void {
+    modeEl.textContent = editing ? editMode : newMode;
+    submitBtn.textContent = editing ? saveEdit : saveNew;
+    cancelBtn.hidden = !editing;
+  }
+
+  currentInput.addEventListener("change", () => {
+    if (currentInput.checked) {
+      endInput.value = "";
+      endInput.disabled = true;
+    } else {
+      endInput.disabled = false;
+    }
+  });
+
+  window.addEventListener("experience:edit", ((event: Event) => {
+    const detail = (event as CustomEvent<{
+      id: string;
+      role: string;
+      company: string;
+      startDate: string;
+      endDate: string | null;
+      isCurrent: boolean;
+      description: string;
+      sortOrder: number;
+    }>).detail;
+    editingId = detail.id;
+    roleInput.value = detail.role;
+    companyInput.value = detail.company;
+    startInput.value = detail.startDate;
+    currentInput.checked = detail.isCurrent;
+    endInput.disabled = detail.isCurrent;
+    endInput.value = detail.isCurrent ? "" : (detail.endDate ?? "");
+    descInput.value = detail.description;
+    sortInput.value = String(detail.sortOrder);
+    setMode(true);
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+    roleInput.focus();
+  }) as EventListener);
+
+  cancelBtn.addEventListener("click", () => {
+    editingId = null;
+    form.reset();
+    endInput.disabled = false;
+    sortInput.value = "0";
+    setMode(false);
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    statusEl.textContent = "";
+    submitBtn.disabled = true;
+
+    const payload = {
+      role: roleInput.value.trim(),
+      company: companyInput.value.trim(),
+      startDate: startInput.value,
+      endDate: currentInput.checked ? null : endInput.value,
+      isCurrent: currentInput.checked,
+      description: descInput.value.trim(),
+      sortOrder: Number(sortInput.value) || 0,
+    };
+
+    const res = await fetch(
+      editingId ? `/api/admin/experiences?id=${encodeURIComponent(editingId)}` : "/api/admin/experiences",
+      {
+        method: editingId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    ).catch(() => null);
+
+    if (!res) {
+      statusEl.textContent = `${errorPrefix} jaringan gagal`;
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const data = await res.json().catch(() => ({ ok: false, error: "invalid_response" }));
+
+    submitBtn.disabled = false;
+
+    if (!res.ok || !data.ok) {
+      statusEl.textContent = `${errorPrefix} ${data.error ?? "gagal menyimpan"}`;
+      return;
+    }
+
+    statusEl.textContent = savedMsg;
+    window.location.reload();
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-exp-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.expEdit as string;
+      window.dispatchEvent(
+        new CustomEvent("experience:edit", {
+          detail: {
+            id,
+            role: btn.dataset.expRole ?? "",
+            company: btn.dataset.expCompany ?? "",
+            startDate: btn.dataset.expStart ?? "",
+            endDate: btn.dataset.expEnd || null,
+            isCurrent: btn.dataset.expCurrent === "true",
+            description: btn.dataset.expDesc ?? "",
+            sortOrder: Number(btn.dataset.expSort) || 0,
+          },
+        })
+      );
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-exp-delete]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.expDelete as string;
+      const role = btn.dataset.expRole ?? "";
+      const company = btn.dataset.expCompany ?? "";
+      const msg = tDeleteConfirm.replace("{role}", role).replace("{company}", company);
+      if (!window.confirm(msg)) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/experiences?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
+      if (res && res.ok) window.location.reload();
+      else btn.disabled = false;
+    });
+  });
+</script>
