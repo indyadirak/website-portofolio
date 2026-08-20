@@ -114,6 +114,9 @@ export const id: Dictionary = {
     collapseSecondary: "Sembunyikan",
     secondaryEmpty: '$ echo "Belum ada proyek sekunder — semua project ditandai featured."',
     featuredLabel: "featured",
+    filterLabel: "$ filter --category",
+    allCategories: "Semua",
+    categoryEmpty: "$ echo 'Belum ada proyek di kategori ini.'",
   },
   imageZoom: {
     closeLabel: "tutup gambar",

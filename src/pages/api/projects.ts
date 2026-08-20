@@ -5,16 +5,27 @@ import {
   canManageProjects,
 } from "../../lib/auth";
 import { adminMutationGuard } from "../../lib/rateLimit";
-import type { ProjectCategory, ProjectStatus } from "../../lib/types";
+import type { ProjectStatus } from "../../lib/types";
 
 export const prerender = false;
+
+// TODO: Migrate admin operations to /api/admin/projects.ts
+// Separation of concerns: public read vs admin CRUD
+// Track: Issue B2-ADMIN-API-MIGRATION
+// Catatan: ini temporary architecture — direfactor ke /api/admin/projects.ts
+// setelah semua fitur B2 (categories, writeups, dashboard) selesai & stabil.
 
 export interface ProjectInput {
   slug: string;
   title: string;
   summary: string;
   description?: string | null;
-  category: ProjectCategory;
+  /** Nama kategori legacy (fallback) — diisi otomatis dari FK bila categoryId diberikan. */
+  category: string;
+  /** FK ke project_categories (B2) — optional: null/undefined = kategori legacy text.
+   *  Bila diberikan, API memvalidasi keberadaan kategori & mengisi `category` text
+   *  dari nama kategori tersebut (COALESCE di sisi baca tetap memprioritaskan FK). */
+  categoryId?: string | null;
   tags?: string[];
   imageUrl?: string | null;
   repoUrl?: string | null;
@@ -26,13 +37,13 @@ export interface ProjectInput {
   impact?: string | null;
 }
 
-const VALID_CATEGORIES: ProjectCategory[] = [
-  "Web App", "Mobile", "Network", "IoT", "Red Team", "Blue Team", "Defensive", "OSINT", "Forensics",
-];
 const VALID_STATUSES: ProjectStatus[] = ["active", "archived", "planned"];
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** Konversi input (camelCase) -> kolom tabel (snake_case). */
+/** Konversi input (camelCase) -> kolom tabel (snake_case).
+ *  category_id: diteruskan bila ada (validasi FK dilakukan sebelumnya).
+ *  category: nilai text fallback — dari nama FK bila categoryId dipilih,
+ *  atau nilai legacy dari form (mis. insert manual via dashboard). */
 function toRow(input: ProjectInput) {
   return {
     slug: input.slug.trim(),
@@ -40,6 +51,7 @@ function toRow(input: ProjectInput) {
     summary: input.summary.trim(),
     description: input.description?.trim() ?? "",
     category: input.category,
+    category_id: input.categoryId ?? null,
     tags: input.tags ?? [],
     image_url: input.imageUrl?.trim() || null,
     repo_url: input.repoUrl?.trim() || null,
@@ -52,20 +64,67 @@ function toRow(input: ProjectInput) {
   };
 }
 
-function validate(input: ProjectInput): string | null {
+/** Cek kategori FK valid (jika categoryId diberikan) & ambil nama kategori utk
+ *  mengisi kolom legacy `category` (fallback). return: { name } | null. */
+async function resolveCategory(
+  supabase: NonNullable<ReturnType<typeof getSupabaseFromLocals>>,
+  input: ProjectInput
+): Promise<{ name: string } | null> {
+  if (!input.categoryId) return null;
+  const { data, error } = await supabase
+    .from("project_categories")
+    .select("name")
+    .eq("id", input.categoryId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data;
+}
+
+/** Validasi input. Kategori TIDAK lagi pakai whitelist hardcode (kategori kini
+ *  DINAMIS dari project_categories). Bila categoryId diberikan, `resolved`
+ *  adalah baris kategori dari DB (sudah diverifikasi di handler) — dipakai
+ *  untuk mengisi kolom legacy `category` secara otomatis. */
+function validate(input: ProjectInput, resolved: { name: string } | null): string | null {
   if (!input.title?.trim() || !input.summary?.trim() || !input.slug?.trim()) {
     return "title_summary_slug_wajib_diisi";
   }
   if (!SLUG_RE.test(input.slug.trim())) {
     return "slug_format_lowercase_hyphen";
   }
-  if (!VALID_CATEGORIES.includes(input.category)) {
-    return "category_tidak_valid";
+  if (!input.category?.trim() && !input.categoryId) {
+    return "category_wajib_diisi";
   }
   if (!VALID_STATUSES.includes(input.status)) {
     return "status_tidak_valid";
   }
+  if (input.categoryId && !resolved) {
+    return "category_id_tidak_valid";
+  }
   return null;
+}
+
+/** Siapkan input utk insert/update: resolve kategori FK (bila ada) dan isi
+ *  kolom legacy `category` dari nama kategori. return error validation atau
+ *  { input, resolved } siap pakai. */
+async function prepareInput(
+  body: unknown,
+  supabase: NonNullable<ReturnType<typeof getSupabaseFromLocals>>
+): Promise<{ error: string } | { input: ProjectInput; resolved: { name: string } | null }> {
+  const input = body as ProjectInput;
+  if (!input) return { error: "invalid_json" };
+
+  const resolved = input.categoryId ? await resolveCategory(supabase, input) : null;
+
+  const invalid = validate(input, resolved);
+  if (invalid) return { error: invalid };
+
+  if (resolved) {
+    // Auto-fill kolom legacy: simpan nama kategori resmi (fallback bila FK
+    // dihapus / insert manual di masa depan).
+    input.category = resolved.name;
+  }
+
+  return { input, resolved };
 }
 
 async function readInput(request: Request): Promise<ProjectInput | null> {
@@ -103,12 +162,12 @@ export async function POST({ request, locals }: APIContext) {
   const input = await readInput(request);
   if (!input) return json({ ok: false, error: "invalid_json" }, 400);
 
-  const invalid = validate(input);
-  if (invalid) return json({ ok: false, error: invalid }, 400);
+  const prep = await prepareInput(input, supabase);
+  if ("error" in prep) return json({ ok: false, error: prep.error }, 400);
 
   const { data, error } = await supabase
     .from("projects")
-    .insert(toRow(input))
+    .insert(toRow(prep.input))
     .select("id")
     .single();
 
@@ -151,8 +210,8 @@ export async function PUT({ request, locals }: APIContext) {
   const input = await readInput(request);
   if (!input) return json({ ok: false, error: "invalid_json" }, 400);
 
-  const invalid = validate(input);
-  if (invalid) return json({ ok: false, error: invalid }, 400);
+  const prep = await prepareInput(input, supabase);
+  if ("error" in prep) return json({ ok: false, error: prep.error }, 400);
 
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
@@ -160,7 +219,7 @@ export async function PUT({ request, locals }: APIContext) {
 
   const { error } = await supabase
     .from("projects")
-    .update(toRow(input))
+    .update(toRow(prep.input))
     .eq("id", id);
 
   if (error) {

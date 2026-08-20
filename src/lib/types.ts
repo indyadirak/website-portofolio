@@ -7,7 +7,7 @@
 // Domain types (dipakai oleh pages & components)
 // ---------------------------------------------------------------------------
 
-export type ProjectCategory = "Web App" | "Mobile" | "Network" | "IoT" | "Red Team" | "Blue Team" | "Defensive" | "OSINT" | "Forensics";
+export type ProjectCategory = "Web App" | "Mobile" | "Network" | "IoT" | "Red Team" | "Blue Team" | "Defensive" | "OSINT" | "Forensics" | "Cloud Security" | "Malware Analysis" | "Active Directory" | "Security Automation" | "Incident Response";
 
 export type ProjectStatus = "active" | "archived" | "planned";
 
@@ -17,7 +17,10 @@ export interface Project {
   title: string;
   summary: string;
   description: string;
-  category: ProjectCategory;
+  /** Nama kategori tampilan (COALESCE pc.name, p.category). */
+  category: string;
+  /** FK ke project_categories (B2) — null = legacy text fallback. */
+  categoryId: string | null;
   tags: string[];
   imageUrl: string | null;
   repoUrl: string | null;
@@ -130,7 +133,9 @@ export type ProjectsRow = {
   title: string;
   summary: string;
   description: string;
-  category: ProjectCategory;
+  category: string;
+  /** FK ke project_categories (B2) — nullable: fallback ke kolom category text. */
+  category_id: string | null;
   tags: string[];
   image_url: string | null;
   repo_url: string | null;
@@ -141,6 +146,18 @@ export type ProjectsRow = {
   solution: string | null;
   impact: string | null;
   created_at: string;
+};
+
+/** Kategori proyek dinamis (tabel public.project_categories) — B2. */
+export type ProjectCategoryRow = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type SkillsRow = {
@@ -241,7 +258,8 @@ export interface Database {
           title: string;
           summary: string;
           description?: string;
-          category?: ProjectCategory;
+          category?: string;
+          category_id?: string | null;
           tags?: string[];
           image_url?: string | null;
           repo_url?: string | null;
@@ -259,7 +277,8 @@ export interface Database {
           title?: string;
           summary?: string;
           description?: string;
-          category?: ProjectCategory;
+          category?: string;
+          category_id?: string | null;
           tags?: string[];
           image_url?: string | null;
           repo_url?: string | null;
@@ -270,6 +289,38 @@ export interface Database {
           solution?: string | null;
           impact?: string | null;
           created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "projects_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "project_categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_categories: {
+        Row: ProjectCategoryRow;
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          description?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          description?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };

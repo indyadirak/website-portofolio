@@ -2,13 +2,15 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import SectionHeading from "../SectionHeading.astro";
 import ProjectGrid from "../ProjectGrid.astro";
-import { getProjects } from "../../lib/data/projects";
+import { getProjects, getProjectCategories } from "../../lib/data/projects";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
 
 const projects = await getProjects();
+// Kategori aktif utk filter charter (B2: dinamis dari project_categories).
+const categories = await getProjectCategories();
 
 // Featured vs secondary: kolom `featured` (boolean) pada tabel projects.
 const featuredProjects = projects.filter((p) => p.featured);
@@ -22,6 +24,39 @@ const secondaryProjects = projects.filter((p) => !p.featured);
       title={t.projects.title}
       description={t.projects.description}
     />
+
+    <!-- B2: filter kategori dinamis (client-side, tanpa reload) -->
+    <div class="mt-8 flex flex-wrap items-center gap-2">
+      <span class="font-mono text-xs uppercase tracking-wider text-cyber-muted">
+        {t.projects.filterLabel}
+      </span>
+      <button
+        type="button"
+        data-filter-all
+        class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-3 py-1 font-mono text-xs text-cyber-primary transition hover:bg-cyber-primary/20"
+      >
+        {t.projects.allCategories}
+      </button>
+      {
+        categories.map((c) => (
+          <button
+            type="button"
+            data-filter={c.name}
+            class="rounded border border-cyber-border px-3 py-1 font-mono text-xs text-cyber-muted transition hover:border-cyber-primary/60 hover:text-cyber-primary"
+          >
+            {c.name}
+          </button>
+        ))
+      }
+    </div>
+
+    <p
+      data-filter-empty
+      hidden
+      class="mt-12 rounded border border-cyber-border bg-cyber-card p-6 font-mono text-sm text-cyber-muted"
+    >
+      {t.projects.categoryEmpty}
+    </p>
 
     <ProjectGrid projects={featuredProjects} />
 
@@ -71,6 +106,41 @@ const secondaryProjects = projects.filter((p) => !p.featured);
     const closedLabel = label.dataset.closed ?? "";
     details.addEventListener("toggle", () => {
       label.textContent = details.open ? openLabel : closedLabel;
+    });
+  }
+
+  // B2: filter kategori — sembunyikan kartu yang bukan kategori terpilih.
+  const cards = Array.from(document.querySelectorAll("article[data-category]")) as HTMLElement[];
+  const empty = document.querySelector("[data-filter-empty]") as HTMLElement | null;
+  const chips = Array.from(document.querySelectorAll("[data-filter], [data-filter-all]")) as HTMLButtonElement[];
+
+  const ACTIVE_CLASSES = ["border-cyber-primary/60", "bg-cyber-primary/10", "text-cyber-primary"];
+  const INACTIVE_CLASSES = ["border-cyber-border", "text-cyber-muted"];
+
+  function setActive(chip: HTMLButtonElement, on: boolean): void {
+    for (const cls of ACTIVE_CLASSES) chip.classList.toggle(cls, on);
+    for (const cls of INACTIVE_CLASSES) chip.classList.toggle(cls, !on);
+  }
+
+  function applyFilter(category: string | null): void {
+    let visible = 0;
+    for (const card of cards) {
+      const shown = category === null || (card.dataset.category ?? "") === category;
+      card.hidden = !shown;
+      if (shown) visible += 1;
+    }
+    if (empty) empty.hidden = visible > 0;
+  }
+
+  for (const chip of chips) {
+    chip.addEventListener("click", () => {
+      const isAll = chip.dataset.filterAll !== undefined;
+      const selected = isAll ? null : (chip.dataset.filter ?? null);
+      for (const other of chips) {
+        setActive(other, other === chip && !isAll);
+      }
+      if (isAll) setActive(chip, true);
+      applyFilter(selected);
     });
   }
 </script>

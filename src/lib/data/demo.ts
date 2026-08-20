@@ -1,4 +1,4 @@
-import type { Certificate, Project, Skill } from "../types";
+import type { Certificate, Project, ProjectCategoryRow, Skill } from "../types";
 
 /**
  * Demo data — dipakai sebagai fallback saat Supabase belum dikonfigurasi,
@@ -13,6 +13,7 @@ export const demoProjects: Project[] = [
     description:
       "Proyek lab yang membangun environment Windows Server + Kali Linux untuk melatih teknik reconnaissance, privilege escalation, dan lateral movement pada Active Directory. Dilengkapi skenario terotomatis menggunakan Ansible.",
     category: "Red Team",
+    categoryId: null,
     tags: ["Active Directory", "Kali Linux", "Ansible", "Powershell"],
     imageUrl: null,
     repoUrl: "https://github.com/indyadirak/red-team-recon-lab",
@@ -35,6 +36,7 @@ export const demoProjects: Project[] = [
     description:
       "Implementasi Suricata sebagai Intrusion Detection System dengan dashboard Grafana/Loki, ditambah honeypot Cowrie untuk mengumpulkan intelijen serangan brute-force dan menampilkan analisis serangan secara real-time.",
     category: "Blue Team",
+    categoryId: null,
     tags: ["Suricata", "Grafana", "Loki", "Cowrie", "Docker"],
     imageUrl: null,
     repoUrl: "https://github.com/indyadirak/ids-honeypot",
@@ -57,6 +59,7 @@ export const demoProjects: Project[] = [
     description:
       "Aplikasi chat menggunakan WebSocket dengan enkripsi end-to-end (X25519 + ChaCha20-Poly1305). Mencakup forward secrecy dan verifikasi fingerprint antar pengguna.",
     category: "Web App",
+    categoryId: null,
     tags: ["TypeScript", "WebSocket", "libsodium", "Crypto"],
     imageUrl: null,
     repoUrl: "https://github.com/indyadirak/secure-chat",
@@ -79,6 +82,7 @@ export const demoProjects: Project[] = [
     description:
       "Web app untuk menganalisis URL mencurigakan menggunakan heuristics scoring, reputasi domain, dan integrasi threat intelligence feeds (URLhaus, PhishTank).",
     category: "Defensive",
+    categoryId: null,
     tags: ["Python", "Flask", "Threat Intel", "Machine Learning"],
     imageUrl: null,
     repoUrl: null,
@@ -101,6 +105,7 @@ export const demoProjects: Project[] = [
     description:
       "Script otomatis untuk mendeteksi kerentanan Log4Shell pada target via header injection dan payload jndi, lengkap dengan report berbentuk HTML.",
     category: "Red Team",
+    categoryId: null,
     tags: ["Python", "CVE", "Exploitation", "Reporting"],
     imageUrl: null,
     repoUrl: "https://github.com/indyadirak/log4shell-scanner",
@@ -123,6 +128,7 @@ export const demoProjects: Project[] = [
     description:
       "Sistem portable berbasis Raspberry Pi untuk melakukan wireless security assessment, mencakup capture & analysis WPA2 handshake serta deteksi rogue access point.",
     category: "Network",
+    categoryId: null,
     tags: ["Raspberry Pi", "Wireshark", "802.11", "Python"],
     imageUrl: null,
     repoUrl: null,
@@ -137,6 +143,27 @@ export const demoProjects: Project[] = [
       "Audit lapangan menjadi one-shot boot & scan, mengurangi waktu persiapan di lokasi secara signifikan.",
     createdAt: "2023-08-30T00:00:00.000Z",
   },
+];
+
+/**
+ * Kategori demo — mencerminkan seed project-categories.sql (14 entri).
+ * Dipakai getProjectCategories() saat Supabase belum dikonfigurasi.
+ */
+export const demoProjectCategories: ProjectCategoryRow[] = [
+  { id: "cat-web", name: "Web App", slug: "web-app", description: null, sort_order: 10, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-mobile", name: "Mobile", slug: "mobile", description: null, sort_order: 20, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-network", name: "Network", slug: "network", description: null, sort_order: 30, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-iot", name: "IoT", slug: "iot", description: null, sort_order: 40, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-redteam", name: "Red Team", slug: "red-team", description: null, sort_order: 50, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-blueteam", name: "Blue Team", slug: "blue-team", description: null, sort_order: 60, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-defensive", name: "Defensive", slug: "defensive", description: null, sort_order: 70, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-osint", name: "OSINT", slug: "osint", description: null, sort_order: 80, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-forensics", name: "Forensics", slug: "forensics", description: null, sort_order: 90, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-malware", name: "Malware Analysis", slug: "malware-analysis", description: null, sort_order: 100, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-crypto", name: "Cryptography", slug: "cryptography", description: null, sort_order: 110, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-seceng", name: "Security Engineering", slug: "security-engineering", description: null, sort_order: 120, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-cloud", name: "Cloud Security", slug: "cloud-security", description: null, sort_order: 130, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
+  { id: "cat-devsecops", name: "DevSecOps", slug: "devsecops", description: null, sort_order: 140, is_active: true, created_at: "2023-01-01T00:00:00.000Z", updated_at: "2023-01-01T00:00:00.000Z" },
 ];
 
 export const demoCertificates: Certificate[] = [

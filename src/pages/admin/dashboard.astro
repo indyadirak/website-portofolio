@@ -4,6 +4,7 @@ import CertificateForm from "../../components/admin/CertificateForm.astro";
 import CertificateList from "../../components/admin/CertificateList.astro";
 import ProjectForm from "../../components/admin/ProjectForm.astro";
 import ProjectList from "../../components/admin/ProjectList.astro";
+import type { ProjectCategoryRow } from "../../lib/types";
 import {
   canDeleteCertificates,
   canDeleteProjects,
@@ -49,6 +50,14 @@ const { data: projects } = await supabase
   .from("projects")
   .select("*")
   .order("created_at", { ascending: false });
+
+// ===== Kategori proyek dinamis utk dropdown form (B2) =====
+const { data: projectCategories } = await supabase
+  .from("project_categories")
+  .select("id, name, slug, description, sort_order, is_active, created_at, updated_at")
+  .eq("is_active", true)
+  .order("sort_order", { ascending: true })
+  .order("name", { ascending: true });
 
 // ===== Pesan kontak masuk (SELECT authenticated — viewer ikut bisa baca) =====
 const { data: messages } = await supabase
@@ -157,7 +166,7 @@ const isAdminProjects = canDeleteProjects(profile); // admin saja
     {
       canWriteProjects && (
         <section class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
-          <ProjectForm />
+          <ProjectForm categories={(projectCategories ?? []) as ProjectCategoryRow[]} />
         </section>
       )
     }

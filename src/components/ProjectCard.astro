@@ -19,7 +19,7 @@ const statusColor: Record<Project["status"], string> = {
 };
 ---
 
-<article class="group flex flex-col rounded border border-cyber-border bg-cyber-card p-6 transition-all hover:border-cyber-primary/60 hover:glow-border">
+<article class="group flex flex-col rounded border border-cyber-border bg-cyber-card p-6 transition-all hover:border-cyber-primary/60 hover:glow-border" data-category={project.category}>
   {
     project.imageUrl && (
       <figure class="-mx-6 -mt-6 mb-4 overflow-hidden rounded-t">

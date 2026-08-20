@@ -98,6 +98,10 @@ export interface Dictionary {
     collapseSecondary: string;
     secondaryEmpty: string;
     featuredLabel: string;
+    /** B2: filter kategori dinamis + empty state per kategori. */
+    filterLabel: string;
+    allCategories: string;
+    categoryEmpty: string;
   };
   imageZoom: {
     closeLabel: string;
