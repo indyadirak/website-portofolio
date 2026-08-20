@@ -1,5 +1,8 @@
 ---
-import MainLayout from "../../layouts/MainLayout.astro";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
+import TerminalInput from "../../components/admin/ui/TerminalInput.astro";
+import TerminalTable from "../../components/admin/ui/TerminalTable.astro";
 import { canManageSiteContent } from "../../lib/auth";
 import { getDictionary, localeFromPathname } from "../../lib/i18n";
 import { SITE_SETTING_KEYS, type SiteSettingRow } from "../../lib/types";
@@ -26,52 +29,18 @@ const { data: rawSettings } = await supabase
 
 const settings = (rawSettings ?? []) as SiteSettingRow[];
 const byKey = new Map(settings.map((s) => [s.key, s.value]));
-const role = profile?.role ?? "viewer";
-
-const quickActions = [
-  { label: "[ dashboard ]", href: "/admin/dashboard" },
-  { label: "[ experiences ]", href: "/admin/experiences" },
-  { label: "[ social links ]", href: "/admin/social-links" },
-  { label: "[ writeups ]", href: "/admin/writeups" },
-  { label: "[ cv ]", href: "/admin/cv" },
-  { label: "[ backup ]", href: "/admin/backup" },
-];
 ---
 
-<MainLayout title="Site Settings — Admin" description={t.adminSettings.description}>
+<AdminLayout title="Site Settings — Admin" description={t.adminSettings.description}>
   <div class="mx-auto max-w-4xl px-6 py-14">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <p class="font-mono text-sm text-cyber-accent">{t.adminSettings.eyebrow}</p>
-        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
-          {t.adminSettings.title}<span class="text-cyber-primary">;</span>
-        </h1>
-        <p class="mt-2 max-w-xl font-mono text-xs leading-relaxed text-cyber-muted">
-          {t.adminSettings.description}
-        </p>
-      </div>
-      <div class="flex items-center gap-4">
-        <a
-          href="/admin/dashboard"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          {t.adminSettings.back}
-        </a>
-        <span class="rounded border border-cyber-primary/50 px-2 py-1 font-mono text-xs uppercase tracking-wider text-cyber-primary">
-          role: {role}
-        </span>
-      </div>
-    </div>
-
-    <div class="mt-6 flex flex-wrap items-center gap-2 font-mono text-xs">
-      {quickActions.map((a) => (
-        <a
-          href={a.href}
-          class="rounded border border-cyber-border px-3 py-1.5 text-cyber-muted transition-colors hover:text-cyber-primary"
-        >
-          {a.label}
-        </a>
-      ))}
+    <div>
+      <p class="font-mono text-sm text-cyber-accent">{t.adminSettings.eyebrow}</p>
+      <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+        {t.adminSettings.title}<span class="text-cyber-primary">;</span>
+      </h1>
+      <p class="mt-2 max-w-xl font-mono text-xs leading-relaxed text-cyber-muted">
+        {t.adminSettings.description}
+      </p>
     </div>
 
     <form
@@ -82,16 +51,12 @@ const quickActions = [
     >
       <label class="block">
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">hero_title *</span>
-        <input id="s-hero-title" type="text" maxlength={120}
-          value={byKey.get("hero_title") ?? ""}
-          class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
+        <TerminalInput id="s-hero-title" type="text" maxlength={120} value={byKey.get("hero_title") ?? ""} />
       </label>
 
       <label class="block">
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">hero_tagline *</span>
-        <input id="s-hero-tagline" type="text" maxlength={120}
-          value={byKey.get("hero_tagline") ?? ""}
-          class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
+        <TerminalInput id="s-hero-tagline" type="text" maxlength={120} value={byKey.get("hero_tagline") ?? ""} />
       </label>
 
       <label class="block">
@@ -114,10 +79,9 @@ const quickActions = [
       </label>
 
       <div class="flex items-center gap-4">
-        <button type="submit" id="s-submit"
-          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50">
+        <TerminalButton type="submit" id="s-submit">
           {t.adminSettings.save}
-        </button>
+        </TerminalButton>
         <p id="s-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
       </div>
     </form>
@@ -127,29 +91,24 @@ const quickActions = [
         <h2 class="font-mono text-lg font-bold text-white">{t.adminSettings.keyColumn}</h2>
         <span class="font-mono text-xs text-cyber-muted">{t.adminSettings.valueColumn}</span>
       </div>
-      <div class="overflow-x-auto rounded border border-cyber-border bg-cyber-card">
-        <table class="w-full min-w-[640px] text-left font-mono text-sm">
-          <thead class="border-b border-cyber-border/60 text-[11px] uppercase tracking-wider text-cyber-muted">
-            <tr>
-              <th class="px-4 py-3">#</th>
-              <th class="px-4 py-3">key</th>
-              <th class="px-4 py-3">value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {SITE_SETTING_KEYS.map((key, i) => (
-              <tr class="border-b border-cyber-border/40">
-                <td class="px-4 py-3 text-cyber-muted">{String(i + 1).padStart(2, "0")}</td>
-                <td class="px-4 py-3 text-cyber-accent">{key}</td>
-                <td class="px-4 py-3 text-slate-200">{byKey.get(key) ?? ""}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <TerminalTable
+        columns={[
+          { key: "#", label: "#" },
+          { key: "key", label: "key" },
+          { key: "value", label: "value" },
+        ]}
+      >
+        {SITE_SETTING_KEYS.map((key, i) => (
+          <tr class="border-b border-cyber-border/40">
+            <td class="px-4 py-3 text-cyber-muted">{String(i + 1).padStart(2, "0")}</td>
+            <td class="px-4 py-3 text-cyber-accent">{key}</td>
+            <td class="px-4 py-3 text-slate-200">{byKey.get(key) ?? ""}</td>
+          </tr>
+        ))}
+      </TerminalTable>
     </section>
   </div>
-</MainLayout>
+</AdminLayout>
 
 <script>
   const form = document.getElementById("settings-form") as HTMLFormElement;

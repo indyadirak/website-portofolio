@@ -1,5 +1,8 @@
 ---
-import MainLayout from "../../layouts/MainLayout.astro";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
+import TerminalInput from "../../components/admin/ui/TerminalInput.astro";
+import TerminalTable from "../../components/admin/ui/TerminalTable.astro";
 import { canDeleteSiteContent, canManageSiteContent } from "../../lib/auth";
 import { getDictionary, localeFromPathname } from "../../lib/i18n";
 import type { ExperienceRow } from "../../lib/types";
@@ -27,49 +30,15 @@ const { data: rawExperiences } = await supabase
 
 const experiences = (rawExperiences ?? []) as ExperienceRow[];
 const canDelete = canDeleteSiteContent(profile);
-const role = profile?.role ?? "viewer";
-
-const quickActions = [
-  { label: "[ dashboard ]", href: "/admin/dashboard" },
-  { label: "[ site settings ]", href: "/admin/settings" },
-  { label: "[ social links ]", href: "/admin/social-links" },
-  { label: "[ writeups ]", href: "/admin/writeups" },
-  { label: "[ cv ]", href: "/admin/cv" },
-  { label: "[ backup ]", href: "/admin/backup" },
-];
 ---
 
-<MainLayout title="Experiences — Admin" description={t.adminExperiences.title}>
+<AdminLayout title="Experiences — Admin" description={t.adminExperiences.title}>
   <div class="mx-auto max-w-5xl px-6 py-14">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <p class="font-mono text-sm text-cyber-accent">{t.adminExperiences.eyebrow}</p>
-        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
-          {t.adminExperiences.title}<span class="text-cyber-primary">;</span>
-        </h1>
-      </div>
-      <div class="flex items-center gap-4">
-        <a
-          href="/admin/dashboard"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          {t.adminExperiences.back}
-        </a>
-        <span class="rounded border border-cyber-primary/50 px-2 py-1 font-mono text-xs uppercase tracking-wider text-cyber-primary">
-          role: {role}
-        </span>
-      </div>
-    </div>
-
-    <div class="mt-6 flex flex-wrap items-center gap-2 font-mono text-xs">
-      {quickActions.map((a) => (
-        <a
-          href={a.href}
-          class="rounded border border-cyber-border px-3 py-1.5 text-cyber-muted transition-colors hover:text-cyber-primary"
-        >
-          {a.label}
-        </a>
-      ))}
+    <div>
+      <p class="font-mono text-sm text-cyber-accent">{t.adminExperiences.eyebrow}</p>
+      <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+        {t.adminExperiences.title}<span class="text-cyber-primary">;</span>
+      </h1>
     </div>
 
     <form
@@ -87,31 +56,25 @@ const quickActions = [
         {t.adminExperiences.newMode}
       </p>
 
-      <div class="grid gap-5 md:grid-cols-2">
+<div class="grid gap-5 md:grid-cols-2">
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.role} *</span>
-          <input id="e-role" type="text" required maxlength={120}
-            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
-            placeholder="Network & Cyber Security Technician" />
+          <TerminalInput id="e-role" type="text" required maxlength={120} placeholder="Network & Cyber Security Technician" />
         </label>
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.company} *</span>
-          <input id="e-company" type="text" required maxlength={120}
-            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
-            placeholder="Balai Harta Peninggalan Surabaya" />
+          <TerminalInput id="e-company" type="text" required maxlength={120} placeholder="Balai Harta Peninggalan Surabaya" />
         </label>
       </div>
 
       <div class="grid gap-5 md:grid-cols-3">
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.startDate} *</span>
-          <input id="e-start" type="date" required
-            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
+          <TerminalInput id="e-start" type="date" required />
         </label>
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.endDate}</span>
-          <input id="e-end" type="date"
-            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary disabled:opacity-40" />
+          <TerminalInput id="e-end" type="date" />
         </label>
         <div class="flex min-h-11 items-end pb-1">
           <label class="flex cursor-pointer items-center gap-3">
@@ -131,19 +94,16 @@ const quickActions = [
 
       <label class="block">
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.sortOrder}</span>
-        <input id="e-sort" type="number" min={0} max={9999} value="0"
-          class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
+        <TerminalInput id="e-sort" type="number" min={0} max={9999} value="0" />
       </label>
 
       <div class="flex items-center gap-4">
-        <button type="submit" id="e-submit"
-          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50">
+        <TerminalButton type="submit" id="e-submit">
           {t.adminExperiences.saveNew}
-        </button>
-        <button type="button" id="e-cancel" hidden
-          class="rounded border border-cyber-border px-5 py-2.5 font-mono text-sm text-slate-300 hover:border-cyber-accent hover:text-cyber-accent">
+        </TerminalButton>
+        <TerminalButton type="button" id="e-cancel" variant="ghost" hidden>
           {t.adminExperiences.cancelEdit}
-        </button>
+        </TerminalButton>
         <p id="e-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
       </div>
     </form>
@@ -160,73 +120,68 @@ const quickActions = [
             <p>{t.adminExperiences.emptyNote}</p>
           </div>
         ) : (
-          <div class="overflow-x-auto rounded border border-cyber-border bg-cyber-card">
-            <table class="w-full min-w-[720px] text-left font-mono text-sm">
-              <thead class="border-b border-cyber-border/60 text-[11px] uppercase tracking-wider text-cyber-muted">
-                <tr>
-                  <th class="px-4 py-3">#</th>
-                  <th class="px-4 py-3">Period</th>
-                  <th class="px-4 py-3">Role</th>
-                  <th class="px-4 py-3">Company</th>
-                  <th class="px-4 py-3">Sort</th>
-                  <th class="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {experiences.map((e, i) => (
-                  <tr class="border-b border-cyber-border/40 transition-colors hover:bg-cyber-panel">
-                    <td class="px-4 py-3 text-cyber-muted">{String(i + 1).padStart(2, "0")}</td>
-                    <td class="px-4 py-3">
-                      <p class="text-slate-200">{e.start_date} → {e.is_current ? t.adminExperiences.currentBadge : (e.end_date ?? "-")}</p>
-                      {e.is_current && (
-                        <p class="text-[11px] uppercase tracking-wider text-cyber-primary">{t.adminExperiences.currentBadge}</p>
-                      )}
-                    </td>
-                    <td class="px-4 py-3">
-                      <p class="font-semibold text-slate-200">{e.role}</p>
-                      {e.description && <p class="max-w-xs truncate text-[11px] text-cyber-muted">{e.description}</p>}
-                    </td>
-                    <td class="px-4 py-3 text-cyber-muted">{e.company}</td>
-                    <td class="px-4 py-3 text-cyber-muted">{e.sort_order}</td>
-                    <td class="px-4 py-3">
-                      <div class="flex justify-end gap-2 text-[11px]">
-                        <button
-                          type="button"
-                          data-exp-edit={e.id}
-                          data-exp-role={e.role}
-                          data-exp-company={e.company}
-                          data-exp-start={e.start_date}
-                          data-exp-end={e.end_date ?? ""}
-                          data-exp-current={String(e.is_current)}
-                          data-exp-desc={e.description}
-                          data-exp-sort={e.sort_order}
-                          class="rounded border border-cyber-border px-2 py-1 text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-                        >
-                          {t.adminExperiences.edit}
-                        </button>
-                        {canDelete && (
-                          <button
-                            type="button"
-                            data-exp-delete={e.id}
-                            data-exp-role={e.role}
-                            data-exp-company={e.company}
-                            class="rounded border border-cyber-border px-2 py-1 text-cyber-muted transition-colors hover:border-cyber-danger hover:text-cyber-danger"
-                          >
-                            {t.adminExperiences.delete}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <TerminalTable
+            columns={[
+              { key: "#", label: "#" },
+              { key: "period", label: "Period" },
+              { key: "role", label: "Role" },
+              { key: "company", label: "Company" },
+              { key: "sort", label: "Sort" },
+              { key: "actions", label: "Actions" },
+            ]}
+          >
+            {experiences.map((e, i) => (
+              <tr class="border-b border-cyber-border/40 transition-colors hover:bg-cyber-panel">
+                <td class="px-4 py-3 text-cyber-muted">{String(i + 1).padStart(2, "0")}</td>
+                <td class="px-4 py-3">
+                  <p class="text-slate-200">{e.start_date} → {e.is_current ? t.adminExperiences.currentBadge : (e.end_date ?? "-")}</p>
+                  {e.is_current && (
+                    <p class="text-[11px] uppercase tracking-wider text-cyber-primary">{t.adminExperiences.currentBadge}</p>
+                  )}
+                </td>
+                <td class="px-4 py-3">
+                  <p class="font-semibold text-slate-200">{e.role}</p>
+                  {e.description && <p class="max-w-xs truncate text-[11px] text-cyber-muted">{e.description}</p>}
+                </td>
+                <td class="px-4 py-3 text-cyber-muted">{e.company}</td>
+                <td class="px-4 py-3 text-cyber-muted">{e.sort_order}</td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end gap-2 text-[11px]">
+                    <button
+                      type="button"
+                      data-exp-edit={e.id}
+                      data-exp-role={e.role}
+                      data-exp-company={e.company}
+                      data-exp-start={e.start_date}
+                      data-exp-end={e.end_date ?? ""}
+                      data-exp-current={String(e.is_current)}
+                      data-exp-desc={e.description}
+                      data-exp-sort={e.sort_order}
+                      class="rounded border border-cyber-border px-2 py-1 text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+                    >
+                      {t.adminExperiences.edit}
+                    </button>
+                    {canDelete && (
+                      <button
+                        type="button"
+                        data-exp-delete={e.id}
+                        data-exp-role={e.role}
+                        data-exp-company={e.company}
+                        class="rounded border border-cyber-border px-2 py-1 text-cyber-muted transition-colors hover:border-cyber-danger hover:text-cyber-danger"
+                      >
+                        {t.adminExperiences.delete}
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </TerminalTable>
         )
       }
     </section>
   </div>
-</MainLayout>
+</AdminLayout>
 
 <script>
   const form = document.getElementById("experience-form") as HTMLFormElement;

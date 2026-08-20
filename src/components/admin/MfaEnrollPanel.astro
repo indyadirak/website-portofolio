@@ -97,7 +97,13 @@
       "Sesi tidak valid atau kedaluwarsa — silakan login ulang, lalu coba lagi.",
     enroll_gagal:
       "Enrollment gagal (mungkin faktor TOTP lama belum diverifikasi) — coba [ retry ]. Jika berulang, hubungi admin.",
+    timeout: "waktu tunggu habis — server tidak merespons. Coba lagi.",
+    invalid_response: "respons server tidak valid. Coba lagi.",
   };
+
+  // Batas tunggu API enrollment — tanpa ini fetch bisa hang selamanya
+  // dan spinner "generating_qr_code..." tidak pernah berhenti.
+  const ENROLL_TIMEOUT_MS = 15_000;
 
   async function enroll(): Promise<void> {
     loading.hidden = false;
@@ -105,27 +111,42 @@
     retryBtn.hidden = true;
     loading.textContent = "$ generating_qr_code...";
 
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), ENROLL_TIMEOUT_MS);
+
     let res: Response;
     try {
-      res = await fetch("/api/auth/mfa-enroll", { method: "POST" });
-    } catch {
-      loading.textContent = "$ error: jaringan tidak tersedia.";
+      res = await fetch("/api/auth/mfa-enroll", {
+        method: "POST",
+        signal: controller.signal,
+      });
+    } catch (err) {
+      window.clearTimeout(timeoutId);
+      const aborted = err instanceof DOMException && err.name === "AbortError";
+      loading.textContent = `$ error: ${FAIL_MESSAGES[aborted ? "timeout" : "unauthorized"] ?? "enroll gagal. Coba lagi."}`;
+      loading.hidden = false;
       retryBtn.hidden = false;
       return;
     }
+    window.clearTimeout(timeoutId);
 
-    const data = await res.json();
+    let data: { ok?: boolean; factorId?: string; qrDataUrl?: string; secret?: string; error?: string };
+    try {
+      data = await res.json();
+    } catch {
+      data = { ok: false, error: "invalid_response" };
+    }
 
     if (!res.ok || !data.ok) {
-      const code = (data.error as string) ?? "unknown";
+      const code = data.error ?? "unknown";
       loading.textContent = `$ error: ${FAIL_MESSAGES[code] ?? "enroll gagal. Coba lagi."}`;
       retryBtn.hidden = false;
       return;
     }
 
-    factorId = data.factorId;
-    qrImg.src = data.qrDataUrl;
-    secretEl.textContent = data.secret;
+    factorId = data.factorId ?? null;
+    qrImg.src = data.qrDataUrl ?? "";
+    secretEl.textContent = data.secret ?? "";
     loading.hidden = true;
     content.hidden = false;
   }

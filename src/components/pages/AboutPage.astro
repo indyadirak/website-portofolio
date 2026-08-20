@@ -2,6 +2,7 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import SectionHeading from "../SectionHeading.astro";
 import EmailLink from "../EmailLink.astro";
+import CtaSection from "../CtaSection.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
 import { siteConfig } from "../../lib/config";
 import { getExperiences } from "../../lib/data/experiences";
@@ -130,4 +131,6 @@ const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
       )}
     </section>
   </div>
+
+  <CtaSection />
 </MainLayout>

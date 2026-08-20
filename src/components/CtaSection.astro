@@ -1,0 +1,30 @@
+---
+import TerminalButton from "./admin/ui/TerminalButton.astro";
+import { getDictionary, localeFromUrl } from "../lib/i18n";
+
+const { showEyebrow = true } = Astro.props as { showEyebrow?: boolean };
+
+const locale = localeFromUrl(Astro.url);
+const t = getDictionary(locale);
+const contactHref = locale === "en" ? "/en/contact" : "/id/contact";
+---
+
+<section class="mx-auto max-w-5xl px-6 py-16">
+  <div class="relative overflow-hidden rounded border border-cyber-border bg-cyber-card p-8 md:p-12">
+    <div class="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cyber-primary/20 blur-3xl" aria-hidden="true"></div>
+    <div class="max-w-2xl">
+      {showEyebrow && (
+        <p class="font-mono text-sm text-cyber-accent">{t.cta.eyebrow}</p>
+      )}
+      <h2 class="mt-4 font-mono text-3xl font-bold text-white md:text-4xl">
+        {t.cta.title}
+      </h2>
+      <p class="mt-4 text-sm leading-relaxed text-cyber-muted md:text-base">
+        {t.cta.description}
+      </p>
+      <TerminalButton href={contactHref} variant="primary" class="mt-8">
+        {t.cta.buttonLabel}
+      </TerminalButton>
+    </div>
+  </div>
+</section>

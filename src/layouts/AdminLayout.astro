@@ -1,0 +1,121 @@
+---
+import "../styles/global.css";
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+import { siteConfig } from "../lib/config";
+
+export interface Props {
+  title: string;
+  description?: string;
+  /** Kunci nav aktif untuk aria-current: dashboard|projects|writeups|certificates|settings|experiences|socialLinks|cv|backup. */
+  current?: string;
+}
+
+const { title, description, current } = Astro.props;
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+// AdminLayout hanya dipakai di balik guard halaman admin — tetap null-safe
+// (Astro.locals kosong di luar middleware = tampil "guest").
+const { user, profile } = Astro.locals;
+const role = profile?.role ?? (user ? "viewer" : "guest");
+const displayName = profile?.fullName?.trim() || user?.email || "operator";
+
+const navItems = [
+  { key: "dashboard", label: t.adminLayout.navDashboard, href: "/admin/dashboard" },
+  { key: "projects", label: t.adminLayout.navProjects, href: "/admin/dashboard#project-list" },
+  { key: "writeups", label: t.adminLayout.navWriteups, href: "/admin/writeups" },
+  { key: "certificates", label: t.adminLayout.navCertificates, href: "/admin/dashboard#certificates" },
+  { key: "settings", label: t.adminLayout.navSettings, href: "/admin/settings" },
+  { key: "experiences", label: t.adminLayout.navExperiences, href: "/admin/experiences" },
+  { key: "socialLinks", label: t.adminLayout.navSocialLinks, href: "/admin/social-links" },
+  { key: "cv", label: t.adminLayout.navCv, href: "/admin/cv" },
+  { key: "backup", label: t.adminLayout.navBackup, href: "/admin/backup" },
+];
+
+const activeClasses =
+  "bg-cyber-primary/10 text-cyber-primary";
+const idleClasses =
+  "text-cyber-muted hover:bg-cyber-card hover:text-cyber-primary";
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description ?? title} />
+    <meta name="theme-color" content="#0b0c10" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} — {siteConfig.name}</title>
+  </head>
+  <body class="flex min-h-screen flex-col bg-cyber-bg">
+    <header class="glass sticky top-0 z-50">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 md:px-6">
+        <a
+          href="/admin/dashboard"
+          class="flex min-h-11 items-center font-mono text-base font-bold tracking-tight text-cyber-primary glow-text md:text-lg"
+        >
+          CyberSec<span class="text-cyber-accent">_admin</span>
+        </a>
+        <div class="flex items-center gap-3 font-mono text-xs">
+          <div class="hidden text-right sm:block">
+            <p class="text-slate-300">{displayName}</p>
+            {user?.email && <p class="text-cyber-muted">{user.email}</p>}
+          </div>
+          <span class="rounded border border-cyber-primary/50 px-2 py-1 uppercase tracking-wider text-cyber-primary">
+            {t.adminLayout.role}: {role}
+          </span>
+          <button
+            id="admin-logout"
+            type="button"
+            class="rounded border border-cyber-border px-3 py-1.5 text-slate-300 transition-colors hover:border-cyber-danger hover:text-cyber-danger"
+          >
+            [ {t.adminLayout.logout} ]
+          </button>
+        </div>
+      </div>
+      <nav aria-label="Admin navigation" class="border-t border-cyber-border/60">
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-1 px-4 py-1.5 md:px-6">
+          {navItems.map((item) => (
+            <a
+              href={item.href}
+              aria-current={current === item.key ? "page" : undefined}
+              class={`flex min-h-9 items-center rounded px-3 font-mono text-xs transition-colors ${
+                current === item.key ? activeClasses : idleClasses
+              }`}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+      </nav>
+    </header>
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="border-t border-cyber-border/40 py-4">
+      <p class="text-center font-mono text-xs text-cyber-muted">
+        admin://portofolio — {siteConfig.url}
+      </p>
+    </footer>
+
+    <script>
+      const logoutBtn = document.getElementById("admin-logout") as HTMLButtonElement;
+
+      logoutBtn.addEventListener("click", async () => {
+        logoutBtn.disabled = true;
+        const res = await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+        if (res && (await res.json().catch(() => ({ ok: false }))).ok) {
+          window.location.href = "/admin/login";
+        } else {
+          logoutBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

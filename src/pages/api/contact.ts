@@ -107,6 +107,11 @@ function json(body: Record<string, unknown>, status = 200): Response {
 }
 
 export const POST: APIRoute = async ({ request }) => {
+  // ===== DEBUG TURNSTILE — baris pertama handler: membuktikan request
+  // benar-benar sampai ke worker (kalau log ini absen, request diblokir
+  // di edge: Cloudflare WAF / Access / Rate Limit) =====
+  console.log("[BACKEND DEBUG] Request received at /api/contact. Method:", request.method);
+
   const ip = clientIp(request);
 
   let body: Record<string, unknown>;

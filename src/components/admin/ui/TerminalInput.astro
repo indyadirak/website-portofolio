@@ -1,0 +1,52 @@
+---
+interface Props {
+  id?: string;
+  name?: string;
+  type?: "text" | "email" | "url" | "date" | "month" | "number" | "password" | "search" | "tel" | "time";
+  value?: string;
+  placeholder?: string;
+  required?: boolean;
+  minlength?: number;
+  maxlength?: number;
+  min?: number;
+  max?: number;
+  pattern?: string;
+  list?: string;
+  disabled?: boolean;
+  class?: string;
+}
+
+const {
+  id,
+  name,
+  type = "text",
+  value,
+  placeholder,
+  required = false,
+  minlength,
+  maxlength,
+  min,
+  max,
+  pattern,
+  list,
+  disabled = false,
+  class: className,
+} = Astro.props;
+---
+
+<input
+  id={id}
+  name={name}
+  type={type}
+  value={value}
+  placeholder={placeholder}
+  required={required || undefined}
+  minlength={minlength}
+  maxlength={maxlength}
+  min={min}
+  max={max}
+  pattern={pattern}
+  list={list}
+  disabled={disabled}
+  class={`w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary disabled:cursor-not-allowed disabled:opacity-40 ${className ?? ""}`}
+/>

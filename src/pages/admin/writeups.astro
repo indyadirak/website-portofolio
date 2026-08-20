@@ -1,5 +1,6 @@
 ---
-import MainLayout from "../../layouts/MainLayout.astro";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
 import WriteupList from "../../components/admin/WriteupList.astro";
 import { canDeleteCertificates, canManageCertificates } from "../../lib/auth";
 
@@ -36,12 +37,12 @@ const writeups = (rawWriteups ?? []).map((w) => ({
 }));
 
 const canDelete = canDeleteCertificates(profile);
-const role = profile?.role ?? "viewer";
 ---
 
-<MainLayout
+<AdminLayout
   title="Write-ups — Admin"
   description="CMS write-up CTF — kelola laporan TryHackMe / HackTheBox."
+  current="writeups"
 >
   <div class="mx-auto max-w-5xl px-6 py-14">
     <div class="flex flex-wrap items-center justify-between gap-4">
@@ -51,23 +52,9 @@ const role = profile?.role ?? "viewer";
           Write-ups<span class="text-cyber-primary">;</span>
         </h1>
       </div>
-      <div class="flex items-center gap-4">
-        <a
-          href="/admin/writeups/new"
-          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
-        >
-          [ + new ]
-        </a>
-        <a
-          href="/admin/dashboard"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          [ dashboard ]
-        </a>
-        <span class="rounded border border-cyber-primary/50 px-2 py-1 font-mono text-xs uppercase tracking-wider text-cyber-primary">
-          role: {role}
-        </span>
-      </div>
+      <TerminalButton href="/admin/writeups/new" variant="primary">
+        [ + new ]
+      </TerminalButton>
     </div>
 
     <section class="mt-10">
@@ -81,4 +68,4 @@ const role = profile?.role ?? "viewer";
       <WriteupList writeups={writeups} canDelete={canDelete} />
     </section>
   </div>
-</MainLayout>
+</AdminLayout>

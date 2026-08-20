@@ -73,15 +73,18 @@ export interface Dictionary {
     empty: string;
     /** Empty state UTUH (tidak ada sertifikat sama sekali) — tampilan terminal. */
     emptyAll: string;
-    /** Baris perintah terminal pada empty state utuh. */
-    lsLine: string;
-    /** Baris "total 0" — jumlah item kosong pada empty state utuh. */
-    totalZero: string;
     verify: string;
     featured: string;
     /** Template badge masa berlaku — placeholder {date} diganti format locale. */
     validUntil: string;
     expired: string;
+  };
+  /** CTA penutup halaman publik — ajak menghubungi admin. */
+  cta: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    buttonLabel: string;
   };
   dashboard: {
     title: string;
@@ -95,6 +98,10 @@ export interface Dictionary {
     statInbox: string;
     statWriteups: string;
     quickActions: string;
+    /** Tombol quick action besar — 3 aksi utama. */
+    quickNewProject: string;
+    quickNewWriteup: string;
+    quickNewCertificate: string;
     newProject: string;
     newWriteup: string;
     manageCategories: string;
@@ -108,6 +115,17 @@ export interface Dictionary {
     statusRls: string;
     statusMfa: string;
     statusHsts: string;
+    /** Prefiks indikator status: OK (hijau) / FAIL (merah). */
+    statusOk: string;
+    statusFail: string;
+    /** Label status DB saat koneksi gagal (fallback, bukan crash halaman). */
+    statusDbFail: string;
+    /** Feed aktivitas terbaru (data minimization: ringkasan aksi saja). */
+    activityTitle: string;
+    activityEmpty: string;
+    activityModuleWriteup: string;
+    /** Aksi entry feed — placeholder {title} isi judul write-up. */
+    activityNewWriteup: string;
     expiryTitle: string;
     projectsTitle: string;
     certificatesTitle: string;
@@ -354,6 +372,25 @@ export interface Dictionary {
     back: string;
     saved: string;
     errorPrefix: string;
+  };
+  /** Shared: teks utilitas komponen UI reusable. */
+  ui: {
+    /** Baris "total 0" pada TerminalEmptyState. */
+    totalZero: string;
+  };
+  /** Layout admin: navigasi, role, logout (AdminLayout). */
+  adminLayout: {
+    navDashboard: string;
+    navProjects: string;
+    navWriteups: string;
+    navCertificates: string;
+    navSettings: string;
+    navExperiences: string;
+    navSocialLinks: string;
+    navCv: string;
+    navBackup: string;
+    logout: string;
+    role: string;
   };
   notFound: {
     title: string;

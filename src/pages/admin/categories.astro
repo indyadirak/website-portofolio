@@ -1,5 +1,7 @@
 ---
-import MainLayout from "../../layouts/MainLayout.astro";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
+import TerminalInput from "../../components/admin/ui/TerminalInput.astro";
 import CategoryList from "../../components/admin/CategoryList.astro";
 import { canDeleteProjects, canManageProjects } from "../../lib/auth";
 import type { ProjectCategoryRow } from "../../lib/types";
@@ -24,52 +26,19 @@ const { data: rawCategories } = await supabase
 
 const categories = (rawCategories ?? []) as ProjectCategoryRow[];
 const canDelete = canDeleteProjects(profile);
-const role = profile?.role ?? "viewer";
-
-const quickActions = [
-  { label: "[ dashboard ]", href: "/admin/dashboard" },
-  { label: "[ writeups ]", href: "/admin/writeups" },
-  { label: "[ cv ]", href: "/admin/cv" },
-  { label: "[ backup ]", href: "/admin/backup" },
-  { label: "[ security ]", href: "/security" },
-];
 ---
 
-<MainLayout
+<AdminLayout
   title="Categories — Admin"
   description="Kelola kategori proyek dinamis (B2)."
+  current="projects"
 >
   <div class="mx-auto max-w-4xl px-6 py-14">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <p class="font-mono text-sm text-cyber-accent">$ categories --manage</p>
-        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
-          Project Categories<span class="text-cyber-primary">;</span>
-        </h1>
-      </div>
-      <div class="flex items-center gap-4">
-        <a
-          href="/admin/dashboard"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          [ dashboard ]
-        </a>
-        <span class="rounded border border-cyber-primary/50 px-2 py-1 font-mono text-xs uppercase tracking-wider text-cyber-primary">
-          role: {role}
-        </span>
-      </div>
-    </div>
-
-    {/* Navigasi silang admin (konsisten halaman admin lain) */}
-    <div class="mt-6 flex flex-wrap items-center gap-2 font-mono text-xs">
-      {quickActions.map((a) => (
-        <a
-          href={a.href}
-          class="rounded border border-cyber-border px-3 py-1.5 text-cyber-muted transition-colors hover:text-cyber-primary"
-        >
-          {a.label}
-        </a>
-      ))}
+    <div>
+      <p class="font-mono text-sm text-cyber-accent">$ categories --manage</p>
+      <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+        Project Categories<span class="text-cyber-primary">;</span>
+      </h1>
     </div>
 
     <form id="category-form" class="mt-8 space-y-5 rounded border border-cyber-border bg-cyber-panel p-6">
@@ -80,30 +49,23 @@ const quickActions = [
       <div class="grid gap-5 md:grid-cols-2">
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Name *</span>
-          <input id="c-name" type="text" required minlength={2} maxlength={80}
-            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
-            placeholder="Cloud Security" />
+          <TerminalInput id="c-name" type="text" required minlength={2} maxlength={80} placeholder="Cloud Security" />
         </label>
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Slug *</span>
-          <input id="c-slug" type="text" required pattern="[a-z0-9-]+"
-            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
-            placeholder="auto: cloud-security" />
+          <TerminalInput id="c-slug" type="text" required pattern="[a-z0-9-]+" placeholder="auto: cloud-security" />
         </label>
       </div>
 
       <label class="block">
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Description</span>
-        <input id="c-description" type="text" maxlength={200}
-          class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
-          placeholder="Deskripsi singkat kategori (opsional)" />
+        <TerminalInput id="c-description" type="text" maxlength={200} placeholder="Deskripsi singkat kategori (opsional)" />
       </label>
 
       <div class="grid gap-5 md:grid-cols-2">
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Sort Order</span>
-          <input id="c-sort" type="number" min={0} max={9999} value="0"
-            class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
+          <TerminalInput id="c-sort" type="number" min={0} max={9999} value="0" />
         </label>
         <div class="flex min-h-11 items-end pb-1">
           <label class="flex cursor-pointer items-center gap-3">
@@ -115,14 +77,12 @@ const quickActions = [
       </div>
 
       <div class="flex items-center gap-4">
-        <button type="submit" id="c-submit"
-          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50">
+        <TerminalButton type="submit" id="c-submit" disabled>
           [ save_category ]
-        </button>
-        <button type="button" id="c-cancel" hidden
-          class="rounded border border-cyber-border px-5 py-2.5 font-mono text-sm text-slate-300 hover:border-cyber-accent hover:text-cyber-accent">
+        </TerminalButton>
+        <TerminalButton type="button" id="c-cancel" variant="ghost" hidden>
           [ cancel_edit ]
-        </button>
+        </TerminalButton>
         <p id="c-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
       </div>
     </form>
@@ -135,7 +95,7 @@ const quickActions = [
       <CategoryList categories={categories} canDelete={canDelete} />
     </section>
   </div>
-</MainLayout>
+</AdminLayout>
 
 <script>
   const form = document.getElementById("category-form") as HTMLFormElement;

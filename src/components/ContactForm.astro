@@ -221,6 +221,9 @@ const t = getDictionary(locale);
     const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
     button.disabled = true;
 
+    // ===== DEBUG TURNSTILE — membedakan kegagalan frontend vs edge vs backend =====
+    console.log("[FRONTEND DEBUG] Attempting to submit form. Token exists:", !!tokenInput?.value);
+
     let res: Response;
     try {
       res = await fetch("/api/contact", {

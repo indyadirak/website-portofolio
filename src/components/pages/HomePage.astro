@@ -5,6 +5,7 @@ import TerminalLog from "../TerminalLog.astro";
 import SectionHeading from "../SectionHeading.astro";
 import ProjectGrid from "../ProjectGrid.astro";
 import SkillGrid from "../SkillGrid.astro";
+import CtaSection from "../CtaSection.astro";
 import { getProjects } from "../../lib/data/projects";
 import { getSkills } from "../../lib/data/skills";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
@@ -45,4 +46,6 @@ const skills = await getSkills();
     />
     <SkillGrid skills={skills} />
   </section>
+
+  <CtaSection />
 </MainLayout>

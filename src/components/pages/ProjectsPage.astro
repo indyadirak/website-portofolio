@@ -2,6 +2,7 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import SectionHeading from "../SectionHeading.astro";
 import ProjectGrid from "../ProjectGrid.astro";
+import TerminalEmptyState from "../ui/TerminalEmptyState.astro";
 import { getProjects, getProjectCategories } from "../../lib/data/projects";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
 
@@ -25,73 +26,86 @@ const secondaryProjects = projects.filter((p) => !p.featured);
       description={t.projects.description}
     />
 
-    <!-- B2: filter kategori dinamis (client-side, tanpa reload) -->
-    <div class="mt-8 flex flex-wrap items-center gap-2">
-      <span class="font-mono text-xs uppercase tracking-wider text-cyber-muted">
-        {t.projects.filterLabel}
-      </span>
-      <button
-        type="button"
-        data-filter-all
-        class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-3 py-1 font-mono text-xs text-cyber-primary transition hover:bg-cyber-primary/20"
-      >
-        {t.projects.allCategories}
-      </button>
-      {
-        categories.map((c) => (
-          <button
-            type="button"
-            data-filter={c.name}
-            class="rounded border border-cyber-border px-3 py-1 font-mono text-xs text-cyber-muted transition hover:border-cyber-primary/60 hover:text-cyber-primary"
-          >
-            {c.name}
-          </button>
-        ))
-      }
-    </div>
-
-    <p
-      data-filter-empty
-      hidden
-      class="mt-12 rounded border border-cyber-border bg-cyber-card p-6 font-mono text-sm text-cyber-muted"
-    >
-      {t.projects.categoryEmpty}
-    </p>
-
-    <ProjectGrid projects={featuredProjects} />
-
     {
-      secondaryProjects.length > 0 && (
-        <details class="soc-details mt-16 rounded border border-cyber-border bg-cyber-card p-6">
-          <summary class="flex min-h-11 flex-wrap items-center justify-between gap-2">
-            <span class="font-mono text-lg font-bold text-white">
-              {t.projects.secondaryTitle}
+      projects.length === 0 ? (
+        <TerminalEmptyState
+          class="mt-12"
+          command="ls"
+          directory="/projects"
+          messageId="projects.noProjects"
+        />
+      ) : (
+        <>
+          <!-- B2: filter kategori dinamis (client-side, tanpa reload) -->
+          <div class="mt-8 flex flex-wrap items-center gap-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-cyber-muted">
+              {t.projects.filterLabel}
             </span>
-            <span class="font-mono text-xs text-cyber-accent">
-              <span data-details-label data-open={t.projects.collapseSecondary} data-closed={t.projects.expandSecondary}>
-                {t.projects.expandSecondary}
-              </span>
-              <span class="font-mono text-xs text-cyber-muted">
-                ({secondaryProjects.length})
-              </span>
-            </span>
-          </summary>
-
-          <div class="soc-details-content mt-6">
-            <p class="mb-6 text-sm leading-relaxed text-cyber-muted">
-              {t.projects.secondaryDescription}
-            </p>
-            <ProjectGrid projects={secondaryProjects} />
+            <button
+              type="button"
+              data-filter-all
+              class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-3 py-1 font-mono text-xs text-cyber-primary transition hover:bg-cyber-primary/20"
+            >
+              {t.projects.allCategories}
+            </button>
+            {
+              categories.map((c) => (
+                <button
+                  type="button"
+                  data-filter={c.name}
+                  class="rounded border border-cyber-border px-3 py-1 font-mono text-xs text-cyber-muted transition hover:border-cyber-primary/60 hover:text-cyber-primary"
+                >
+                  {c.name}
+                </button>
+              ))
+            }
           </div>
-        </details>
-      )
-    }
 
-    {
-      projects.length > 0 && secondaryProjects.length === 0 && (
-        <p class="mt-12 rounded border border-cyber-border bg-cyber-card p-6 font-mono text-sm text-cyber-muted">
-          {t.projects.secondaryEmpty}
-        </p>
+          <TerminalEmptyState
+            id="filter-empty"
+            class="mt-12"
+            hidden
+            messageId="projects.categoryEmpty"
+          />
+
+          <ProjectGrid projects={featuredProjects} />
+
+          {
+            secondaryProjects.length > 0 && (
+              <details class="soc-details mt-16 rounded border border-cyber-border bg-cyber-card p-6">
+                <summary class="flex min-h-11 flex-wrap items-center justify-between gap-2">
+                  <span class="font-mono text-lg font-bold text-white">
+                    {t.projects.secondaryTitle}
+                  </span>
+                  <span class="font-mono text-xs text-cyber-accent">
+                    <span data-details-label data-open={t.projects.collapseSecondary} data-closed={t.projects.expandSecondary}>
+                      {t.projects.expandSecondary}
+                    </span>
+                    <span class="font-mono text-xs text-cyber-muted">
+                      ({secondaryProjects.length})
+                    </span>
+                  </span>
+                </summary>
+
+                <div class="soc-details-content mt-6">
+                  <p class="mb-6 text-sm leading-relaxed text-cyber-muted">
+                    {t.projects.secondaryDescription}
+                  </p>
+                  <ProjectGrid projects={secondaryProjects} />
+                </div>
+              </details>
+            )
+          }
+
+          {
+            projects.length > 0 && secondaryProjects.length === 0 && (
+              <TerminalEmptyState
+                class="mt-12"
+                messageId="projects.secondaryEmpty"
+              />
+            )
+          }
+        </>
       )
     }
   </div>
@@ -111,7 +125,7 @@ const secondaryProjects = projects.filter((p) => !p.featured);
 
   // B2: filter kategori — sembunyikan kartu yang bukan kategori terpilih.
   const cards = Array.from(document.querySelectorAll("article[data-category]")) as HTMLElement[];
-  const empty = document.querySelector("[data-filter-empty]") as HTMLElement | null;
+  const empty = document.getElementById("filter-empty") as HTMLElement | null;
   const chips = Array.from(document.querySelectorAll("[data-filter], [data-filter-all]")) as HTMLButtonElement[];
 
   const ACTIVE_CLASSES = ["border-cyber-primary/60", "bg-cyber-primary/10", "text-cyber-primary"];

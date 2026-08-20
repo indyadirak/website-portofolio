@@ -4,7 +4,5 @@
 // memastikan pengunjung /admin diarahkan ke login/dashboard.
 import { ADMIN_DASHBOARD, ADMIN_LOGIN } from "../../lib/auth";
 
-const user = Astro.locals.user;
-const target = user ? ADMIN_DASHBOARD : ADMIN_LOGIN;
-return Astro.redirect(target);
+return Astro.redirect(Astro.locals.user ? ADMIN_DASHBOARD : ADMIN_LOGIN);
 ---

@@ -1,0 +1,49 @@
+---
+interface Props {
+  /** Varian warna: primary (aksi utama), danger (destruktif), ghost (sekunder). */
+  variant?: "primary" | "ghost" | "danger";
+  /** Jika diisi, render <a> (bukan <button>). */
+  href?: string;
+  type?: "button" | "submit" | "reset";
+  id?: string;
+  disabled?: boolean;
+  hidden?: boolean;
+  /** Atribut data-* tambahan (data-locale, data-cv-delete, dsb). */
+  data?: Record<string, string>;
+  class?: string;
+}
+
+const {
+  variant = "primary",
+  href,
+  type = "button",
+  id,
+  disabled = false,
+  hidden = false,
+  data,
+  class: className,
+} = Astro.props;
+
+const variantClasses: Record<"primary" | "ghost" | "danger", string> = {
+  primary:
+    "border-cyber-primary/60 bg-cyber-primary/10 text-cyber-primary hover:bg-cyber-primary hover:text-cyber-bg",
+  ghost:
+    "border-cyber-border text-slate-300 hover:border-cyber-accent hover:text-cyber-accent",
+  danger:
+    "border-cyber-danger/60 text-cyber-danger hover:bg-cyber-danger/10",
+};
+
+const classes = `inline-flex min-h-10 items-center rounded border px-4 py-2 font-mono text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variantClasses[variant]} ${className ?? ""}`;
+---
+
+{
+  href ? (
+    <a href={href} id={id} hidden={hidden} class={classes} {...(data ?? {})}>
+      <slot />
+    </a>
+  ) : (
+    <button type={type} id={id} disabled={disabled} hidden={hidden} class={classes} {...(data ?? {})}>
+      <slot />
+    </button>
+  )
+}

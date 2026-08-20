@@ -1,5 +1,6 @@
 ---
-import MainLayout from "../../layouts/MainLayout.astro";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
 import CertificateForm from "../../components/admin/CertificateForm.astro";
 import CertificateList from "../../components/admin/CertificateList.astro";
 import ProjectForm from "../../components/admin/ProjectForm.astro";
@@ -93,6 +94,33 @@ const writeupsCount = await safeCount(
   supabase.from("writeups").select("id", { count: "exact", head: true }),
 );
 
+// ===== Status koneksi DB: dideteksi dari hasil query ringan (true/false),
+// TIDAK pernah melempar — indicator checklist di bawah tetap render. =====
+let dbConnected = false;
+try {
+  const { error } = await supabase
+    .from("site_settings")
+    .select("id", { count: "exact", head: true });
+  dbConnected = !error;
+} catch {
+  dbConnected = false;
+}
+
+// ===== Unified Recent Activity Feed (data minimization) =====
+// Satu sumber aman: 5 write-up terakhir yang di-publish. Feed TIDAK pernah
+// menyertakan isi pesan kontak, nama/email pengirim, atau data sensitif lain.
+const activity = await safeQuery(
+  supabase
+    .from("writeups")
+    .select("id, title, is_published, created_at")
+    .eq("is_published", true)
+    .order("created_at", { ascending: false })
+    .limit(5),
+);
+const recentActivity = (activity ?? [])
+  .filter((w) => w.is_published)
+  .slice(0, 5);
+
 // ===== Peringatan kedaluwarsa: 90 hari ke depan, urut terdekat =====
 const today = new Date();
 const todayUtc = new Date(
@@ -109,7 +137,6 @@ const expiredCount = (certificates ?? []).filter(
     c.expiry_date != null && new Date(`${c.expiry_date}T00:00:00Z`) < todayUtc,
 ).length;
 
-const role = profile?.role ?? "viewer";
 const canWrite = canManageCertificates(profile); // admin | editor
 const isAdmin = canDeleteCertificates(profile); // admin saja
 const canWriteProjects = canManageProjects(profile); // admin | editor
@@ -118,66 +145,46 @@ const isAdminProjects = canDeleteProjects(profile); // admin saja
 // ===== Sapaan: prefer full_name profil (camelCase di tipe Profile), fallback email =====
 const displayName = profile?.fullName?.trim() || user.email;
 
-/** Widget statistik — nilai string (fallback 0 saat query gagal/null). */
+/** Widget KPI — nilai string (fallback 0 saat query gagal/null). */
 const stats: Array<{ label: string; value: string }> = [
   { label: t.dashboard.statProjects, value: String(projects?.length ?? 0) },
+  { label: t.dashboard.statWriteups, value: String(writeupsCount) },
   { label: t.dashboard.statCertificates, value: String(certificates?.length ?? 0) },
   { label: t.dashboard.statInbox, value: String(messages?.length ?? 0) },
-  { label: t.dashboard.statWriteups, value: String(writeupsCount) },
+];
+
+/** Timestamp feed: "2026-08-20 16:00" (maks. detik pertama, tanpa zona). */
+const fmtTs = (iso: string | null | undefined) =>
+  iso ? iso.slice(0, 16).replace("T", " ") : "????-??-?? ??:??";
+
+// ===== System status checklist: DB dinamis; lainnya indikator tema SOC =====
+const statusItems = [
+  {
+    ok: dbConnected,
+    label: dbConnected ? t.dashboard.statusDb : t.dashboard.statusDbFail,
+  },
+  { ok: true, label: t.dashboard.statusMfa },
+  { ok: true, label: t.dashboard.statusRateLimit },
+  { ok: true, label: t.dashboard.statusRls },
+  { ok: true, label: t.dashboard.statusHsts },
 ];
 ---
 
-<MainLayout
+<AdminLayout
   title={t.dashboard.title}
   description={t.dashboard.description}
+  current="dashboard"
 >
   <div class="mx-auto max-w-6xl px-6 py-14">
     <!-- ===== HEADER TERMINAL: whoami ===== -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <p class="font-mono text-sm text-cyber-accent">{t.dashboard.shellPrompt}</p>
-        <h1 class="mt-2 font-mono text-2xl font-bold text-white md:text-3xl">
-          {t.dashboard.welcomeBack.replace("{name}", displayName ?? "")}<span class="text-cyber-primary">;</span>
-        </h1>
-      </div>
-      <div class="flex items-center gap-4">
-        <a
-          href="/admin/writeups"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          [ writeups ]
-        </a>
-        <a
-          href="/admin/cv"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          [ cv ]
-        </a>
-        <a
-          href="/admin/backup"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          [ backup ]
-        </a>
-        <div class="text-right font-mono text-xs">
-          <p class="text-slate-300">{user.email}</p>
-          <p class="mt-1">
-            <span class="rounded border border-cyber-primary/50 px-2 py-0.5 uppercase tracking-wider text-cyber-primary">
-              role: {role}
-            </span>
-          </p>
-        </div>
-        <button
-          id="logout-btn"
-          type="button"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-danger hover:text-cyber-danger"
-        >
-          [ logout ]
-        </button>
-      </div>
+    <div>
+      <p class="font-mono text-sm text-cyber-accent">{t.dashboard.shellPrompt}</p>
+      <h1 class="mt-2 font-mono text-2xl font-bold text-white md:text-3xl">
+        {t.dashboard.welcomeBack.replace("{name}", displayName ?? "")}<span class="text-cyber-primary">;</span>
+      </h1>
     </div>
 
-    <!-- ===== 4 WIDGET STATISTIK (grid) ===== -->
+    <!-- ===== KPI WIDGETS (grid 4 kolom) ===== -->
     <dl class="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
       {
         stats.map((stat) => (
@@ -193,59 +200,71 @@ const stats: Array<{ label: string; value: string }> = [
       }
     </dl>
 
-    <!-- ===== QUICK ACTIONS (terminal buttons) ===== -->
+    <!-- ===== QUICK ACTIONS (3 tombol besar) ===== -->
     <section class="mt-10">
       <h2 class="mb-4 font-mono text-lg font-bold text-white">
         {t.dashboard.quickActions}<span class="text-cyber-primary">;</span>
       </h2>
       <div class="flex flex-wrap gap-3">
+        <TerminalButton
+          href={canWriteProjects ? "#project-form" : "#project-list"}
+          variant="primary"
+          class="px-6 py-3"
+        >
+          {t.dashboard.quickNewProject}
+        </TerminalButton>
+        <TerminalButton href="/admin/writeups/new" variant="primary" class="px-6 py-3">
+          {t.dashboard.quickNewWriteup}
+        </TerminalButton>
+        <TerminalButton
+          href={canWrite ? "#certificate-form" : "#certificates"}
+          variant="primary"
+          class="px-6 py-3"
+        >
+          {t.dashboard.quickNewCertificate}
+        </TerminalButton>
+      </div>
+
+      <div class="mt-4 flex flex-wrap gap-2">
+        <TerminalButton href="/admin/categories" variant="ghost" class="px-3 py-1.5">
+          {t.dashboard.manageCategories}
+        </TerminalButton>
+        <TerminalButton href="/admin/settings" variant="ghost" class="px-3 py-1.5">
+          {t.dashboard.manageSettings}
+        </TerminalButton>
+        <TerminalButton href="/admin/experiences" variant="ghost" class="px-3 py-1.5">
+          {t.dashboard.manageExperiences}
+        </TerminalButton>
+        <TerminalButton href="/admin/social-links" variant="ghost" class="px-3 py-1.5">
+          {t.dashboard.manageSocialLinks}
+        </TerminalButton>
+      </div>
+    </section>
+
+    <!-- ===== RECENT ACTIVITY FEED (ringkasan aksi — tanpa data sensitif) ===== -->
+    <section class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6">
+      <h2 class="font-mono text-lg font-bold text-white">
+        {t.dashboard.activityTitle}<span class="text-cyber-primary">;</span>
+      </h2>
+      <ul class="mt-4 space-y-2.5 font-mono text-sm">
         {
-          canWriteProjects && (
-            <a
-              href="#project-form"
-              class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
-            >
-              {t.dashboard.newProject}
-            </a>
+          recentActivity.length > 0 ? (
+            recentActivity.map((w) => (
+              <li class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span class="text-cyber-muted">[{fmtTs(w.created_at)}]</span>
+                <span class="rounded border border-cyber-accent/50 px-1.5 py-0.5 text-[11px] uppercase tracking-wider text-cyber-accent">
+                  {t.dashboard.activityModuleWriteup}
+                </span>
+                <span class="text-slate-300">
+                  {t.dashboard.activityNewWriteup.replace("{title}", w.title)}
+                </span>
+              </li>
+            ))
+          ) : (
+            <li class="text-cyber-muted">{t.dashboard.activityEmpty}</li>
           )
         }
-        <a
-          href="/admin/writeups"
-          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
-        >
-          {t.dashboard.newWriteup}
-        </a>
-        <a
-          href="/admin/categories"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          {t.dashboard.manageCategories}
-        </a>
-        <a
-          href="/admin/settings"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          {t.dashboard.manageSettings}
-        </a>
-        <a
-          href="/admin/experiences"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          {t.dashboard.manageExperiences}
-        </a>
-        <a
-          href="/admin/social-links"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          {t.dashboard.manageSocialLinks}
-        </a>
-        <a
-          href="#certificates"
-          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-        >
-          {t.dashboard.viewCertificates}
-        </a>
-      </div>
+      </ul>
     </section>
 
     <!-- ===== SYSTEM STATUS CHECKLIST ===== -->
@@ -253,12 +272,14 @@ const stats: Array<{ label: string; value: string }> = [
       <h2 class="font-mono text-lg font-bold text-white">
         {t.dashboard.systemStatus}
       </h2>
-      <ul class="mt-4 space-y-2 font-mono text-sm text-cyber-muted">
-        <li>{t.dashboard.statusDb}</li>
-        <li>{t.dashboard.statusRateLimit}</li>
-        <li>{t.dashboard.statusRls}</li>
-        <li>{t.dashboard.statusMfa}</li>
-        <li>{t.dashboard.statusHsts}</li>
+      <ul class="mt-4 space-y-2 font-mono text-sm">
+        {
+          statusItems.map((item) => (
+            <li class={item.ok ? "text-cyber-primary" : "text-cyber-danger"}>
+              {item.ok ? t.dashboard.statusOk : t.dashboard.statusFail} {item.label}
+            </li>
+          ))
+        }
       </ul>
     </section>
 
@@ -305,7 +326,7 @@ const stats: Array<{ label: string; value: string }> = [
     <!-- ===== FORM PROJECT (tambah/edit): hanya admin & editor ===== -->
     {
       canWriteProjects && (
-        <section class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+        <section id="project-form" class="mt-10 scroll-mt-24 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
           <ProjectForm categories={(projectCategories ?? []) as ProjectCategoryRow[]} />
         </section>
       )
@@ -327,10 +348,10 @@ const stats: Array<{ label: string; value: string }> = [
       />
     </section>
 
-    <!-- ===== FORM TAMBAH/EDIT: hanya admin & editor ===== -->
+    <!-- ===== FORM TAMBAH/EDIT SERTIFIKAT: hanya admin & editor ===== -->
     {
       canWrite && (
-        <section class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+        <section id="certificate-form" class="mt-10 scroll-mt-24 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
           <CertificateForm />
         </section>
       )
@@ -395,19 +416,4 @@ const stats: Array<{ label: string; value: string }> = [
       }
     </section>
   </div>
-</MainLayout>
-
-<script>
-  const logoutBtn = document.getElementById("logout-btn") as HTMLButtonElement;
-
-  logoutBtn.addEventListener("click", async () => {
-    logoutBtn.disabled = true;
-    const res = await fetch("/api/auth/logout", { method: "POST" });
-    const data = await res.json();
-    if (res.ok && data.ok) {
-      window.location.href = "/admin/login";
-    } else {
-      logoutBtn.disabled = false;
-    }
-  });
-</script>
+</AdminLayout>
