@@ -43,11 +43,17 @@ binding = "RATE_LIMIT_KV"
 id = "b6712a968e694199a6dd5efce80d97f8"
 
 # ===== Observability (Workers Logs) =====
-# Mengaktifkan log invocation + console.log untuk debugging Turnstile
+# Mengaktifkan observability + konsol.log untuk debugging Turnstile
 # (`[TURNSTILE DEBUG]`). head_sampling_rate = 1 -> 100% request di-sample.
-# NOTE: toggle "Invocation Logs" di dashboard
-#   Workers & Pages > website-portofolio > Settings > Logs
-# juga harus ON agar invocation tsb muncul di Observability > Logs.
+# Sub-blok [observability.logs] (didukung schema wrangler versi ini):
+#   enable logs, 100% sampling, persist ke platform, invocation logs ON.
+# NOTE: pastikan pula worker > Settings > Logs > Invocation Logs = ON.
 [observability]
 enabled = true
 head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
