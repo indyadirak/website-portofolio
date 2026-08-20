@@ -5,6 +5,7 @@ export const id: Dictionary = {
   nav: {
     home: "Beranda",
     projects: "Proyek",
+    writeups: "Riset & Write-ups",
     certificates: "Sertifikat",
     about: "Tentang",
     contact: "Kontak",
@@ -212,13 +213,14 @@ export const id: Dictionary = {
       "Widget Turnstile gagal dimuat — muat ulang halaman lalu coba lagi.",
   },
   footer: {
-    rights: "All rights reserved.",
     github: "GitHub",
     linkedin: "LinkedIn",
-    privacy: "Kebijakan Privasi",
-    security: "Keamanan",
-    writeups: "Write-ups",
-    securityArchitecture: "Arsitektur & Model Ancaman",
+    legalSecurity: "Legal & Security",
+    securityPolicy: "Kebijakan Keamanan",
+    privacyPolicy: "Kebijakan Privasi",
+    connect: "connect",
+    systemStatus: "[✓] HSTS Active | [✓] CSP Enforced | v1.0.0",
+    copyright: "© {year} {author}. Secured by Cloudflare & Astro.",
   },
   privacy: {
     eyebrow: "// privasi",

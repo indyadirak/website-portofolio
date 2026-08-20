@@ -12,10 +12,19 @@ const homeHref = getRelativeLocaleUrl(locale, "");
 const navLinks = [
   { label: t.nav.home, href: homeHref },
   { label: t.nav.projects, href: getRelativeLocaleUrl(locale, "projects") },
+  { label: t.nav.writeups, href: getRelativeLocaleUrl(locale, "writeups") },
   { label: t.nav.certificates, href: getRelativeLocaleUrl(locale, "certificates") },
   { label: t.nav.about, href: getRelativeLocaleUrl(locale, "about") },
   { label: t.nav.contact, href: getRelativeLocaleUrl(locale, "contact") },
 ];
+const normalizePath = (p: string) => p.replace(/\/+$/, "") || "/";
+const currentPath = normalizePath(Astro.url.pathname);
+const isActive = (href: string) => {
+  const normalized = normalizePath(href);
+  return currentPath === normalized || currentPath.startsWith(normalized + "/");
+};
+const linkClass =
+  "flex min-h-11 items-center rounded px-3 font-mono text-sm transition-colors";
 const menuId = "site-menu";
 const btnId = "menu-toggle";
 const blogUrl = siteConfig.blogUrl;
@@ -36,7 +45,12 @@ const blogUrl = siteConfig.blogUrl;
         navLinks.map((link) => (
           <a
             href={link.href}
-            class="flex min-h-11 items-center rounded px-3 font-mono text-sm text-cyber-muted transition-colors hover:text-cyber-primary"
+            aria-current={isActive(link.href) ? "page" : undefined}
+            class={`${linkClass} ${
+              isActive(link.href)
+                ? "text-cyber-primary"
+                : "text-cyber-muted hover:text-cyber-primary"
+            }`}
           >
             {link.label}
           </a>
@@ -83,7 +97,12 @@ const blogUrl = siteConfig.blogUrl;
         navLinks.map((link) => (
           <a
             href={link.href}
-            class="flex min-h-11 items-center rounded px-3 font-mono text-sm text-cyber-muted transition-colors hover:bg-cyber-card hover:text-cyber-primary"
+            aria-current={isActive(link.href) ? "page" : undefined}
+            class={`${linkClass} ${
+              isActive(link.href)
+                ? "text-cyber-primary hover:text-cyber-primary"
+                : "text-cyber-muted hover:bg-cyber-card hover:text-cyber-primary"
+            }`}
           >
             {link.label}
           </a>

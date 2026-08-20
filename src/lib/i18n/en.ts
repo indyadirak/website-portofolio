@@ -5,6 +5,7 @@ export const en: Dictionary = {
   nav: {
     home: "Home",
     projects: "Projects",
+    writeups: "Research & Write-ups",
     certificates: "Certificates",
     about: "About",
     contact: "Contact",
@@ -212,13 +213,14 @@ export const en: Dictionary = {
       "Turnstile widget failed to load — please reload the page and try again.",
   },
   footer: {
-    rights: "All rights reserved.",
     github: "GitHub",
     linkedin: "LinkedIn",
-    privacy: "Privacy Policy",
-    security: "Security",
-    writeups: "Write-ups",
-    securityArchitecture: "Architecture & Threat Model",
+    legalSecurity: "Legal & Security",
+    securityPolicy: "Security Policy",
+    privacyPolicy: "Privacy Policy",
+    connect: "Connect",
+    systemStatus: "[✓] HSTS Active | [✓] CSP Enforced | v1.0.0",
+    copyright: "© {year} {author}. Secured by Cloudflare & Astro.",
   },
   privacy: {
     eyebrow: "// privacy",

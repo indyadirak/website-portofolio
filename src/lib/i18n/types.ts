@@ -7,6 +7,7 @@ export interface Dictionary {
   nav: {
     home: string;
     projects: string;
+    writeups: string;
     certificates: string;
     about: string;
     contact: string;
@@ -184,13 +185,21 @@ export interface Dictionary {
     captchaUnavailable: string;
   };
   footer: {
-    rights: string;
+    /** Label link GitHub (dipakai juga di Hero.astro). */
     github: string;
     linkedin: string;
-    privacy: string;
-    security: string;
-    writeups: string;
-    securityArchitecture: string;
+    /** Heading kolom 1 (Legal & Security). */
+    legalSecurity: string;
+    /** Label link /security. */
+    securityPolicy: string;
+    /** Label link /privacy. */
+    privacyPolicy: string;
+    /** Heading kolom 2 (Connect). */
+    connect: string;
+    /** Teks status sistem bergaya terminal (HSTS, CSP, versi). */
+    systemStatus: string;
+    /** Baris copyright — placeholder {year} dan {author}. */
+    copyright: string;
   };
   privacy: {
     eyebrow: string;
