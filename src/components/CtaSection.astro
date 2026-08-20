@@ -1,4 +1,5 @@
 ---
+import { getRelativeLocaleUrl } from "astro:i18n";
 import TerminalButton from "./admin/ui/TerminalButton.astro";
 import { getDictionary, localeFromUrl } from "../lib/i18n";
 
@@ -6,7 +7,7 @@ const { showEyebrow = true } = Astro.props as { showEyebrow?: boolean };
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
-const contactHref = locale === "en" ? "/en/contact" : "/id/contact";
+const contactHref = getRelativeLocaleUrl(locale, "contact");
 ---
 
 <section class="mx-auto max-w-5xl px-6 py-16">
