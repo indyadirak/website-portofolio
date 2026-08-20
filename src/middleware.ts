@@ -21,7 +21,15 @@ import { pageNavigationGuard } from "./lib/rateLimit";
  *
  * CSP tanpa 'unsafe-inline'/'unsafe-eval': semua script Astro di-build
  * menjadi file eksternal (_astro/*.js). `challenges.cloudflare.com`
- * diizinkan untuk widget Turnstile; `*.supabase.co` untuk data & koneksi.
+ * diizinkan untuk widget Turnstile; `static.cloudflareinsights.com` +
+ * hash inline untuk Cloudflare Web Analytics (beacon);
+ * `cloudflareinsights.com` di connect-src untuk POST telemetri;
+ * `*.supabase.co` untuk data & koneksi.
+ *
+ * Hash `sha256-sklxf1n...` adalah inline script yang di-inject Cloudflare —
+ * pakai hash (lebih aman daripada 'unsafe-inline'). Bila hash berubah saat
+ * Cloudflare meng-update bundle, hash baru muncul di error console browser:
+ * tambahkan hash baru, JANGAN ganti dengan 'unsafe-inline'.
  *
  * PENGECUALIAN KHUSUS DEVELOPMENT: Vite dev-mode meng-inject CSS lewat
  * tag <style> via JavaScript (dianggap "inline style" oleh browser),
@@ -37,7 +45,7 @@ const CSP_STYLE_SRC = import.meta.env.DEV
 
 const SECURITY_HEADERS: Record<string, string> = {
   "Content-Security-Policy":
-    `default-src 'self'; script-src 'self' https://challenges.cloudflare.com; ${CSP_STYLE_SRC}; img-src 'self' data: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`,
+    `default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'sha256-sklxf1nY7676U2gNIjaGWI0Bv9h/h8vH4fF9nQkqb6Q='; ${CSP_STYLE_SRC}; img-src 'self' data: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`,
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
