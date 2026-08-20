@@ -47,29 +47,38 @@ function expiryBadgeClasses(status: "valid" | "expired"): string {
 }
 ---
 
-<div class="flex flex-wrap items-center gap-2">
-  <span class="mr-1 font-mono text-[11px] uppercase tracking-wider text-cyber-muted">
-    $ filter:
-  </span>
-  <button
-    type="button"
-    data-cert-filter="all"
-    aria-pressed="true"
-    class="cert-filter-btn rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
-  >
-    {t.certificates.all}
-  </button>
-  {(["compliance", "training"] as const).map((category) => (
-    <button
-      type="button"
-      data-cert-filter={category}
-      aria-pressed="false"
-      class="cert-filter-btn rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
-    >
-      {categoryLabels[category]}
-    </button>
-  ))}
-</div>
+{
+  certificates.length === 0 ? (
+    <div class="mt-6 rounded border border-cyber-border bg-cyber-card p-8 font-mono text-sm text-cyber-muted">
+      <p class="text-cyber-primary">{t.certificates.lsLine}</p>
+      <p>{t.certificates.totalZero}</p>
+      <p class="mt-2 text-cyber-muted">{t.certificates.emptyAll}</p>
+    </div>
+  ) : (
+    <>
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        <span class="mr-1 font-mono text-[11px] uppercase tracking-wider text-cyber-muted">
+          $ filter:
+        </span>
+        <button
+          type="button"
+          data-cert-filter="all"
+          aria-pressed="true"
+          class="cert-filter-btn rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+        >
+          {t.certificates.all}
+        </button>
+        {(["compliance", "training"] as const).map((category) => (
+          <button
+            type="button"
+            data-cert-filter={category}
+            aria-pressed="false"
+            class="cert-filter-btn rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+          >
+            {categoryLabels[category]}
+          </button>
+        ))}
+      </div>
 
 <div id="cert-list" class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
   {certificates.map((cert) => (
@@ -150,6 +159,9 @@ function expiryBadgeClasses(status: "valid" | "expired"): string {
 <p id="cert-empty" hidden class="mt-6 rounded border border-cyber-border bg-cyber-card p-6 font-mono text-sm text-cyber-muted">
   {t.certificates.empty}
 </p>
+    </>
+  )
+}
 
 <script>
   const buttons = document.querySelectorAll<HTMLButtonElement>("[data-cert-filter]");

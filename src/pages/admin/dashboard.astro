@@ -5,6 +5,7 @@ import CertificateList from "../../components/admin/CertificateList.astro";
 import ProjectForm from "../../components/admin/ProjectForm.astro";
 import ProjectList from "../../components/admin/ProjectList.astro";
 import type { ProjectCategoryRow } from "../../lib/types";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 import {
   canDeleteCertificates,
   canDeleteProjects,
@@ -23,11 +24,74 @@ if (!user) {
   return Astro.redirect("/admin/login");
 }
 
-// ===== Data sertifikat (SELECT publik, aman untuk semua role) =====
-const { data: certificates } = await supabase
-  .from("certificates")
-  .select("*")
-  .order("issue_date", { ascending: false });
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+// ===== Helper query aman (B4, anti-500): error/exception -> null. =====
+// Dashboard TIDAK boleh crash hanya karena satu query gagal (timeout, RLS,
+// kolom belum ada, dsb) — widget menampilkan fallback 0 / N/A.
+async function safeQuery<T>(
+  query: PromiseLike<{ data: T | null; error: unknown }>,
+): Promise<T | null> {
+  try {
+    const { data, error } = await query;
+    if (error) {
+      console.error(
+        "[dashboard] query error:",
+        (error as { message?: string }).message,
+      );
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.error("[dashboard] exception saat query:", err);
+    return null;
+  }
+}
+
+/** Count baris tabel (head=true) — fallback 0 saat query gagal. */
+async function safeCount(
+  query: PromiseLike<{ count: number | null; error: unknown }>,
+): Promise<number> {
+  try {
+    const { count, error } = await query;
+    if (error) {
+      console.error(
+        "[dashboard] count error:",
+        (error as { message?: string }).message,
+      );
+      return 0;
+    }
+    return count ?? 0;
+  } catch (err) {
+    console.error("[dashboard] exception saat count:", err);
+    return 0;
+  }
+}
+
+// ===== Data dashboard (semua via safeQuery — tidak ada yang bisa 500) =====
+const certificates = await safeQuery(
+  supabase.from("certificates").select("*").order("issue_date", { ascending: false }),
+);
+const projects = await safeQuery(
+  supabase.from("projects").select("*").order("created_at", { ascending: false }),
+);
+const projectCategories = await safeQuery(
+  supabase
+    .from("project_categories")
+    .select("id, name, slug, description, sort_order, is_active, created_at, updated_at")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true }),
+);
+const messages = await safeQuery(
+  supabase.from("contact_messages").select("*").order("created_at", { ascending: false }).limit(50),
+);
+
+// B1: total write-ups (count ringan tanpa mengambil baris).
+const writeupsCount = await safeCount(
+  supabase.from("writeups").select("id", { count: "exact", head: true }),
+);
 
 // ===== Peringatan kedaluwarsa: 90 hari ke depan, urut terdekat =====
 const today = new Date();
@@ -45,44 +109,35 @@ const expiredCount = (certificates ?? []).filter(
     c.expiry_date != null && new Date(`${c.expiry_date}T00:00:00Z`) < todayUtc,
 ).length;
 
-// ===== Data projects (SELECT publik, aman untuk semua role) =====
-const { data: projects } = await supabase
-  .from("projects")
-  .select("*")
-  .order("created_at", { ascending: false });
-
-// ===== Kategori proyek dinamis utk dropdown form (B2) =====
-const { data: projectCategories } = await supabase
-  .from("project_categories")
-  .select("id, name, slug, description, sort_order, is_active, created_at, updated_at")
-  .eq("is_active", true)
-  .order("sort_order", { ascending: true })
-  .order("name", { ascending: true });
-
-// ===== Pesan kontak masuk (SELECT authenticated — viewer ikut bisa baca) =====
-const { data: messages } = await supabase
-  .from("contact_messages")
-  .select("*")
-  .order("created_at", { ascending: false })
-  .limit(50);
-
 const role = profile?.role ?? "viewer";
 const canWrite = canManageCertificates(profile); // admin | editor
 const isAdmin = canDeleteCertificates(profile); // admin saja
 const canWriteProjects = canManageProjects(profile); // admin | editor
 const isAdminProjects = canDeleteProjects(profile); // admin saja
+
+// ===== Sapaan: prefer full_name profil (camelCase di tipe Profile), fallback email =====
+const displayName = profile?.fullName?.trim() || user.email;
+
+/** Widget statistik — nilai string (fallback 0 saat query gagal/null). */
+const stats: Array<{ label: string; value: string }> = [
+  { label: t.dashboard.statProjects, value: String(projects?.length ?? 0) },
+  { label: t.dashboard.statCertificates, value: String(certificates?.length ?? 0) },
+  { label: t.dashboard.statInbox, value: String(messages?.length ?? 0) },
+  { label: t.dashboard.statWriteups, value: String(writeupsCount) },
+];
 ---
 
 <MainLayout
-  title="Command Center"
-  description="Admin CMS — kelola sertifikat dengan akses berbasis role dan MFA."
+  title={t.dashboard.title}
+  description={t.dashboard.description}
 >
-  <div class="mx-auto max-w-5xl px-6 py-14">
+  <div class="mx-auto max-w-6xl px-6 py-14">
+    <!-- ===== HEADER TERMINAL: whoami ===== -->
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <p class="font-mono text-sm text-cyber-accent">$ command_center --session</p>
-        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
-          Dashboard<span class="text-cyber-primary">;</span>
+        <p class="font-mono text-sm text-cyber-accent">{t.dashboard.shellPrompt}</p>
+        <h1 class="mt-2 font-mono text-2xl font-bold text-white md:text-3xl">
+          {t.dashboard.welcomeBack.replace("{name}", displayName ?? "")}<span class="text-cyber-primary">;</span>
         </h1>
       </div>
       <div class="flex items-center gap-4">
@@ -122,13 +177,80 @@ const isAdminProjects = canDeleteProjects(profile); // admin saja
       </div>
     </div>
 
+    <!-- ===== 4 WIDGET STATISTIK (grid) ===== -->
+    <dl class="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {
+        stats.map((stat) => (
+          <div class="rounded border border-cyber-border bg-cyber-panel p-5">
+            <dt class="font-mono text-[11px] uppercase tracking-wider text-cyber-accent">
+              {stat.label}
+            </dt>
+            <dd class="mt-2 font-mono text-4xl font-bold text-white">
+              {stat.value}
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <!-- ===== QUICK ACTIONS (terminal buttons) ===== -->
+    <section class="mt-10">
+      <h2 class="mb-4 font-mono text-lg font-bold text-white">
+        {t.dashboard.quickActions}<span class="text-cyber-primary">;</span>
+      </h2>
+      <div class="flex flex-wrap gap-3">
+        {
+          canWriteProjects && (
+            <a
+              href="#project-form"
+              class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+            >
+              {t.dashboard.newProject}
+            </a>
+          )
+        }
+        <a
+          href="/admin/writeups"
+          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+        >
+          {t.dashboard.newWriteup}
+        </a>
+        <a
+          href="/admin/categories"
+          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+        >
+          {t.dashboard.manageCategories}
+        </a>
+        <a
+          href="#certificates"
+          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+        >
+          {t.dashboard.viewCertificates}
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== SYSTEM STATUS CHECKLIST ===== -->
+    <section class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6">
+      <h2 class="font-mono text-lg font-bold text-white">
+        {t.dashboard.systemStatus}
+      </h2>
+      <ul class="mt-4 space-y-2 font-mono text-sm text-cyber-muted">
+        <li>{t.dashboard.statusDb}</li>
+        <li>{t.dashboard.statusRateLimit}</li>
+        <li>{t.dashboard.statusRls}</li>
+        <li>{t.dashboard.statusMfa}</li>
+        <li>{t.dashboard.statusHsts}</li>
+      </ul>
+    </section>
+
     <!-- ===== PERINGATAN KEDALUWARSA SERTIFIKAT ===== -->
     {
       (expiringSoon.length > 0 || expiredCount > 0) && (
         <section class="mt-10">
           <div class="mb-6 flex items-center justify-between">
             <h2 class="font-mono text-lg font-bold text-white">
-              Expiry<span class="text-cyber-primary">_alerts</span>
+              {t.dashboard.expiryTitle}
             </h2>
             <span class="font-mono text-xs text-cyber-muted">
               {expiringSoon.length} expiring{expiredCount > 0 && ` / ${expiredCount} expired`}
@@ -172,11 +294,11 @@ const isAdminProjects = canDeleteProjects(profile); // admin saja
     }
 
     <!-- ===== DAFTAR PROJECT ===== -->
-    <section class="mt-10">
+    <section id="project-list" class="mt-10 scroll-mt-24">
       <div class="mb-6 flex items-center justify-between">
-        <h2 class="font-mono text-lg font-bold text-white">Projects</h2>
+        <h2 class="font-mono text-lg font-bold text-white">{t.dashboard.projectsTitle}</h2>
         <span class="font-mono text-xs text-cyber-muted">
-          total: {projects?.length ?? 0}
+          {t.dashboard.total}: {projects?.length ?? 0}
         </span>
       </div>
 
@@ -197,11 +319,11 @@ const isAdminProjects = canDeleteProjects(profile); // admin saja
     }
 
     <!-- ===== DAFTAR SERTIFIKAT ===== -->
-    <section class="mt-10">
+    <section id="certificates" class="mt-10 scroll-mt-24">
       <div class="mb-6 flex items-center justify-between">
-        <h2 class="font-mono text-lg font-bold text-white">Certificates</h2>
+        <h2 class="font-mono text-lg font-bold text-white">{t.dashboard.certificatesTitle}</h2>
         <span class="font-mono text-xs text-cyber-muted">
-          total: {certificates?.length ?? 0}
+          {t.dashboard.total}: {certificates?.length ?? 0}
         </span>
       </div>
 
@@ -224,9 +346,9 @@ const isAdminProjects = canDeleteProjects(profile); // admin saja
     <!-- ===== PESAN KONTAK MASUK (baca: semua role) ===== -->
     <section class="mt-10">
       <div class="mb-6 flex items-center justify-between">
-        <h2 class="font-mono text-lg font-bold text-white">Contact Messages</h2>
+        <h2 class="font-mono text-lg font-bold text-white">{t.dashboard.contactTitle}</h2>
         <span class="font-mono text-xs text-cyber-muted">
-          total: {messages?.length ?? 0}
+          {t.dashboard.total}: {messages?.length ?? 0}
         </span>
       </div>
 

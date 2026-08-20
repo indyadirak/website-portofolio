@@ -70,11 +70,45 @@ export interface Dictionary {
     compliance: string;
     training: string;
     empty: string;
+    /** Empty state UTUH (tidak ada sertifikat sama sekali) — tampilan terminal. */
+    emptyAll: string;
+    /** Baris perintah terminal pada empty state utuh. */
+    lsLine: string;
+    /** Baris "total 0" — jumlah item kosong pada empty state utuh. */
+    totalZero: string;
     verify: string;
     featured: string;
     /** Template badge masa berlaku — placeholder {date} diganti format locale. */
     validUntil: string;
     expired: string;
+  };
+  dashboard: {
+    title: string;
+    description: string;
+    /** Prompt terminal sapaan: "root@portofolio:~$ whoami". */
+    shellPrompt: string;
+    /** Sapaan — placeholder {name} diganti nama/email admin. */
+    welcomeBack: string;
+    statProjects: string;
+    statCertificates: string;
+    statInbox: string;
+    statWriteups: string;
+    quickActions: string;
+    newProject: string;
+    newWriteup: string;
+    manageCategories: string;
+    viewCertificates: string;
+    systemStatus: string;
+    statusDb: string;
+    statusRateLimit: string;
+    statusRls: string;
+    statusMfa: string;
+    statusHsts: string;
+    expiryTitle: string;
+    projectsTitle: string;
+    certificatesTitle: string;
+    contactTitle: string;
+    total: string;
   };
   projects: {
     eyebrow: string;
