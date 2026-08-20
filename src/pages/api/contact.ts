@@ -27,16 +27,31 @@ function clientIp(request: Request): string {
 }
 
 /**
- * Verifikasi token Turnstile via siteverify Cloudflare.
+ * Verifikasi token Turnstile via siteverify Cloudflare (server-side).
+ *
+ * SANGAT PENTING — format body: Cloudflare Turnstile siteverify HANYA
+ * menerima `application/x-www-form-urlencoded` (URLSearchParams). Body
+ * JSON (`JSON.stringify`) akan ditolak. Ini sudah sesuai standar resmi:
+ *   POST https://challenges.cloudflare.com/turnstile/v0/siteverify
+ *   body: secret=<SECRET>&response=<TOKEN>[&remoteip=<IP>]
+ *
  * Return true bila Turnstile tidak dikonfigurasi (siteKey kosong — mode
  * dev) ATAU token valid. Token wajib ada & valid saat Turnstile aktif.
  * FAIL CLOSED bila widget tampil tapi secret runtime hilang (misconfig):
  * tolak daripada membiarkan submit lolos tanpa verifikasi.
+ *
+ * Secret key dibaca dari RUNTIME binding (env.TURNSTILE_SECRET_KEY —
+ * di-set deploy.yml via `wrangler secret put`), bukan dari build artifact.
  */
-async function verifyTurnstile(token: string | null): Promise<boolean> {
+async function verifyTurnstile(token: string | null, remoteIp: string): Promise<boolean> {
   if (!turnstile.siteKey) return true;
 
   const secret = getTurnstileSecretKey();
+  // Debug sementara: hanya 5 karakter pertama — JANGAN log secret penuh.
+  console.log(
+    "[TURNSTILE DEBUG] Secret Key starts with:",
+    secret ? secret.substring(0, 5) : "UNDEFINED",
+  );
   if (!secret) {
     console.error(
       "[api/contact] TURNSTILE_SECRET_KEY tidak tersedia di runtime — " +
@@ -44,16 +59,43 @@ async function verifyTurnstile(token: string | null): Promise<boolean> {
     );
     return false;
   }
-  if (!token) return false;
+  if (!token) {
+    console.log("[TURNSTILE DEBUG] Token: MISSING (missing-input-response)");
+    return false;
+  }
 
   const form = new URLSearchParams({ secret, response: token });
+  if (remoteIp && remoteIp !== "unknown") {
+    form.set("remoteip", remoteIp);
+  }
+
   const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
     method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: form,
   }).catch(() => null);
-  if (!res) return false;
+  if (!res) {
+    console.log("[TURNSTILE DEBUG] siteverify fetch FAILED (network/timeout)");
+    return false;
+  }
 
-  const data = (await res.json().catch(() => null)) as { success?: boolean } | null;
+  const data = (await res.json().catch(() => null)) as {
+    success?: boolean;
+    "error-codes"?: string[];
+    action?: string;
+    hostname?: string;
+  } | null;
+
+  // ===== DEBUG SEMENTARA — hapus setelah root cause terkonfirmasi =====
+  console.log("[TURNSTILE DEBUG] HTTP status:", res.status);
+  console.log("[TURNSTILE DEBUG] Success:", data?.success);
+  console.log(
+    "[TURNSTILE DEBUG] Error Codes:",
+    JSON.stringify(data?.["error-codes"] ?? []),
+  );
+  console.log("[TURNSTILE DEBUG] Action:", data?.action);
+  console.log("[TURNSTILE DEBUG] Hostname:", data?.hostname);
+
   return data?.success === true;
 }
 
@@ -97,9 +139,12 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // ===== Turnstile: token wajib valid bila dikonfigurasi =====
+  // Token dibaca dari body JSON (frontend mengirim `cf-turnstile-response`
+  // di payload JSON — lihat ContactForm.astro). Bukan formData: form kontak
+  // memakai fetch JSON, field hidden hanya sebagai wadah token.
   const cfToken =
     typeof body["cf-turnstile-response"] === "string" ? body["cf-turnstile-response"] : "";
-  if (!(await verifyTurnstile(cfToken))) {
+  if (!(await verifyTurnstile(cfToken, ip))) {
     return json({ ok: false, error: "captcha_failed" }, 400);
   }
 

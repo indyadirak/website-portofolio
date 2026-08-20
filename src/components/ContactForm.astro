@@ -137,6 +137,15 @@ const t = getDictionary(locale);
     if (tokenInput) tokenInput.value = "";
   }
 
+  /** Reset visual+internal state widget setelah submit (sukses maupun gagal),
+   *  agar user bisa mencoba lagi tanpa refresh — token lama dibersihkan. */
+  function resetWidget(): void {
+    if (widgetId) {
+      (window as unknown as { turnstile?: TurnstileApi }).turnstile?.reset(widgetId);
+    }
+    clearToken();
+  }
+
   (window as unknown as { onTurnstileSuccess?: (token: string) => void }).onTurnstileSuccess =
     (token: string) => {
       if (tokenInput) tokenInput.value = token;
@@ -238,12 +247,9 @@ const t = getDictionary(locale);
     if (result.ok) {
       show(messages.success, true);
       form.reset();
-      if (tokenInput) tokenInput.value = "";
       // Reset widget: state visual & token internal Turnstile ikut dibersihkan
       // (form.reset() hanya membersihkan input hidden, bukan widget).
-      if (widgetId) {
-        (window as unknown as { turnstile?: TurnstileApi }).turnstile?.reset(widgetId);
-      }
+      resetWidget();
       return;
     }
 
@@ -255,9 +261,13 @@ const t = getDictionary(locale);
         show(`${messages.errorPrefix} ${messages.noconfig}`, false);
         break;
       case "captcha_failed":
+        // Token ditolak backend — reset widget agar user bisa coba ulang
+        // tanpa refresh halaman.
+        resetWidget();
         show(`${messages.errorPrefix} ${messages.captcha}`, false);
         break;
       default:
+        resetWidget();
         show(`${messages.errorPrefix} ${messages.fail}`, false);
     }
   });
