@@ -41,3 +41,13 @@ compatibility_flags = ["nodejs_compat"]
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
 id = "b6712a968e694199a6dd5efce80d97f8"
+
+# ===== Observability (Workers Logs) =====
+# Mengaktifkan log invocation + console.log untuk debugging Turnstile
+# (`[TURNSTILE DEBUG]`). head_sampling_rate = 1 -> 100% request di-sample.
+# NOTE: toggle "Invocation Logs" di dashboard
+#   Workers & Pages > website-portofolio > Settings > Logs
+# juga harus ON agar invocation tsb muncul di Observability > Logs.
+[observability]
+enabled = true
+head_sampling_rate = 1
