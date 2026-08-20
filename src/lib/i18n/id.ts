@@ -189,6 +189,10 @@ export const id: Dictionary = {
       "Linux Administration",
       "Incident Response",
     ],
+    timelineEyebrow: "$ timeline --career",
+    timelineTitle: "Linimasa Karir",
+    timelineEmpty: "(belum ada pengalaman kerja. Cek kembali nanti.)",
+    periodNow: "sekarang",
   },
   contact: {
     eyebrow: "$ nc -lvp 443",

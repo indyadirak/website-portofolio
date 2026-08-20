@@ -91,6 +91,28 @@ export interface Certificate {
   updatedAt: string;
 }
 
+/** Tautan sosial dinamis (tabel public.social_links) — domain type. */
+export interface SocialLink {
+  id: string;
+  platform: string;
+  url: string;
+  icon: string | null;
+  sortOrder: number;
+  createdAt: string;
+}
+
+/** Pengalaman karir (tabel public.experiences) — domain type (camelCase). */
+export interface Experience {
+  id: string;
+  role: string;
+  company: string;
+  startDate: string;
+  endDate: string | null;
+  isCurrent: boolean;
+  description: string;
+  sortOrder: number;
+}
+
 /** Profil user (tabel public.profiles, id → auth.users.id). */
 export interface Profile {
   id: string;

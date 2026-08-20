@@ -5,11 +5,22 @@ import { siteConfig } from "../lib/config";
 import CvDownloadButton from "./CvDownloadButton.astro";
 import { getCertificates } from "../lib/data/certificates";
 import { getProjects } from "../lib/data/projects";
+import { getSiteSettings } from "../lib/data/site-settings";
 
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
 
-const available = siteConfig.contact.availabilityStatus === "open-to-work";
+// Identitas dinamis dari site_settings (FASE 3) — fallback i18n/config saat
+// DB belum diset/error. Varian "!!" memastikan nilai kosong tidak menimpa.
+const settings = await getSiteSettings();
+const settingMap = new Map(settings.map((s) => [s.key, s.value]));
+
+const heroTitle = settingMap.get("hero_title")?.trim() || t.hero.title;
+const heroTagline = settingMap.get("hero_tagline")?.trim() || t.hero.tagline;
+const shortBio = settingMap.get("short_bio")?.trim() || t.hero.description;
+const availabilityStatus =
+  settingMap.get("availability_status") ?? siteConfig.contact.availabilityStatus;
+const available = availabilityStatus !== "not-available";
 
 // Statistik dinamis untuk "at a glance" (scan cepat recruiter).
 const projectCount = (await getProjects()).length;
@@ -17,7 +28,7 @@ const certCount = (await getCertificates()).length;
 
 // --type-steps: langkah animasi typing ≈ jumlah karakter + easing.
 // (lebar animasi = 100% dari wrapper .w-fit, lihat .type-effect di global.css)
-const typeSteps = t.hero.title.length + 8;
+const typeSteps = heroTitle.length + 8;
 ---
 
 <section class="relative overflow-hidden">
@@ -31,24 +42,28 @@ const typeSteps = t.hero.title.length + 8;
         class="type-effect font-mono text-3xl font-bold leading-tight text-cyber-primary glow-text lg:text-5xl"
         style={`--type-steps: ${typeSteps}; --type-duration: 2.4s;`}
       >
-        {t.hero.title}
+        {heroTitle}
       </h1>
     </div>
     <span class="type-caret mt-4 hidden font-mono text-3xl text-cyber-accent md:inline-block lg:text-5xl" aria-hidden="true">
       █
     </span>
 
-    <p class="mt-5 max-w-2xl font-mono text-sm text-cyber-muted md:text-lg">{t.hero.tagline}</p>
+    <p class="mt-5 max-w-2xl font-mono text-sm text-cyber-muted md:text-lg">{heroTagline}</p>
     <p class="mt-4 max-w-2xl text-sm leading-relaxed text-cyber-muted md:text-base">
-      {t.hero.description}
+      {shortBio}
     </p>
 
     {
-      available && (
-        <p class="badge-pulse mt-8 inline-flex min-h-11 items-center rounded border border-cyber-primary/50 bg-cyber-primary/10 px-4 font-mono text-xs font-semibold text-cyber-primary md:text-sm">
-          [ {t.hero.badge} ]
-        </p>
-      )
+      <p
+        class={`badge-pulse mt-8 inline-flex min-h-11 items-center rounded border px-4 font-mono text-xs font-semibold md:text-sm ${
+          available
+            ? "border-cyber-primary/50 bg-cyber-primary/10 text-cyber-primary"
+            : "border-cyber-danger/50 bg-cyber-danger/10 text-cyber-danger"
+        }`}
+      >
+        [ {available ? t.hero.badge : t.hero.statusClosed} ]
+      </p>
     }
 
     {

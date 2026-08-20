@@ -4,12 +4,24 @@ import SectionHeading from "../SectionHeading.astro";
 import EmailLink from "../EmailLink.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
 import { siteConfig } from "../../lib/config";
+import { getExperiences } from "../../lib/data/experiences";
+import { getSocialLinks } from "../../lib/data/social-links";
+import { getSiteSettingValue } from "../../lib/data/site-settings";
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
 
 const { author, contact } = siteConfig;
-const available = contact.availabilityStatus === "open-to-work";
+const availabilityStatus =
+  (await getSiteSettingValue("availability_status")) ?? contact.availabilityStatus;
+const available = availabilityStatus !== "not-available";
+
+const experiences = await getExperiences();
+const socialLinks = await getSocialLinks();
+
+/** Format periode terminal: "2024-03" -> "2024/03". */
+const fmtDate = (d: string) => (d ? d.slice(0, 7).replace("-", "/") : "????/??");
+const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
 ---
 
 <MainLayout title={t.about.title} description={t.meta.about}>
@@ -44,18 +56,36 @@ const available = contact.availabilityStatus === "open-to-work";
           <li>
             {t.about.emailLabel}: <EmailLink />
           </li>
-          <li>
-            {t.about.githubLabel}:{" "}
-            <a href={contact.githubUrl} target="_blank" rel="noopener noreferrer" class="text-cyber-primary hover:underline">
-              {contact.githubUrl.replace(/^https?:\/\/(www\.)?/, "")}
-            </a>
-          </li>
-          <li>
-            {t.about.linkedinLabel}:{" "}
-            <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer" class="text-cyber-primary hover:underline">
-              {contact.linkedinUrl.replace(/^https?:\/\/(www\.)?/, "")}
-            </a>
-          </li>
+          {socialLinks.length > 0 ? (
+            socialLinks.map((link) => (
+              <li>
+                <span class="text-cyber-muted">{link.platform}:</span>{" "}
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-cyber-primary hover:underline"
+                >
+                  {hostOf(link.url)}
+                </a>
+              </li>
+            ))
+          ) : (
+            <>
+              <li>
+                <span class="text-cyber-muted">{t.about.githubLabel}:</span>{" "}
+                <a href={contact.githubUrl} target="_blank" rel="noopener noreferrer" class="text-cyber-primary hover:underline">
+                  {hostOf(contact.githubUrl)}
+                </a>
+              </li>
+              <li>
+                <span class="text-cyber-muted">{t.about.linkedinLabel}:</span>{" "}
+                <a href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer" class="text-cyber-primary hover:underline">
+                  {hostOf(contact.linkedinUrl)}
+                </a>
+              </li>
+            </>
+          )}
           <li class="pt-2">
             {t.about.availabilityLabel}:{" "}
             <span class={available ? "text-cyber-primary" : "text-cyber-danger"}>
@@ -65,5 +95,39 @@ const available = contact.availabilityStatus === "open-to-work";
         </ul>
       </div>
     </div>
+
+    <section class="mt-12">
+      <SectionHeading eyebrow={t.about.timelineEyebrow} title={t.about.timelineTitle} />
+      {experiences.length === 0 ? (
+        <p class="font-mono text-xs text-cyber-muted">{t.about.timelineEmpty}</p>
+      ) : (
+        <ol class="mt-8">
+          {experiences.map((exp) => (
+            <li class="relative border-l border-cyber-border/40 pb-10 pl-6 last:pb-0">
+              <span
+                aria-hidden="true"
+                class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border border-cyber-primary bg-cyber-bg"
+              />
+              <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h3 class="font-mono text-sm font-bold text-cyber-primary md:text-base">{exp.role}</h3>
+                <span class="font-mono text-xs text-cyber-muted">{exp.company}</span>
+              </div>
+              <p class="mt-1 font-mono text-[11px] uppercase tracking-wider text-cyber-accent">
+                [ {fmtDate(exp.startDate)} {"->"}
+                {exp.isCurrent ? (
+                  <span class="text-cyber-primary">{t.about.periodNow}</span>
+                ) : (
+                  fmtDate(exp.endDate ?? "")
+                )}{" "}
+                ]
+              </p>
+              {exp.description && (
+                <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">{exp.description}</p>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   </div>
 </MainLayout>

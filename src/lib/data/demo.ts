@@ -1,4 +1,12 @@
-import type { Certificate, Project, ProjectCategoryRow, Skill } from "../types";
+import type {
+  Certificate,
+  Experience,
+  Project,
+  ProjectCategoryRow,
+  SiteSettingRow,
+  Skill,
+  SocialLink,
+} from "../types";
 
 /**
  * Demo data — dipakai sebagai fallback saat Supabase belum dikonfigurasi,
@@ -269,3 +277,65 @@ export const demoSiteSkills: Skill[] = [
 ];
 
 export const demoSkills: Skill[] = demoSiteSkills;
+
+/**
+ * Identitas dinamis default — fallback getSiteSettings() saat Supabase
+ * belum dikonfigurasi. Nilai identik dengan seed site-settings.sql dan
+ * fallback di src/lib/config.ts / i18n.
+ */
+export const demoSiteSettings: SiteSettingRow[] = [
+  { id: "ss-hero-title", key: "hero_title", value: "Network & Cyber Security Technician", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-hero-tagline", key: "hero_tagline", value: "Network & Cyber Security Portfolio", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-short-bio", key: "short_bio", value: "Penetration testing, security research, dan blue team defense — membangun sistem yang aman sejak awal.", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-availability", key: "availability_status", value: "open-to-work", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+];
+
+/**
+ * Career timeline demo — fallback getExperiences() saat Supabase belum
+ * dikonfigurasi (hanya dipakai saat pengembangan lokal tanpa env).
+ */
+export const demoExperiences: Experience[] = [
+  {
+    id: "e1",
+    role: "Security Operations Analyst",
+    company: "Balai Harta Peninggalan Surabaya",
+    startDate: "2024-03",
+    endDate: null,
+    isCurrent: true,
+    description:
+      "Monitoring keamanan jaringan, triage alert Suricata, dan hardening infrastruktur jaringan kantor (VLAN, firewall, NAC).",
+    sortOrder: 10,
+  },
+  {
+    id: "e2",
+    role: "Network & Cyber Security Technician",
+    company: "Balai Harta Peninggalan Surabaya",
+    startDate: "2023-08",
+    endDate: "2024-02",
+    isCurrent: false,
+    description:
+      "Pengelolaan jaringan lokal, instalasi & konfigurasi perangkat keamanan, serta dokumentasi prosedur operasional.",
+    sortOrder: 20,
+  },
+  {
+    id: "e3",
+    role: "IT Support & Lab Assistant",
+    company: "Laboratorium Jaringan Komputer",
+    startDate: "2022-09",
+    endDate: "2023-07",
+    isCurrent: false,
+    description:
+      "Pendampingan praktikum jaringan & keamanan, perawatan perangkat lab, dan simulasi serangan bertarget untuk materi SOC.",
+    sortOrder: 30,
+  },
+];
+
+/**
+ * Tautan sosial default — fallback getSocialLinks() saat Supabase belum
+ * dikonfigurasi. Identik dengan seed social-links.sql (config.ts).
+ */
+export const demoSocialLinks: SocialLink[] = [
+  { id: "sl-github", platform: "github", url: "https://github.com/indyadirak", icon: "github", sortOrder: 10, createdAt: "2025-01-01T00:00:00.000Z" },
+  { id: "sl-linkedin", platform: "linkedin", url: "https://www.linkedin.com/in/indyadirak", icon: "linkedin", sortOrder: 20, createdAt: "2025-01-01T00:00:00.000Z" },
+  { id: "sl-blog", platform: "blog", url: "https://blog.indyadirak.my.id", icon: "blog", sortOrder: 30, createdAt: "2025-01-01T00:00:00.000Z" },
+];

@@ -163,6 +163,12 @@ export interface Dictionary {
     openToWork: string;
     notAvailable: string;
     knowsAbout: string[];
+    /** Career timeline (FASE 3 — dinamis dari tabel experiences). */
+    timelineEyebrow: string;
+    timelineTitle: string;
+    timelineEmpty: string;
+    /** Label pengganti tanggal berakhir untuk posisi yang masih berjalan. */
+    periodNow: string;
   };
   contact: {
     eyebrow: string;
