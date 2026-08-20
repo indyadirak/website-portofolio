@@ -1,0 +1,13 @@
+---
+import WriteupDetailPage from "../../components/pages/WriteupDetailPage.astro";
+import { getWriteups } from "../../lib/data/writeups";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const writeups = await getWriteups();
+  return writeups.map((writeup) => ({ params: { slug: writeup.slug }, props: { writeup } }));
+}
+---
+
+<WriteupDetailPage writeup={Astro.props.writeup} />

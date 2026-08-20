@@ -221,14 +221,17 @@ export interface Dictionary {
     title: string;
     subtitle: string;
     emptyNote: string;
-    cards: Array<{
-      title: string;
-      platform: string;
-      category: string;
-      date: string;
-      status: string;
-      link?: string;
-    }>;
+    emptyTitle: string;
+    detail: {
+      back: string;
+      target: string;
+      methodology: string;
+      severity: string;
+      findings: string;
+      remediation: string;
+      published: string;
+      updated: string;
+    };
   };
   notFound: {
     title: string;

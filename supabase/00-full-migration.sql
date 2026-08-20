@@ -1068,6 +1068,103 @@ alter table public.certificates add column if not exists short_description_en te
 -- ------------------------------------------------------------------
 
 -- ============================================================
--- SELESAI — SEMUA MIGRASI DITERAPKAN DALAM SATU TRANSAKSI.
+-- 16. WRITEUPS: CMS laporan CTF (TryHackMe / HackTheBox)
+--     (supabase/writeups.sql)
+--     Butuh tabel profiles (rbac-mfa.sql) untuk subquery role.
+-- ============================================================
+
+create table if not exists public.writeups (
+  id           uuid primary key default gen_random_uuid(),
+  title        text not null,
+  slug         text not null unique,
+  target_env   text not null,
+  methodology  text not null,
+  severity     text not null
+               check (severity in ('Critical', 'High', 'Med', 'Low')),
+  findings     text not null,
+  remediation  text not null,
+  is_published boolean not null default false,
+  created_by   uuid references auth.users (id) on delete set null,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+alter table public.writeups enable row level security;
+
+drop policy if exists "writeups_public_read" on public.writeups;
+
+create policy "writeups_public_read" on public.writeups
+  for select
+  to anon, authenticated
+  using (is_published = true);
+
+drop policy if exists "writeups_auth_manage_read" on public.writeups;
+
+create policy "writeups_auth_manage_read" on public.writeups
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "writeups_insert_mfa_admin_editor" on public.writeups;
+
+create policy "writeups_insert_mfa_admin_editor" on public.writeups
+  for insert
+  to authenticated
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "writeups_update_mfa_admin_editor" on public.writeups;
+
+create policy "writeups_update_mfa_admin_editor" on public.writeups
+  for update
+  to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  )
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "writeups_delete_mfa_admin" on public.writeups;
+
+create policy "writeups_delete_mfa_admin" on public.writeups
+  for delete
+  to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role = 'admin'
+    )
+  );
+
+grant select on public.writeups to anon, authenticated;
+grant insert, update, delete on public.writeups to authenticated;
+
+-- ============================================================
+-- SELESAI -- SEMUA MIGRASI DITERAPKAN DALAM SATU TRANSAKSI.
 -- ============================================================
 commit;

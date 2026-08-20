@@ -1,0 +1,68 @@
+---
+import MainLayout from "../../../layouts/MainLayout.astro";
+import WriteupForm from "../../../components/admin/WriteupForm.astro";
+import { canManageCertificates } from "../../../lib/auth";
+
+export const prerender = false;
+
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+if (!canManageCertificates(profile)) {
+  return Astro.redirect("/403");
+}
+
+const id = Astro.params.id;
+
+const { data: row } = id
+  ? await supabase.from("writeups").select("*").eq("id", id).maybeSingle()
+  : { data: null };
+
+if (!row) {
+  return Astro.redirect("/admin/writeups");
+}
+
+const writeup = {
+  id: row.id,
+  title: row.title,
+  slug: row.slug,
+  targetEnv: row.target_env,
+  methodology: row.methodology,
+  severity: row.severity as "Critical" | "High" | "Med" | "Low",
+  findings: row.findings,
+  remediation: row.remediation,
+  isPublished: row.is_published,
+  createdBy: row.created_by ?? null,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+};
+---
+
+<MainLayout
+  title="Edit Write-up — Admin"
+  description="Perbarui laporan CTF."
+>
+  <div class="mx-auto max-w-3xl px-6 py-14">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">$ writeups --edit {writeup.slug}</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          Edit Write-up<span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      <a
+        href="/admin/writeups"
+        class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+      >
+        [ back ]
+      </a>
+    </div>
+
+    <div class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+      <WriteupForm writeup={writeup} />
+    </div>
+  </div>
+</MainLayout>

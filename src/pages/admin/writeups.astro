@@ -1,0 +1,84 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import WriteupList from "../../components/admin/WriteupList.astro";
+import { canDeleteCertificates, canManageCertificates } from "../../lib/auth";
+
+export const prerender = false;
+
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+if (!canManageCertificates(profile)) {
+  return Astro.redirect("/403");
+}
+
+const { data: rawWriteups } = await supabase
+  .from("writeups")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+const writeups = (rawWriteups ?? []).map((w) => ({
+  id: w.id,
+  title: w.title,
+  slug: w.slug,
+  targetEnv: w.target_env,
+  methodology: w.methodology,
+  severity: w.severity as "Critical" | "High" | "Med" | "Low",
+  findings: w.findings,
+  remediation: w.remediation,
+  isPublished: w.is_published,
+  createdBy: w.created_by ?? null,
+  createdAt: w.created_at,
+  updatedAt: w.updated_at,
+}));
+
+const canDelete = canDeleteCertificates(profile);
+const role = profile?.role ?? "viewer";
+---
+
+<MainLayout
+  title="Write-ups — Admin"
+  description="CMS write-up CTF — kelola laporan TryHackMe / HackTheBox."
+>
+  <div class="mx-auto max-w-5xl px-6 py-14">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">$ writeups --manage</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          Write-ups<span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <a
+          href="/admin/writeups/new"
+          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-4 py-2 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+        >
+          [ + new ]
+        </a>
+        <a
+          href="/admin/dashboard"
+          class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+        >
+          [ dashboard ]
+        </a>
+        <span class="rounded border border-cyber-primary/50 px-2 py-1 font-mono text-xs uppercase tracking-wider text-cyber-primary">
+          role: {role}
+        </span>
+      </div>
+    </div>
+
+    <section class="mt-10">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-mono text-lg font-bold text-white">All Write-ups</h2>
+        <span class="font-mono text-xs text-cyber-muted">
+          total: {writeups.length}
+        </span>
+      </div>
+
+      <WriteupList writeups={writeups} canDelete={canDelete} />
+    </section>
+  </div>
+</MainLayout>

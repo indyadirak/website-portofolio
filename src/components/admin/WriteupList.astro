@@ -1,0 +1,132 @@
+---
+import type { Writeup } from "../../lib/types";
+
+interface Props {
+  writeups: Writeup[];
+  /** role admin — boleh menghapus & toggle publish. */
+  canDelete: boolean;
+}
+
+const { writeups, canDelete } = Astro.props;
+
+const severityStyle: Record<Writeup["severity"], string> = {
+  Critical: "border-cyber-danger/60 text-cyber-danger",
+  High: "border-amber-500/60 text-amber-400",
+  Med: "border-yellow-500/50 text-yellow-300",
+  Low: "border-cyber-muted/50 text-cyber-muted",
+};
+---
+
+{
+  writeups.length === 0 ? (
+    <div class="rounded border border-cyber-border bg-cyber-card p-6 font-mono text-xs text-cyber-muted">
+      <p>$ ls /writeups --all</p>
+      <p>total 0</p>
+      <p>(belum ada write-up. Buat lewat tombol [ + new ] di atas.)</p>
+    </div>
+  ) : (
+    <div class="overflow-x-auto rounded border border-cyber-border bg-cyber-card">
+      <table class="w-full min-w-[720px] text-left font-mono text-sm">
+        <thead class="border-b border-cyber-border/60 text-[11px] uppercase tracking-wider text-cyber-muted">
+          <tr>
+            <th class="px-4 py-3">#</th>
+            <th class="px-4 py-3">Title</th>
+            <th class="px-4 py-3">Target</th>
+            <th class="px-4 py-3">Severity</th>
+            <th class="px-4 py-3">Status</th>
+            <th class="px-4 py-3">Created</th>
+            <th class="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {writeups.map((w, i) => (
+            <tr class="border-b border-cyber-border/40 transition-colors hover:bg-cyber-panel">
+              <td class="px-4 py-3 text-cyber-muted">{String(i + 1).padStart(2, "0")}</td>
+              <td class="px-4 py-3">
+                <p class="font-semibold text-slate-200">{w.title}</p>
+                <p class="text-[11px] text-cyber-muted">/writeups/{w.slug}</p>
+              </td>
+              <td class="px-4 py-3 text-cyber-muted">{w.targetEnv}</td>
+              <td class="px-4 py-3">
+                <span class={`rounded border px-2 py-0.5 text-[11px] uppercase tracking-wider ${severityStyle[w.severity]}`}>
+                  {w.severity}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                {w.isPublished ? (
+                  <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-primary">published</span>
+                ) : (
+                  <span class="rounded border border-cyber-border px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-muted">draft</span>
+                )}
+              </td>
+              <td class="px-4 py-3 text-[11px] text-cyber-muted">
+                {new Date(w.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex justify-end gap-2 text-[11px]">
+                  <a
+                    href={`/admin/writeups/${w.id}`}
+                    class="rounded border border-cyber-border px-2 py-1 text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+                  >
+                    [ edit ]
+                  </a>
+                  {
+                    canDelete && (
+                      <>
+                        <button
+                          type="button"
+                          data-wup-toggle={w.id}
+                          data-wup-published={String(w.isPublished)}
+                          class="rounded border border-cyber-border px-2 py-1 text-cyber-muted transition-colors hover:border-cyber-primary hover:text-cyber-primary"
+                        >
+                          {w.isPublished ? "[ unpublish ]" : "[ publish ]"}
+                        </button>
+                        <button
+                          type="button"
+                          data-wup-delete={w.id}
+                          data-wup-title={w.title}
+                          class="rounded border border-cyber-border px-2 py-1 text-cyber-muted transition-colors hover:border-cyber-danger hover:text-cyber-danger"
+                        >
+                          [ delete ]
+                        </button>
+                      </>
+                    )
+                  }
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>("[data-wup-toggle]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.wupToggle as string;
+      const next = btn.dataset.wupPublished === "true" ? false : true;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/writeups?id=${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublished: next }),
+      }).catch(() => null);
+      if (res && res.ok) window.location.reload();
+      else btn.disabled = false;
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-wup-delete]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.wupDelete as string;
+      const title = btn.dataset.wupTitle ?? "";
+      if (!window.confirm(`Hapus write-up "${title}"? Tindakan ini permanen.`)) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/writeups?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
+      if (res && res.ok) window.location.reload();
+      else btn.disabled = false;
+    });
+  });
+</script>

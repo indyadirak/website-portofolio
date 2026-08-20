@@ -1,0 +1,92 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import type { Writeup } from "../../lib/types";
+
+interface Props {
+  writeup: Writeup;
+}
+
+const { writeup } = Astro.props;
+
+const locale = localeFromUrl(Astro.url);
+const t = getDictionary(locale);
+const d = t.writeups.detail;
+
+const severityStyle: Record<Writeup["severity"], string> = {
+  Critical: "border-cyber-danger/60 text-cyber-danger",
+  High: "border-amber-500/60 text-amber-400",
+  Med: "border-yellow-500/50 text-yellow-300",
+  Low: "border-cyber-muted/50 text-cyber-muted",
+};
+
+const backHref = locale === "en" ? "/en/writeups" : "/writeups";
+const fmt = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "id-ID", {
+  dateStyle: "long",
+});
+---
+
+<MainLayout title={`${writeup.title} — Write-up`} description={writeup.findings.slice(0, 160)}>
+  <div class="mx-auto max-w-3xl px-6 py-16">
+    <a
+      href={backHref}
+      class="font-mono text-xs text-cyber-muted transition-colors hover:text-cyber-primary"
+    >
+      {d.back}
+    </a>
+
+    <h1 class="mt-6 font-mono text-3xl font-bold text-white">
+      {writeup.title}<span class="text-cyber-primary">;</span>
+    </h1>
+
+    <div class="mt-4 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-wider">
+      <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-cyber-primary">
+        {writeup.targetEnv}
+      </span>
+      <span class={`rounded border px-2 py-0.5 ${severityStyle[writeup.severity]}`}>
+        {writeup.severity}
+      </span>
+      <span class="rounded border border-cyber-border px-2 py-0.5 text-cyber-muted">
+        {writeup.methodology}
+      </span>
+    </div>
+
+    <p class="mt-4 font-mono text-[11px] text-cyber-muted">
+      {d.updated}: {fmt.format(new Date(writeup.updatedAt))}
+    </p>
+
+    <div class="mt-10 space-y-8">
+      <section>
+        <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+          {d.target}
+        </h2>
+        <p class="mt-2 font-mono text-sm text-slate-200">{writeup.targetEnv}</p>
+      </section>
+
+      <section>
+        <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+          {d.methodology}
+        </h2>
+        <p class="mt-2 font-mono text-sm text-slate-200">{writeup.methodology}</p>
+      </section>
+
+      <section>
+        <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+          {d.findings}
+        </h2>
+        <pre
+          class="mt-2 whitespace-pre-wrap rounded border border-cyber-border bg-cyber-panel p-5 font-mono text-sm leading-relaxed text-slate-300"
+        >{writeup.findings}</pre>
+      </section>
+
+      <section>
+        <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
+          {d.remediation}
+        </h2>
+        <pre
+          class="mt-2 whitespace-pre-wrap rounded border border-cyber-border bg-cyber-panel p-5 font-mono text-sm leading-relaxed text-slate-300"
+        >{writeup.remediation}</pre>
+      </section>
+    </div>
+  </div>
+</MainLayout>

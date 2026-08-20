@@ -2,12 +2,27 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import SectionHeading from "../SectionHeading.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { getWriteups } from "../../lib/data/writeups";
+import type { Writeup } from "../../lib/types";
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
+
+const writeups = await getWriteups();
+
+const severityStyle: Record<Writeup["severity"], string> = {
+  Critical: "border-cyber-danger/60 text-cyber-danger",
+  High: "border-amber-500/60 text-amber-400",
+  Med: "border-yellow-500/50 text-yellow-300",
+  Low: "border-cyber-muted/50 text-cyber-muted",
+};
+
+function detailHref(slug: string): string {
+  return locale === "en" ? `/en/writeups/${slug}` : `/writeups/${slug}`;
+}
 ---
 
-<MainLayout title={t.writeups.title} description={t.writeups.eyebrow}>
+<MainLayout title={t.writeups.title} description={t.writeups.subtitle}>
   <div class="mx-auto max-w-4xl px-6 py-16">
     <SectionHeading
       eyebrow={t.writeups.eyebrow}
@@ -15,47 +30,38 @@ const t = getDictionary(locale);
       description={t.writeups.subtitle}
     />
 
-    <div class="mt-8 grid gap-5 md:grid-cols-2">
-      {
-        t.writeups.cards.map((card) => {
-          const inner = (
-            <>
-              <p class="font-mono text-sm font-semibold text-slate-200">{card.title}</p>
-              <div class="mt-3 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-wider">
-                <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-cyber-primary">
-                  {card.platform}
-                </span>
-                <span class="rounded border border-cyber-border px-2 py-0.5 text-cyber-muted">
-                  {card.category}
-                </span>
-                <span class="rounded border border-cyber-border px-2 py-0.5 text-cyber-muted">
-                  {card.date}
-                </span>
-              </div>
-              <p class="mt-3 font-mono text-xs text-amber-300">{card.status}</p>
-            </>
-          );
-
-          return card.link ? (
-            <a
-              href={card.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex flex-col rounded border border-cyber-border bg-cyber-card p-6 transition-colors hover:border-cyber-accent"
-            >
-              {inner}
-            </a>
-          ) : (
-            <div class="flex flex-col rounded border border-cyber-border bg-cyber-card p-6">
-              {inner}
-            </div>
-          );
-        })
-      }
-    </div>
-
-    <p class="mt-8 rounded border border-cyber-border bg-cyber-card p-4 font-mono text-xs text-cyber-muted">
-      {t.writeups.emptyNote}
-    </p>
+    {
+      writeups.length === 0 ? (
+        <div class="mt-8 rounded border border-cyber-border bg-cyber-card p-8 font-mono text-sm">
+          <p class="text-slate-200">{t.writeups.emptyTitle}</p>
+          <p class="mt-2 text-xs text-cyber-muted">{t.writeups.emptyNote}</p>
+        </div>
+      ) : (
+        <div class="mt-8 grid gap-5 md:grid-cols-2">
+          {
+            writeups.map((w: Writeup) => (
+              <a
+                href={detailHref(w.slug)}
+                class="flex flex-col rounded border border-cyber-border bg-cyber-card p-6 transition-colors hover:border-cyber-accent"
+              >
+                <p class="font-mono text-sm font-semibold text-slate-200">{w.title}</p>
+                <div class="mt-3 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-wider">
+                  <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-cyber-primary">
+                    {w.targetEnv}
+                  </span>
+                  <span class={`rounded border px-2 py-0.5 ${severityStyle[w.severity]}`}>
+                    {w.severity}
+                  </span>
+                  <span class="rounded border border-cyber-border px-2 py-0.5 text-cyber-muted">
+                    {w.methodology}
+                  </span>
+                </div>
+                <p class="mt-auto pt-4 font-mono text-xs text-cyber-muted">{w.createdAt.slice(0, 10)}</p>
+              </a>
+            ))
+          }
+        </div>
+      )
+    }
   </div>
 </MainLayout>

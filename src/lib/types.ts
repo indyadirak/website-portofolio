@@ -99,6 +99,27 @@ export interface Profile {
   updatedAt: string;
 }
 
+/** Severity laporan write-up — dipakai untuk badge warna di UI. */
+export type WriteupSeverity = "Critical" | "High" | "Med" | "Low";
+
+/** Write-up CTF (tabel public.writeups) — format terstruktur THM/HTB. */
+export interface Writeup {
+  id: string;
+  title: string;
+  slug: string;
+  /** Nama lab/mesin target (mis. "HTB Machine X"). */
+  targetEnv: string;
+  /** Kerangka kerja (mis. OWASP / MITRE ATT&CK). */
+  methodology: string;
+  severity: WriteupSeverity;
+  findings: string;
+  remediation: string;
+  isPublished: boolean;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ---------------------------------------------------------------------------
 // Supabase database types (untuk type-safe query: supabase-js)
 // ---------------------------------------------------------------------------
@@ -190,6 +211,22 @@ export type CvFilesRow = {
   size_bytes: number;
   mime: string;
   uploaded_by: string | null;
+  updated_at: string;
+};
+
+/** Baris tabel public.writeups — CMS laporan CTF terstruktur. */
+export type WriteupsRow = {
+  id: string;
+  title: string;
+  slug: string;
+  target_env: string;
+  methodology: string;
+  severity: WriteupSeverity;
+  findings: string;
+  remediation: string;
+  is_published: boolean;
+  created_by: string | null;
+  created_at: string;
   updated_at: string;
 };
 
@@ -374,6 +411,38 @@ export interface Database {
           size_bytes?: number;
           mime?: string;
           uploaded_by?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      writeups: {
+        Row: WriteupsRow;
+        Insert: {
+          id?: string;
+          title: string;
+          slug: string;
+          target_env: string;
+          methodology: string;
+          severity?: WriteupSeverity;
+          findings: string;
+          remediation: string;
+          is_published?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          slug?: string;
+          target_env?: string;
+          methodology?: string;
+          severity?: WriteupSeverity;
+          findings?: string;
+          remediation?: string;
+          is_published?: boolean;
+          created_by?: string | null;
+          created_at?: string;
           updated_at?: string;
         };
         Relationships: [];

@@ -357,22 +357,17 @@ export const id: Dictionary = {
     title: "CTF & Security Write-ups",
     subtitle: "Dokumentasi teknis dari kompetisi & riset — diisi bertahap.",
     emptyNote: "$ echo: daftar diperbarui setelah setiap penyelesaian kompetisi.",
-    cards: [
-      {
-        title: "Template Write-up — Blind SQL Injection",
-        platform: "CTFd",
-        category: "Web",
-        date: "—",
-        status: "Draft — ganti dengan konten asli",
-      },
-      {
-        title: "Template Write-up — Format String Exploitation",
-        platform: "TryHackMe",
-        category: "Pwn",
-        date: "—",
-        status: "Draft — ganti dengan konten asli",
-      },
-    ],
+    emptyTitle: "$ echo: belum ada write-up yang diterbitkan.",
+    detail: {
+      back: "[ cd ../writeups ]",
+      target: "TARGET_ENVIRONMENT",
+      methodology: "METHODOLOGY",
+      severity: "SEVERITY",
+      findings: "FINDINGS",
+      remediation: "REMEDIATION",
+      published: "DITERBITKAN",
+      updated: "DIPERBARUI",
+    },
   },
   notFound: {
     title: "404 — Not Found",

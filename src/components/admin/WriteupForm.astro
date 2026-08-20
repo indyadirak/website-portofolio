@@ -1,0 +1,165 @@
+---
+import type { Writeup } from "../../lib/types";
+
+interface Props {
+  /** Data awal untuk mode edit; null/tidak ada = mode tambah. */
+  writeup?: Writeup | null;
+}
+
+const { writeup = null } = Astro.props;
+
+const editing = Boolean(writeup);
+
+const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Manual / Exploratory"];
+---
+
+<form id="writeup-form" class="space-y-5" data-editing={String(editing)} data-id={writeup?.id ?? ""}>
+  <p id="w-form-mode" class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
+    {editing ? "[ edit_writeup ]" : "[ new_writeup ]"}
+  </p>
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <label class="block md:col-span-2">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Title *</span>
+      <input id="w-title" type="text" required minlength={3} maxlength={200} value={writeup?.title ?? ""}
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="Blind SQL Injection — HTB Machine X" />
+    </label>
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Target Environment *</span>
+      <input id="w-target-env" type="text" required minlength={2} maxlength={120} value={writeup?.targetEnv ?? ""}
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="HTB Machine X | THM Room Y" />
+    </label>
+    <label class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Methodology *</span>
+      <input id="w-methodology" type="text" list="w-methods" required minlength={2} maxlength={120} value={writeup?.methodology ?? ""}
+        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+        placeholder="OWASP / MITRE" />
+      <datalist id="w-methods">
+        {methods.map((m) => <option value={m} />)}
+      </datalist>
+    </label>
+  </div>
+
+  <div>
+    <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Severity *</span>
+    <div class="flex flex-wrap gap-2 font-mono text-xs">
+      {(["Critical", "High", "Med", "Low"] as const).map((sev) => (
+        <label
+          class="cursor-pointer rounded border border-cyber-border px-4 py-2 text-slate-300 transition-colors has-[:checked]:border-cyber-primary has-[:checked]:text-cyber-primary"
+        >
+          <input id={`w-sev-${sev.toLowerCase()}`} type="radio" name="severity" value={sev} required
+            checked={writeup?.severity === sev}
+            class="sr-only" />
+          {sev}
+        </label>
+      ))}
+    </div>
+  </div>
+
+  <label class="block">
+    <span class="mb-2 flex items-baseline justify-between font-mono text-xs uppercase tracking-wider text-cyber-accent">
+      Findings *
+      <span class="text-[10px] text-cyber-muted">min 10 karakter — temuan teknis terstruktur</span>
+    </span>
+    <textarea id="w-findings" rows={8} required minlength={10} maxlength={50000}
+      class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+      placeholder={"$ cat findings.txt\n- Step 1: enumeration...\n- Step 2: exploit..."}>{writeup?.findings ?? ""}</textarea>
+  </label>
+
+  <label class="block">
+    <span class="mb-2 flex items-baseline justify-between font-mono text-xs uppercase tracking-wider text-cyber-accent">
+      Remediation *
+      <span class="text-[10px] text-cyber-muted">min 10 karakter — langkah perbaikan / pelajaran</span>
+    </span>
+    <textarea id="w-remediation" rows={5} required minlength={10} maxlength={50000}
+      class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
+      placeholder={"$ cat remediation.txt\n- Patch: parametrized query..."}>{writeup?.remediation ?? ""}</textarea>
+  </label>
+
+  <label class="flex min-h-11 cursor-pointer items-center gap-3">
+    <input id="w-published" type="checkbox"
+      class="h-5 w-5 rounded border-cyber-border bg-cyber-panel accent-cyber-primary"
+      checked={writeup?.isPublished ?? false} />
+    <span class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
+      Published — tampil di halaman publik /writeups/
+    </span>
+  </label>
+
+  <div class="flex items-center gap-4">
+    <a href="/admin/writeups"
+      class="rounded border border-cyber-border px-5 py-2.5 font-mono text-sm text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent">
+      [ cancel ]
+    </a>
+    <button type="submit" id="w-submit"
+      class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50">
+      {editing ? "[ update_writeup ]" : "[ save_writeup ]"}
+    </button>
+    <p id="w-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
+  </div>
+</form>
+
+<script>
+  const form = document.getElementById("writeup-form") as HTMLFormElement;
+  const submitBtn = document.getElementById("w-submit") as HTMLButtonElement;
+  const statusEl = document.getElementById("w-status") as HTMLParagraphElement;
+
+  const title = document.getElementById("w-title") as HTMLInputElement;
+  const targetEnv = document.getElementById("w-target-env") as HTMLInputElement;
+  const methodology = document.getElementById("w-methodology") as HTMLInputElement;
+  const findings = document.getElementById("w-findings") as HTMLTextAreaElement;
+  const remediation = document.getElementById("w-remediation") as HTMLTextAreaElement;
+  const published = document.getElementById("w-published") as HTMLInputElement;
+
+  if (!form || !title || !statusEl) {
+    throw new Error("writeup form elements missing");
+  }
+
+  const editing = form.dataset.editing === "true";
+  const writeupId = form.dataset.id ?? "";
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    statusEl.textContent = "";
+    submitBtn.disabled = true;
+
+    const severity = form.querySelector<HTMLInputElement>('input[name="severity"]:checked')?.value ?? "";
+    const payload = {
+      title: title.value.trim(),
+      targetEnv: targetEnv.value.trim(),
+      methodology: methodology.value.trim(),
+      severity,
+      findings: findings.value.trim(),
+      remediation: remediation.value.trim(),
+      isPublished: published.checked,
+    };
+
+    const res = await fetch(
+      editing ? `/api/admin/writeups?id=${encodeURIComponent(writeupId)}` : "/api/admin/writeups",
+      {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    ).catch(() => null);
+
+    if (!res) {
+      submitBtn.disabled = false;
+      statusEl.textContent = "$ error: jaringan tidak tersedia.";
+      return;
+    }
+
+    const data = await res.json();
+    submitBtn.disabled = false;
+
+    if (!res.ok || !data.ok) {
+      statusEl.textContent = `$ error: ${data.error ?? "gagal menyimpan"}`;
+      return;
+    }
+
+    statusEl.textContent = "$ saved — redirecting...";
+    statusEl.classList.add("text-cyber-primary");
+    window.location.href = "/admin/writeups";
+  });
+</script>

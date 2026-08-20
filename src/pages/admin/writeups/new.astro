@@ -1,0 +1,43 @@
+---
+import MainLayout from "../../../layouts/MainLayout.astro";
+import WriteupForm from "../../../components/admin/WriteupForm.astro";
+import { canManageCertificates } from "../../../lib/auth";
+
+export const prerender = false;
+
+const { user, profile } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+if (!canManageCertificates(profile)) {
+  return Astro.redirect("/403");
+}
+---
+
+<MainLayout
+  title="New Write-up — Admin"
+  description="Buat laporan CTF terstruktur (THM / HTB)."
+>
+  <div class="mx-auto max-w-3xl px-6 py-14">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">$ writeups --new</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          New Write-up<span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      <a
+        href="/admin/writeups"
+        class="rounded border border-cyber-border px-4 py-2 font-mono text-xs text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
+      >
+        [ back ]
+      </a>
+    </div>
+
+    <div class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+      <WriteupForm />
+    </div>
+  </div>
+</MainLayout>
