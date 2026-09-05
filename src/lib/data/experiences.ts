@@ -28,8 +28,8 @@ export async function getExperiences(): Promise<Experience[]> {
     const { data, error } = await supabase
       .from("experiences")
       .select("*")
-      .order("sort_order", { ascending: true })
-      .order("start_date", { ascending: false });
+      .order("start_date", { ascending: false })
+      .order("sort_order", { ascending: true });
 
     if (error) {
       console.error("[supabase] Gagal mengambil experiences:", error.message);
