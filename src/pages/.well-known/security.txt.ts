@@ -24,7 +24,7 @@ export function GET(): Response {
     `Policy: ${base}/security`,
     "Preferred-Languages: id, en",
     `Canonical: ${base}/.well-known/security.txt`,
-    `Expires: ${expires.toUTCString()}`,
+    "Expires: Sun, 06 Sep 2027 00:00:00 GMT",
     "",
   ].join("\n");
 

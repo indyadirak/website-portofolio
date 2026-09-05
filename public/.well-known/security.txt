@@ -1,0 +1,10 @@
+# Security contact for CyberSec
+# Domain: portofolio.indyadirak.my.id
+# Pelaporan kerentanan mengikuti RFC 9116 dan kebijakan keamanan situs.
+
+Contact: https://portofolio.indyadirak.my.id/contact
+Encryption: https://portofolio.indyadirak.my.id/.well-known/pgp.txt
+Policy: https://portofolio.indyadirak.my.id/security
+Preferred-Languages: id, en
+Canonical: https://portofolio.indyadirak.my.id/.well-known/security.txt
+Expires: Sun, 06 Sep 2027 00:00:00 GMT
