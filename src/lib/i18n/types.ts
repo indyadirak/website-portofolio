@@ -378,12 +378,35 @@ export interface Dictionary {
     /** Baris "total 0" pada TerminalEmptyState. */
     totalZero: string;
   };
+  /** Manajemen pesan kontak (admin/messages) — FASE 2. */
+  adminMessages: {
+    eyebrow: string;
+    title: string;
+    total: string;
+    emptyNote: string;
+    thSender: string;
+    thDate: string;
+    thStatus: string;
+    thMessage: string;
+    thActions: string;
+    unread: string;
+    read: string;
+    markRead: string;
+    delete: string;
+    /** Placeholder {name} = nama pengirim. */
+    deleteConfirm: string;
+    done: string;
+    errorPrefix: string;
+  };
   /** Layout admin: navigasi, role, logout (AdminLayout). */
   adminLayout: {
     navDashboard: string;
-    navProjects: string;
+    navViewProjects: string;
+    navAddProjects: string;
     navWriteups: string;
-    navCertificates: string;
+    navViewCertificates: string;
+    navAddCertificates: string;
+    navMessages: string;
     navSettings: string;
     navExperiences: string;
     navSocialLinks: string;
@@ -391,6 +414,24 @@ export interface Dictionary {
     navBackup: string;
     logout: string;
     role: string;
+  };
+  /** Halaman list project (admin/projects) — FASE 2. */
+  adminProjects: {
+    eyebrow: string;
+    title: string;
+    addNew: string;
+    formTitleNew: string;
+    formTitleEdit: string;
+    backToList: string;
+  };
+  /** Halaman list certificate (admin/certificates) — FASE 2. */
+  adminCertificates: {
+    eyebrow: string;
+    title: string;
+    addNew: string;
+    formTitleNew: string;
+    formTitleEdit: string;
+    backToList: string;
   };
   notFound: {
     title: string;

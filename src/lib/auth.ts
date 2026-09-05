@@ -115,6 +115,12 @@ export function canDeleteSiteContent(profile: Profile | null): boolean {
   return hasRole(profile, "admin");
 }
 
+/** Manajemen pesan kontak (tandai dibaca, hapus) — FASE 2.
+ *  Selaras policy RLS contact_messages (admin/editor + aal2). */
+export function canManageMessages(profile: Profile | null): boolean {
+  return hasRole(profile, "admin", "editor");
+}
+
 export interface AuthContext {
   supabase: SupabaseClient<Database>;
   user: User | null;

@@ -1,0 +1,238 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
+import TerminalTable from "../../components/admin/ui/TerminalTable.astro";
+import { canManageMessages } from "../../lib/auth";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
+import type { ContactMessagesRow } from "../../lib/types";
+
+export const prerender = false;
+
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+// Bisa dilihat semua role login (selaras policy RLS select-all-roles);
+// tombol aksi hanya untuk admin/editor (selaras policy RLS update/delete).
+const canManage = canManageMessages(profile);
+
+// Anti-500: gagal baca DB tidak boleh meruntuhkan halaman admin.
+let messages: ContactMessagesRow[] = [];
+try {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("contact_messages")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("[admin/messages] Gagal membaca pesan:", error.message);
+    } else {
+      messages = (data ?? []) as ContactMessagesRow[];
+    }
+  }
+} catch (err) {
+  console.error("[admin/messages] Gagal membaca pesan:", err);
+}
+
+const dateLocale = locale === "en" ? "en-US" : "id-ID";
+---
+
+<AdminLayout title="Contact Messages — Admin" description={t.adminMessages.title} current="messages">
+  <div
+    class="mx-auto max-w-6xl px-6 py-14"
+    data-i18n-delete-confirm={t.adminMessages.deleteConfirm}
+    data-i18n-error-prefix={t.adminMessages.errorPrefix}
+    data-i18n-done={t.adminMessages.done}
+    data-i18n-read={t.adminMessages.read}
+  >
+    <div>
+      <p class="font-mono text-sm text-cyber-accent">{t.adminMessages.eyebrow}</p>
+      <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+        {t.adminMessages.title}<span class="text-cyber-primary">;</span>
+      </h1>
+    </div>
+
+    <section class="mt-8">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-mono text-lg font-bold text-white">{t.adminMessages.title}</h2>
+        <span class="font-mono text-xs text-cyber-muted" id="msg-count">
+          {t.adminMessages.total}: {messages.length}
+        </span>
+      </div>
+
+      <div
+        id="msg-empty-state"
+        hidden={messages.length > 0}
+        class="rounded border border-cyber-border bg-cyber-card p-6 font-mono text-xs text-cyber-muted"
+      >
+        <p>{t.adminMessages.emptyNote}</p>
+      </div>
+
+      {
+        messages.length > 0 && (
+          <div id="msg-table-wrap">
+            <TerminalTable
+              columns={[
+                { key: "#", label: "#" },
+                { key: "sender", label: t.adminMessages.thSender },
+                { key: "date", label: t.adminMessages.thDate },
+                { key: "status", label: t.adminMessages.thStatus },
+                { key: "message", label: t.adminMessages.thMessage },
+                { key: "actions", label: t.adminMessages.thActions },
+              ]}
+            >
+            {messages.map((m, i) => (
+              <tr
+                id={`msg-row-${i}`}
+                class:list={[
+                  "border-b border-cyber-border/40 transition-colors hover:bg-cyber-panel",
+                  !m.is_read && "bg-cyber-primary/5",
+                ]}
+              >
+                <td class="px-4 py-3 text-cyber-muted">{String(i + 1).padStart(2, "0")}</td>
+                <td class="px-4 py-3">
+                  <p class="text-slate-200">{m.name}</p>
+                  <a
+                    href={`mailto:${m.email}`}
+                    class="max-w-[16rem] truncate text-xs text-cyber-muted underline decoration-cyber-border underline-offset-4 hover:text-cyber-primary"
+                  >
+                    {m.email}
+                  </a>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-cyber-muted">
+                  {new Date(m.created_at).toLocaleString(dateLocale)}
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    id={`msg-badge-${i}`}
+                    class:list={[
+                      "rounded border px-2 py-0.5 text-[11px] uppercase tracking-wider",
+                      m.is_read
+                        ? "border-cyber-border text-cyber-muted"
+                        : "border-cyber-primary/60 text-cyber-primary",
+                    ]}
+                  >
+                    {m.is_read ? t.adminMessages.read : t.adminMessages.unread}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <p class="max-w-md truncate text-slate-300" title={m.message}>
+                    {m.message}
+                  </p>
+                </td>
+                <td class="px-4 py-3">
+                  {canManage && (
+                    <div class="flex justify-end gap-2 text-[11px]">
+                      <TerminalButton
+                        variant="ghost"
+                        hidden={m.is_read}
+                        data-msg-read={m.id}
+                        data-msg-index={String(i)}
+                      >
+                        {t.adminMessages.markRead}
+                      </TerminalButton>
+                      <TerminalButton
+                        variant="danger"
+                        data-msg-delete={m.id}
+                        data-msg-index={String(i)}
+                        data-msg-name={m.name}
+                      >
+                        {t.adminMessages.delete}
+                      </TerminalButton>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+            </TerminalTable>
+          </div>
+        )
+      }
+    </section>
+
+    <p id="msg-page-status" role="status" aria-live="polite" class="mt-4 font-mono text-xs text-cyber-danger"></p>
+  </div>
+</AdminLayout>
+
+<script>
+  const root = document.querySelector("[data-i18n-delete-confirm]") as HTMLElement | null;
+  if (!root) throw new Error("messages: root element tidak ditemukan");
+
+  const tDeleteConfirm = root.dataset.i18nDeleteConfirm ?? "";
+  const errorPrefix = root.dataset.i18nErrorPrefix ?? "";
+  const doneMsg = root.dataset.i18nDone ?? "";
+  const readLabel = root.dataset.i18nRead ?? "read";
+
+  const statusEl = document.getElementById("msg-page-status") as HTMLParagraphElement;
+  const countEl = document.getElementById("msg-count") as HTMLElement;
+
+  function reportError(detail: string): void {
+    statusEl.textContent = `${errorPrefix} ${detail}`;
+  }
+
+  document.querySelectorAll<HTMLButtonElement>("[data-msg-read]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.msgRead;
+      const index = btn.dataset.msgIndex;
+      if (!id || index === undefined) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/messages?id=${encodeURIComponent(id)}`, {
+        method: "PUT",
+      }).catch(() => null);
+      const data = res ? await res.json().catch(() => null) : null;
+      if (!res || !data?.ok) {
+        reportError(data?.error ?? "gagal menandai dibaca");
+        btn.disabled = false;
+        return;
+      }
+      const badge = document.getElementById(`msg-badge-${index}`) as HTMLElement | null;
+      if (badge) {
+        badge.textContent = readLabel;
+        badge.classList.remove("border-cyber-primary/60", "text-cyber-primary");
+        badge.classList.add("border-cyber-border", "text-cyber-muted");
+      }
+      const row = document.getElementById(`msg-row-${index}`) as HTMLElement | null;
+      row?.classList.remove("bg-cyber-primary/5");
+      btn.remove();
+      statusEl.textContent = doneMsg;
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-msg-delete]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.msgDelete;
+      const index = btn.dataset.msgIndex;
+      const name = btn.dataset.msgName ?? "";
+      if (!id || index === undefined) return;
+      if (!window.confirm(tDeleteConfirm.replace("{name}", name))) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/messages?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }).catch(() => null);
+      const data = res ? await res.json().catch(() => null) : null;
+      if (!res || !data?.ok) {
+        reportError(data?.error ?? "gagal menghapus pesan");
+        btn.disabled = false;
+        return;
+      }
+      const row = document.getElementById(`msg-row-${index}`) as HTMLElement | null;
+      row?.remove();
+      const remaining = document.querySelectorAll("#msg-table-wrap tr").length;
+      if (countEl) {
+        countEl.textContent = `${countEl.textContent.split(":")[0]}: ${remaining}`;
+      }
+      if (remaining === 0) {
+        const empty = document.getElementById("msg-empty-state");
+        const wrap = document.getElementById("msg-table-wrap");
+        wrap?.remove();
+        empty?.removeAttribute("hidden");
+      }
+      statusEl.textContent = doneMsg;
+    });
+  });
+</script>

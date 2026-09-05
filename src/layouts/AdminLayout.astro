@@ -6,7 +6,7 @@ import { siteConfig } from "../lib/config";
 export interface Props {
   title: string;
   description?: string;
-  /** Kunci nav aktif untuk aria-current: dashboard|projects|writeups|certificates|settings|experiences|socialLinks|cv|backup. */
+  /** Kunci nav aktif untuk aria-current: dashboard|projects|addProjects|writeups|certificates|addCertificates|messages|settings|experiences|socialLinks|cv|backup. */
   current?: string;
 }
 
@@ -23,9 +23,12 @@ const displayName = profile?.fullName?.trim() || user?.email || "operator";
 
 const navItems = [
   { key: "dashboard", label: t.adminLayout.navDashboard, href: "/admin/dashboard" },
-  { key: "projects", label: t.adminLayout.navProjects, href: "/admin/dashboard#project-list" },
+  { key: "projects", label: t.adminLayout.navViewProjects, href: "/admin/projects" },
+  { key: "addProjects", label: t.adminLayout.navAddProjects, href: "/admin/projects/new" },
   { key: "writeups", label: t.adminLayout.navWriteups, href: "/admin/writeups" },
-  { key: "certificates", label: t.adminLayout.navCertificates, href: "/admin/dashboard#certificates" },
+  { key: "certificates", label: t.adminLayout.navViewCertificates, href: "/admin/certificates" },
+  { key: "addCertificates", label: t.adminLayout.navAddCertificates, href: "/admin/certificates/new" },
+  { key: "messages", label: t.adminLayout.navMessages, href: "/admin/messages" },
   { key: "settings", label: t.adminLayout.navSettings, href: "/admin/settings" },
   { key: "experiences", label: t.adminLayout.navExperiences, href: "/admin/experiences" },
   { key: "socialLinks", label: t.adminLayout.navSocialLinks, href: "/admin/social-links" },

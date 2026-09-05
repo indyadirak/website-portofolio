@@ -57,6 +57,8 @@ export interface ContactMessage {
   name: string;
   email: string;
   message: string;
+  /** true = sudah ditandai dibaca di admin (FASE 2). */
+  isRead: boolean;
   createdAt: string;
 }
 
@@ -247,6 +249,8 @@ export type ContactMessagesRow = {
   name: string;
   email: string;
   message: string;
+  /** Penanda dibaca (admin/editor) — false = belum dibaca (FASE 2). */
+  is_read: boolean;
   created_at: string;
 };
 
@@ -423,6 +427,7 @@ export interface Database {
           name: string;
           email: string;
           message: string;
+          is_read?: boolean;
           created_at?: string;
         };
         Update: {
@@ -430,6 +435,7 @@ export interface Database {
           name?: string;
           email?: string;
           message?: string;
+          is_read?: boolean;
           created_at?: string;
         };
         Relationships: [];

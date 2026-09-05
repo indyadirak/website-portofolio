@@ -349,6 +349,7 @@ create table if not exists public.contact_messages (
   name       text not null,
   email      text not null,
   message    text not null,
+  is_read    boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -391,6 +392,43 @@ create policy "contact_messages_public_insert" on public.contact_messages
 create policy "contact_messages_auth_select" on public.contact_messages
   for select to authenticated
   using (true);
+
+-- Tulis (tandai dibaca) & hapus: HANYA aal2 + role admin/editor.
+-- Role via subquery public.profiles — JANGAN auth.jwt() ->> 'role'
+-- (klaim role tidak ada di JWT project ini).
+drop policy if exists "contact_messages_auth_update" on public.contact_messages;
+create policy "contact_messages_auth_update" on public.contact_messages
+  for update to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  )
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "contact_messages_auth_delete" on public.contact_messages;
+create policy "contact_messages_auth_delete" on public.contact_messages
+  for delete to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+grant update, delete on public.contact_messages to authenticated;
 
 -- ============================================================
 -- 4. STORAGE SERTIFIKAT — BUCKET + POLICY storage.objects
