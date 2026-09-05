@@ -9,7 +9,13 @@
 
 export type ProjectCategory = "Web App" | "Mobile" | "Network" | "IoT" | "Red Team" | "Blue Team" | "Defensive" | "OSINT" | "Forensics" | "Cloud Security" | "Malware Analysis" | "Active Directory" | "Security Automation" | "Incident Response";
 
-export type ProjectStatus = "active" | "archived" | "planned";
+/**
+ * Nilai status project — SINGLE SOURCE OF TRUTH (dipakai API + form admin).
+ * Harus identik dengan CHECK constraint kolom status di supabase/schema.sql
+ * (`status in ('active','archived','planned')`).
+ */
+export const PROJECT_STATUSES = ["active", "archived", "planned"] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 export interface Project {
   id: string;

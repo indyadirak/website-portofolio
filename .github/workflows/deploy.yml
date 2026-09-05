@@ -13,6 +13,10 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Least privilege di level job (selaras workflow-level di atas):
+    # workflow ini hanya membaca repo + deploy via CLOUDFLARE_API_TOKEN secret.
+    permissions:
+      contents: read
     # Secrets TIDAK bisa direferensikan langsung di `if:` — pola resmi:
     # petakan ke job-level env dulu, lalu `if: env.X != ''` (job env
     # tersedia di konteks `if`; step-level env TIDAK).
@@ -24,7 +28,7 @@ jobs:
       GDRIVE_CONFIG_ENCRYPTION_SECRET: ${{ secrets.GDRIVE_CONFIG_ENCRYPTION_SECRET }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # GUARD: RATE_LIMIT_KV id wajib ASLI sebelum deploy.
       # Dengan id placeholder (00000000-...), kv.get() selalu null —
@@ -41,7 +45,7 @@ jobs:
           echo "KV namespace id OK"
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm

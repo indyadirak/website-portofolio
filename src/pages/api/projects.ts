@@ -5,7 +5,7 @@ import {
   canManageProjects,
 } from "../../lib/auth";
 import { adminMutationGuard } from "../../lib/rateLimit";
-import type { ProjectStatus } from "../../lib/types";
+import { PROJECT_STATUSES, type ProjectStatus } from "../../lib/types";
 
 export const prerender = false;
 
@@ -37,7 +37,6 @@ export interface ProjectInput {
   impact?: string | null;
 }
 
-const VALID_STATUSES: ProjectStatus[] = ["active", "archived", "planned"];
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Konversi input (camelCase) -> kolom tabel (snake_case).
@@ -94,7 +93,7 @@ function validate(input: ProjectInput, resolved: { name: string } | null): strin
   if (!input.category?.trim() && !input.categoryId) {
     return "category_wajib_diisi";
   }
-  if (!VALID_STATUSES.includes(input.status)) {
+  if (!(PROJECT_STATUSES as readonly string[]).includes(input.status)) {
     return "status_tidak_valid";
   }
   if (input.categoryId && !resolved) {
@@ -112,6 +111,16 @@ async function prepareInput(
 ): Promise<{ error: string } | { input: ProjectInput; resolved: { name: string } | null }> {
   const input = body as ProjectInput;
   if (!input) return { error: "invalid_json" };
+
+  // Normalisasi status (trim + lowercase) — defensif terhadap varian case
+  // dari klien. Nilai akhir dijamin anggota PROJECT_STATUSES (identik
+  // CHECK constraint DB), sehingga error "status_tidak_valid" hanya untuk
+  // nilai yang benar-benar di luar enum.
+  const rawStatus = typeof input.status === "string" ? input.status.trim().toLowerCase() : "";
+  if (!(PROJECT_STATUSES as readonly string[]).includes(rawStatus)) {
+    return { error: "status_tidak_valid" };
+  }
+  input.status = rawStatus as ProjectStatus;
 
   const resolved = input.categoryId ? await resolveCategory(supabase, input) : null;
 

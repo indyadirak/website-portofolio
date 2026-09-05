@@ -5,7 +5,7 @@
  * B2: kategori dari project_categories (dinamis) — dikirim sebagai
  * categoryId (FK) + auto-fill category text (fallback legacy).
  */
-import type { ProjectCategoryRow } from "../../lib/types";
+import { PROJECT_STATUSES, type ProjectCategoryRow } from "../../lib/types";
 
 interface Props {
   /** Kategori aktif dari DB (project_categories) untuk dropdown. */
@@ -61,9 +61,11 @@ const { categories = [] } = Astro.props;
       <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Status *</span>
       <select id="p-status" required
         class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">
-        <option value="active">active</option>
-        <option value="archived">archived</option>
-        <option value="planned">planned</option>
+        {
+          PROJECT_STATUSES.map((s) => (
+            <option value={s}>{s}</option>
+          ))
+        }
       </select>
     </label>
   </div>
@@ -144,16 +146,18 @@ const { categories = [] } = Astro.props;
       class="rounded border border-cyber-border px-5 py-2.5 font-mono text-sm text-slate-300 hover:border-cyber-accent hover:text-cyber-accent">
       [ cancel_edit ]
     </button>
-    <p id="p-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
+    <p id="p-status-msg" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
   </div>
 </form>
 
 <script>
+  import type { ProjectStatus } from "../../lib/types";
+
   const form = document.getElementById("project-form") as HTMLFormElement;
   const modeEl = document.getElementById("project-form-mode") as HTMLParagraphElement;
   const submitBtn = document.getElementById("p-submit") as HTMLButtonElement;
   const cancelBtn = document.getElementById("p-cancel") as HTMLButtonElement;
-  const statusEl = document.getElementById("p-status") as HTMLParagraphElement;
+  const statusEl = document.getElementById("p-status-msg") as HTMLParagraphElement;
 
   const title = document.getElementById("p-title") as HTMLInputElement;
   const slug = document.getElementById("p-slug") as HTMLInputElement;
@@ -243,7 +247,13 @@ const { categories = [] } = Astro.props;
     slug.value = detail.slug;
     summary.value = detail.summary;
     selectCategory(detail);
+    // Fallback defensif: jika nilai status dari DB tidak ada di option
+    // (data anomali), pilih "active" agar select tidak kosong dan submit
+    // tidak mengirim status string kosong.
     status.value = detail.status;
+    if (status.selectedIndex === -1) {
+      status.value = "active";
+    }
     tags.value = (detail.tags ?? []).join(", ");
     imageUrl.value = toInput(detail.imageUrl);
     repoUrl.value = toInput(detail.repoUrl);
@@ -282,7 +292,9 @@ const { categories = [] } = Astro.props;
       // B2: kategori FK bila opsi dari project_categories; legacy bila bukan.
       categoryId: isLegacy ? null : (selected?.value ?? null),
       category: categoryName,
-      status: status.value as never,
+      // Value select dijamin anggota PROJECT_STATUSES (option dirender
+      // dari konstanta yang sama dengan validasi API).
+      status: status.value as ProjectStatus,
       tags: tags.value.split(",").map((s) => s.trim()).filter(Boolean),
       imageUrl: imageUrl.value.trim() || null,
       repoUrl: repoUrl.value.trim() || null,

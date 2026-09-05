@@ -1396,6 +1396,14 @@ create policy "site_settings_update_mfa_admin_editor" on public.site_settings
       where profiles.id = auth.uid()
         and profiles.role in ('admin', 'editor')
     )
+  )
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
   );
 
 drop policy if exists "site_settings_delete_mfa_admin" on public.site_settings;

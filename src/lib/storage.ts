@@ -9,6 +9,34 @@ export const CV_BUCKET = "cv";
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
 
+// ---------------------------------------------------------------------------
+// Anti path traversal (FASE 1, TUGAS 1.2)
+//
+// Path Supabase Storage adalah OBJECT path, bukan filesystem path — jadi
+// path.resolve TIDAK aplikabel. Proteksi yang benar = penolakan segment
+// berbahaya + allowlist pola (strict shape) untuk path yang kita bangun.
+// ---------------------------------------------------------------------------
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Shape sah untuk path file sertifikat: <userId-uuid>/<random-uuid>.<ext>. */
+const CERT_PATH_RE = new RegExp(
+  `^${UUID_RE.source}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(pdf|png|jpe?g|gif|webp)$`,
+  "i"
+);
+
+/**
+ * Cek keamanan path object storage (dipakai untuk path yang berasal dari
+ * luar, mis. kolom file_url di DB). Menolak: null byte, backslash, path
+ * absolut, dan segment ".." / "." / kosong. Return false = path tidak
+ * pernah dikirim ke Storage API (fail-closed).
+ */
+function isSafeStoragePath(path: string): boolean {
+  if (typeof path !== "string" || path.length === 0 || path.length > 512) return false;
+  if (path.includes("\0") || path.includes("\\") || path.startsWith("/")) return false;
+  return path.split("/").every((seg) => seg.length > 0 && seg !== "." && seg !== "..");
+}
+
 interface AllowedFileType {
   mime: string;
   extensions: string[];
@@ -84,7 +112,20 @@ export async function uploadCertificateFile(
   ext: string,
   mime: string
 ): Promise<{ path: string | null; error: string | null }> {
+  // userId harus UUID autentik (dari sesi terverifikasi) — tolak nilai lain
+  // agar path tidak bisa dimanipulasi menjadi traversal/injection.
+  if (!UUID_RE.test(userId)) {
+    console.error("[storage] userId tidak valid untuk path storage");
+    return { path: null, error: "invalid_path" };
+  }
+
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+
+  // Double-safety: hasil akhir WAJIB match shape <uuid>/<uuid>.<ext>.
+  if (!CERT_PATH_RE.test(path)) {
+    console.error("[storage] path hasil build tidak sesuai shape yang diizinkan");
+    return { path: null, error: "invalid_path" };
+  }
 
   const { data, error } = await supabase.storage
     .from(CERTIFICATE_BUCKET)
@@ -108,6 +149,14 @@ export async function removeCertificateFile(
 ): Promise<void> {
   if (!path) return;
 
+  // Path berasal dari kolom DB (file_url) — validasi dulu agar nilai
+  // anomali tidak pernah sampai ke Storage API. Skip (best-effort) bila
+  // tidak aman, jangan dilempar.
+  if (!isSafeStoragePath(path)) {
+    console.error("[storage] Path tidak aman, lewati hapus (mungkin orphan):", path);
+    return;
+  }
+
   const { error } = await supabase.storage.from(CERTIFICATE_BUCKET).remove([path]);
 
   if (error) {
@@ -123,6 +172,11 @@ export type CvLocale = "id" | "en";
 
 /** Path stabil di storage per bahasa — nama tetap agar URL publik tidak berubah. */
 export function cvStoragePath(locale: CvLocale): string {
+  // Runtime guard (bukan hanya TS type): fail-closed bila nilai anomali
+  // lolos ke sini, agar path tidak bisa menjadi traversal.
+  if (locale !== "id" && locale !== "en") {
+    throw new Error("locale CV tidak valid");
+  }
   return `cv-${locale}.pdf`;
 }
 
@@ -163,7 +217,13 @@ export async function uploadCvFile(
   file: File,
   mime: string
 ): Promise<{ path: string | null; error: string | null }> {
-  const path = cvStoragePath(locale);
+  let path: string;
+  try {
+    path = cvStoragePath(locale);
+  } catch (err) {
+    console.error("[storage] Path CV tidak valid:", err instanceof Error ? err.message : "unknown");
+    return { path: null, error: "invalid_path" };
+  }
 
   const { data, error } = await supabase.storage
     .from(CV_BUCKET)

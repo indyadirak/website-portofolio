@@ -17,18 +17,22 @@ permissions:
 jobs:
   sbom:
     runs-on: ubuntu-latest
+    # Least privilege di level job: contents: write WAJIB untuk Dependency
+    # Submission API (publish-sbom); tidak ada permission lain yang dibuka.
+    permissions:
+      contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Generate SBOM (Syft)
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           path: ./
           format: cyclonedx-json
           artifact-name: sbom-results
 
       - name: Upload SBOM ke GitHub Dependency Graph
-        uses: anchore/sbom-action/publish-sbom@v0
+        uses: anchore/sbom-action/publish-sbom@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           artifact: sbom-results
