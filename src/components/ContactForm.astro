@@ -70,6 +70,7 @@ const t = getDictionary(locale);
   <div class="flex items-center gap-4">
     <button
       type="submit"
+      disabled={Boolean(turnstile.siteKey)}
       class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50"
     >
       {t.contact.sendMessage}
@@ -126,12 +127,19 @@ const t = getDictionary(locale);
 
   type TurnstileApi = {
     render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+    getResponse: (id?: string) => string;
     reset(id: string): void;
   };
 
   let widgetId: string | null = null;
   let renderStarted = false;
   let apiFailed = false;
+
+  const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+
+  function setSubmitEnabled(enabled: boolean): void {
+    if (submitButton) submitButton.disabled = !enabled;
+  }
 
   function clearToken(): void {
     if (tokenInput) tokenInput.value = "";
@@ -146,11 +154,6 @@ const t = getDictionary(locale);
     clearToken();
   }
 
-  (window as unknown as { onTurnstileSuccess?: (token: string) => void }).onTurnstileSuccess =
-    (token: string) => {
-      if (tokenInput) tokenInput.value = token;
-    };
-
   function renderTurnstile(): void {
     if (renderStarted || !widgetEl) return;
     const api = (window as unknown as { turnstile?: TurnstileApi }).turnstile;
@@ -161,13 +164,23 @@ const t = getDictionary(locale);
         sitekey: widgetEl.dataset.sitekey,
         theme: "dark",
         language: widgetEl.dataset.language,
-        callback: "onTurnstileSuccess",
-        "expired-callback": clearToken,
-        "error-callback": clearToken,
+        callback: (token: string) => {
+          if (tokenInput) tokenInput.value = token;
+          setSubmitEnabled(Boolean(token));
+        },
+        "expired-callback": () => {
+          clearToken();
+          setSubmitEnabled(false);
+        },
+        "error-callback": () => {
+          clearToken();
+          setSubmitEnabled(false);
+        },
       });
     } catch (err) {
       console.error("[contact] Gagal render Turnstile:", err);
       apiFailed = true;
+      setSubmitEnabled(false);
     }
   }
 
@@ -194,6 +207,8 @@ const t = getDictionary(locale);
   // Mulai render sesegera mungkin (jangan menunggu `load`).
   void waitForTurnstile();
 
+  if (!widgetEl) setSubmitEnabled(true);
+
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -207,8 +222,12 @@ const t = getDictionary(locale);
       }
     }
 
+    const api = (window as unknown as { turnstile?: TurnstileApi }).turnstile;
+    const token = widgetEl && widgetId && api ? api.getResponse(widgetId) : "";
+    if (tokenInput && token) tokenInput.value = token;
+
     // Wajib selesaikan CAPTCHA sebelum submit (bila widget ada & sehat).
-    if (widgetEl && (!tokenInput || !tokenInput.value)) {
+    if (widgetEl && !token) {
       if (apiFailed) {
         show(`${messages.errorPrefix} ${messages.captchaUnavailable}`, false);
         return;
@@ -218,24 +237,17 @@ const t = getDictionary(locale);
     }
 
     const data = new FormData(form);
+    // Set eksplisit agar kontrak backend selalu menerima field standar
+    // Turnstile, termasuk bila hidden input belum tersinkron.
+    data.set("cf-turnstile-response", token);
     const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
     button.disabled = true;
-
-    // ===== DEBUG TURNSTILE — membedakan kegagalan frontend vs edge vs backend =====
-    console.log("[FRONTEND DEBUG] Attempting to submit form. Token exists:", !!tokenInput?.value);
 
     let res: Response;
     try {
       res = await fetch("/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: String(data.get("name") ?? ""),
-          email: String(data.get("email") ?? ""),
-          message: String(data.get("message") ?? ""),
-          website: String(data.get("website") ?? ""),
-          "cf-turnstile-response": tokenInput?.value ?? "",
-        }),
+        body: data,
       });
     } catch {
       button.disabled = false;

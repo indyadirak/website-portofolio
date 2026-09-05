@@ -116,9 +116,10 @@ export const POST: APIRoute = async ({ request }) => {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    const formData = await request.formData();
+    body = Object.fromEntries(formData.entries());
   } catch {
-    return json({ ok: false, error: "validation" }, 400);
+    return json({ ok: false, error: "invalid_form_data" }, 400);
   }
 
   // ===== Honeypot: diam-diam diterima, tapi dibuang =====
@@ -144,9 +145,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // ===== Turnstile: token wajib valid bila dikonfigurasi =====
-  // Token dibaca dari body JSON (frontend mengirim `cf-turnstile-response`
-  // di payload JSON — lihat ContactForm.astro). Bukan formData: form kontak
-  // memakai fetch JSON, field hidden hanya sebagai wadah token.
+  // Token dibaca dari FormData dengan key standar Turnstile.
   const cfToken =
     typeof body["cf-turnstile-response"] === "string" ? body["cf-turnstile-response"] : "";
   if (!(await verifyTurnstile(cfToken, ip))) {
