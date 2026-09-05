@@ -1,6 +1,13 @@
 ---
 import { getDictionary, localeFromPathname } from "../lib/i18n";
 import SectionHeading from "./SectionHeading.astro";
+import type { Experience } from "../lib/types";
+
+interface Props {
+  experiences: Experience[];
+}
+
+const { experiences } = Astro.props;
 
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
@@ -10,6 +17,22 @@ function lineClass(row: string): string {
   if (row.includes("status: completed")) return "text-cyber-accent";
   return "text-cyber-muted";
 }
+
+const fmtDate = (date: string | null): string =>
+  date ? date.slice(0, 7).replace("-", "/") : "????/??";
+
+const rows = [
+  t.opsLog.command,
+  t.opsLog.startMarker,
+  ...experiences.flatMap((experience) => [
+    `${t.opsLog.roleLabel}: ${experience.role}`,
+    `${t.opsLog.organizationLabel}: ${experience.company}`,
+    `${t.opsLog.periodLabel}: ${fmtDate(experience.startDate)} — ${experience.isCurrent ? t.opsLog.currentStatus : fmtDate(experience.endDate)}`,
+    `${t.opsLog.statusLabel}: ${experience.isCurrent ? t.opsLog.currentStatus : t.opsLog.completedStatus}`,
+  ]),
+  t.opsLog.endMarker,
+  t.opsLog.cursor,
+];
 ---
 
 <section id="operations-log" class="mx-auto max-w-6xl px-4 py-16 md:px-6">
@@ -20,13 +43,13 @@ function lineClass(row: string): string {
       <span class="h-3 w-3 rounded-full bg-cyber-danger/80" aria-hidden="true" />
       <span class="h-3 w-3 rounded-full bg-cyber-accent/60" aria-hidden="true" />
       <span class="h-3 w-3 rounded-full bg-cyber-primary/50" aria-hidden="true" />
-      <p class="ml-3 truncate font-mono text-xs text-cyber-muted">{t.opsLog.header}</p>
+       <p class="ml-3 truncate font-mono text-xs text-cyber-muted">{t.opsLog.header}</p>
     </div>
 
     <div class="term-scroll overflow-x-auto">
       <pre class="min-w-max px-4 py-4 font-mono text-xs leading-relaxed md:text-sm">
         {
-          t.opsLog.rows.map((row) => (
+          rows.map((row) => (
             <span class={`term-row block whitespace-pre ${lineClass(row)}`}>{row}</span>
           ))
         }

@@ -38,7 +38,16 @@ export interface Dictionary {
     eyebrow: string;
     title: string;
     header: string;
-    rows: string[];
+    command: string;
+    startMarker: string;
+    roleLabel: string;
+    organizationLabel: string;
+    periodLabel: string;
+    statusLabel: string;
+    currentStatus: string;
+    completedStatus: string;
+    endMarker: string;
+    cursor: string;
   };
   home: {
     featuredEyebrow: string;
