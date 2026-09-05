@@ -1,0 +1,42 @@
+# Supabase Keep-Alive — mencegah auto-pause database free tier
+# setelah ~7 hari tidak aktif.
+#
+# Cara kerja:
+#   Semua halaman HTML publik project ini DI-PRERENDER (statis) dan TIDAK
+#   menjalankan query database pada saat request. Karena itu GET ke `/`
+#   tidak cukup untuk membuat project Supabase tercatat "aktif".
+#   Workflow ini GET `/api/health` (SSR) — endpoint tersebut menjalankan
+#   satu query ringan ke Postgres (`count head site_settings`) pada setiap
+#   panggilan. Selama query sampai ke DB, project Supabase dianggap aktif
+#   dan tidak akan di-pause.
+#
+# Keamanan: hanya memanggil URL publik yang dilayani Cloudflare Workers —
+# TANPA secret Supabase. `permissions: contents: read` (least privilege;
+# job ini sebenarnya tidak butuh GITHUB_TOKEN sama sekali).
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Tiap 5 hari pada jam 00:00 UTC (hari 1, 6, 11, 16, 21, 26, 31).
+    - cron: "0 0 */5 * *"
+  workflow_dispatch: # izinkan trigger manual untuk uji coba
+
+permissions:
+  contents: read
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/health (memicu query DB nyata)
+        env:
+          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.my.id' }}
+        run: |
+          RESPONSE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
+            -A "supabase-keep-alive" "${PROD_URL}/api/health")
+          echo "GET /api/health -> HTTP ${RESPONSE}"
+          if [ "$RESPONSE" != "200" ]; then
+            echo "::warning::Diharapkan 200, dapat HTTP ${RESPONSE}. Jika database sudah ter-pause, bangunkan lewat query ringan di Supabase SQL Editor (mis. select 1), lalu jalankan ulang workflow ini."
+            exit 1
+          fi
+          echo "Supabase project aktif."
