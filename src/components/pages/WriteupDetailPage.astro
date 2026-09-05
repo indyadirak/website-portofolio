@@ -74,18 +74,14 @@ const fmt = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "id-ID", {
         <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
           {d.findings}
         </h2>
-        <pre
-          class="mt-2 whitespace-pre-wrap rounded border border-cyber-border bg-cyber-panel p-5 font-mono text-sm leading-relaxed text-slate-300"
-        >{writeup.findings}</pre>
+        <pre class="writeup-code-block mt-2"><code>{writeup.findings}</code></pre>
       </section>
 
       <section>
         <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
           {d.remediation}
         </h2>
-        <pre
-          class="mt-2 whitespace-pre-wrap rounded border border-cyber-border bg-cyber-panel p-5 font-mono text-sm leading-relaxed text-slate-300"
-        >{writeup.remediation}</pre>
+        <pre class="writeup-code-block mt-2"><code>{writeup.remediation}</code></pre>
       </section>
     </div>
   </div>
