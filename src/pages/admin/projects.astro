@@ -1,0 +1,81 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
+import ProjectList from "../../components/admin/ProjectList.astro";
+import type { ProjectsRow } from "../../lib/types";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
+import { canDeleteProjects, canManageProjects } from "../../lib/auth";
+
+export const prerender = false;
+
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const canWrite = canManageProjects(profile); // admin | editor
+const isAdmin = canDeleteProjects(profile); // admin saja
+
+// Anti-500: gagal baca DB -> daftar kosong, halaman tetap render.
+let projects: ProjectsRow[] = [];
+try {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("[admin/projects] Gagal membaca project:", error.message);
+    } else {
+      projects = (data ?? []) as ProjectsRow[];
+    }
+  }
+} catch (err) {
+  console.error("[admin/projects] Gagal membaca project:", err);
+}
+---
+
+<AdminLayout title="Projects — Admin" description={t.adminProjects.title} current="projects">
+  <div class="mx-auto max-w-6xl px-6 py-14">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">{t.adminProjects.eyebrow}</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          {t.adminProjects.title}<span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      {canWrite && (
+        <TerminalButton href="/admin/projects/new" variant="primary">
+          {t.adminProjects.addNew}
+        </TerminalButton>
+      )}
+    </div>
+
+    <section class="mt-8">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-mono text-lg font-bold text-white">{t.adminProjects.title}</h2>
+        <span class="font-mono text-xs text-cyber-muted">
+          {t.dashboard.total}: {projects.length}
+        </span>
+      </div>
+
+      <ProjectList projects={projects} canWrite={canWrite} isAdmin={isAdmin} />
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  // Tombol [ edit ] (ProjectList) dispatch event project:edit. Dari halaman
+  // list, artinya navigasi ke halaman form dengan parameter ?id (mode edit) —
+  // prefill form dilakukan oleh handler di ProjectForm.
+  window.addEventListener("project:edit", ((event: Event) => {
+    const detail = (event as CustomEvent<{ id?: string }>).detail;
+    if (detail?.id) {
+      window.location.href = `/admin/projects/new?id=${encodeURIComponent(detail.id)}`;
+    }
+  }) as EventListener);
+</script>

@@ -1,0 +1,144 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import TerminalButton from "../../../components/admin/ui/TerminalButton.astro";
+import ProjectForm from "../../../components/admin/ProjectForm.astro";
+import type { ProjectCategoryRow, ProjectsRow } from "../../../lib/types";
+import { getDictionary, localeFromPathname } from "../../../lib/i18n";
+import { canManageProjects } from "../../../lib/auth";
+
+export const prerender = false;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+// Halaman form = halaman tulis: hanya admin/editor (selaras RLS projects).
+if (!canManageProjects(profile)) {
+  return Astro.redirect("/admin/projects");
+}
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+// Mode edit (?id=<uuid> valid) — selain itu mode tambah.
+const rawId = Astro.url.searchParams.get("id");
+const editId = rawId && UUID_RE.test(rawId) ? rawId : null;
+
+// Kategori aktif untuk dropdown form (anti-500: fallback kosong).
+let categories: ProjectCategoryRow[] = [];
+try {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("project_categories")
+      .select("id, name, slug, description, sort_order, is_active, created_at, updated_at")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) {
+      console.error("[admin/projects/new] Gagal membaca kategori:", error.message);
+    } else {
+      categories = (data ?? []) as ProjectCategoryRow[];
+    }
+  }
+} catch (err) {
+  console.error("[admin/projects/new] Gagal membaca kategori:", err);
+}
+
+// Mode edit: baca baris untuk prefill form (anti-500: fallback null).
+let editing: ProjectsRow | null = null;
+if (editId && supabase) {
+  try {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("id", editId)
+      .maybeSingle();
+    if (error) {
+      console.error("[admin/projects/new] Gagal membaca project:", error.message);
+    } else {
+      editing = (data ?? null) as ProjectsRow | null;
+    }
+  } catch (err) {
+    console.error("[admin/projects/new] Gagal membaca project:", err);
+  }
+}
+
+// Id tidak ditemukan (link basi/hapus bersamaan) -> kembali ke list.
+if (editId && !editing) {
+  return Astro.redirect("/admin/projects");
+}
+
+// Seed data edit -> data-attribute (CSP: tanpa inline script berisi data).
+// Shape identik dengan detail event "project:edit" di ProjectList.
+const initialDetail = editing
+  ? {
+      id: editing.id,
+      slug: editing.slug,
+      title: editing.title,
+      summary: editing.summary,
+      description: editing.description,
+      category: editing.category,
+      categoryId: editing.category_id,
+      tags: editing.tags,
+      imageUrl: editing.image_url,
+      repoUrl: editing.repo_url,
+      liveUrl: editing.live_url,
+      featured: editing.featured,
+      status: editing.status,
+      problem: editing.problem,
+      solution: editing.solution,
+      impact: editing.impact,
+    }
+  : null;
+---
+
+<AdminLayout
+  title={`${initialDetail ? t.adminProjects.formTitleEdit : t.adminProjects.formTitleNew} — Admin`}
+  description={t.adminProjects.title}
+  current="addProjects"
+>
+  <div class="mx-auto max-w-5xl px-6 py-14">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">{t.adminProjects.eyebrow}</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          {initialDetail ? t.adminProjects.formTitleEdit : t.adminProjects.formTitleNew}
+          <span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      <TerminalButton href="/admin/projects" variant="ghost">
+        {t.adminProjects.backToList}
+      </TerminalButton>
+    </div>
+
+    <section class="mt-8 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+      <ProjectForm categories={categories} />
+    </section>
+
+    {
+      initialDetail && (
+        <div id="proj-edit-seed" hidden data-proj-edit={JSON.stringify(initialDetail)}></div>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<script>
+  // Mode edit (?id=): teruskan seed (data-attribute hasil render server)
+  // sebagai event project:edit — handler ProjectForm akan prefill seluruh
+  // field dan beralih ke mode edit secara otomatis.
+  const seed = document.getElementById("proj-edit-seed");
+  const payload = seed?.dataset.projEdit;
+  if (seed && payload) {
+    try {
+      window.dispatchEvent(new CustomEvent("project:edit", { detail: JSON.parse(payload) }));
+    } catch (err) {
+      console.error("[admin/projects/new] Gagal memuat data edit:", err);
+    }
+    seed.remove();
+  }
+</script>

@@ -1,0 +1,90 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
+import CertificateList from "../../components/admin/CertificateList.astro";
+import type { CertificatesRow } from "../../lib/types";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
+import { canDeleteCertificates, canManageCertificates } from "../../lib/auth";
+
+export const prerender = false;
+
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const canWrite = canManageCertificates(profile); // admin | editor
+const isAdmin = canDeleteCertificates(profile); // admin saja
+
+// Anti-500: gagal baca DB -> daftar kosong, halaman tetap render.
+let certificates: CertificatesRow[] = [];
+try {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("certificates")
+      .select("*")
+      .order("issue_date", { ascending: false });
+    if (error) {
+      console.error("[admin/certificates] Gagal membaca sertifikat:", error.message);
+    } else {
+      certificates = (data ?? []) as CertificatesRow[];
+    }
+  }
+} catch (err) {
+  console.error("[admin/certificates] Gagal membaca sertifikat:", err);
+}
+---
+
+<AdminLayout title="Certificates — Admin" description={t.adminCertificates.title} current="certificates">
+  <div class="mx-auto max-w-6xl px-6 py-14">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">{t.adminCertificates.eyebrow}</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          {t.adminCertificates.title}<span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      {canWrite && (
+        <TerminalButton href="/admin/certificates/new" variant="primary">
+          {t.adminCertificates.addNew}
+        </TerminalButton>
+      )}
+    </div>
+
+    <section class="mt-8">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-mono text-lg font-bold text-white">{t.adminCertificates.title}</h2>
+        <span class="font-mono text-xs text-cyber-muted">
+          {t.dashboard.total}: {certificates.length}
+        </span>
+      </div>
+
+      <CertificateList certificates={certificates} canWrite={canWrite} isAdmin={isAdmin} />
+
+      {
+        !canWrite && (
+          <p class="mt-6 rounded border border-cyber-border bg-cyber-card p-4 font-mono text-xs text-cyber-muted">
+            $ note: role Anda (viewer) hanya memiliki akses baca — tombol edit/delete tidak dirender.
+            Hubungi admin untuk upgrade role atau daftarkan MFA.
+          </p>
+        )
+      }
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  // Tombol [ edit ] (CertificateList) dispatch event certificate:edit. Dari
+  // halaman list, artinya navigasi ke halaman form dengan parameter ?id
+  // (mode edit) — prefill form dilakukan oleh handler di CertificateForm.
+  window.addEventListener("certificate:edit", ((event: Event) => {
+    const detail = (event as CustomEvent<{ id?: string }>).detail;
+    if (detail?.id) {
+      window.location.href = `/admin/certificates/new?id=${encodeURIComponent(detail.id)}`;
+    }
+  }) as EventListener);
+</script>

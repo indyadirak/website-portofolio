@@ -1,0 +1,121 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import TerminalButton from "../../../components/admin/ui/TerminalButton.astro";
+import CertificateForm from "../../../components/admin/CertificateForm.astro";
+import type { CertificatesRow } from "../../../lib/types";
+import { getDictionary, localeFromPathname } from "../../../lib/i18n";
+import { canManageCertificates } from "../../../lib/auth";
+
+export const prerender = false;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const { user, profile, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+// Halaman form = halaman tulis: hanya admin/editor (selaras RLS certificates).
+if (!canManageCertificates(profile)) {
+  return Astro.redirect("/admin/certificates");
+}
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+// Mode edit (?id=<uuid> valid) — selain itu mode tambah.
+const rawId = Astro.url.searchParams.get("id");
+const editId = rawId && UUID_RE.test(rawId) ? rawId : null;
+
+// Mode edit: baca baris untuk prefill form (anti-500: fallback null).
+let editing: CertificatesRow | null = null;
+if (editId && supabase) {
+  try {
+    const { data, error } = await supabase
+      .from("certificates")
+      .select("*")
+      .eq("id", editId)
+      .maybeSingle();
+    if (error) {
+      console.error("[admin/certificates/new] Gagal membaca sertifikat:", error.message);
+    } else {
+      editing = (data ?? null) as CertificatesRow | null;
+    }
+  } catch (err) {
+    console.error("[admin/certificates/new] Gagal membaca sertifikat:", err);
+  }
+}
+
+// Id tidak ditemukan (link basi/hapus bersamaan) -> kembali ke list.
+if (editId && !editing) {
+  return Astro.redirect("/admin/certificates");
+}
+
+// Seed data edit -> data-attribute (CSP: tanpa inline script berisi data).
+// Shape identik dengan detail event "certificate:edit" di CertificateList.
+const initialDetail = editing
+  ? {
+      id: editing.id,
+      title: editing.title,
+      issuer: editing.issuer,
+      issueDate: editing.issue_date,
+      expiryDate: editing.expiry_date,
+      category: editing.category,
+      isFeatured: editing.is_featured,
+      shortDescriptionId: editing.short_description_id,
+      shortDescriptionEn: editing.short_description_en,
+      credentialUrl: editing.credential_url,
+      verificationUrl: editing.verification_url,
+      skills: editing.skills,
+      fileUrl: editing.file_url,
+    }
+  : null;
+---
+
+<AdminLayout
+  title={`${initialDetail ? t.adminCertificates.formTitleEdit : t.adminCertificates.formTitleNew} — Admin`}
+  description={t.adminCertificates.title}
+  current="addCertificates"
+>
+  <div class="mx-auto max-w-5xl px-6 py-14">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">{t.adminCertificates.eyebrow}</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          {initialDetail ? t.adminCertificates.formTitleEdit : t.adminCertificates.formTitleNew}
+          <span class="text-cyber-primary">;</span>
+        </h1>
+      </div>
+      <TerminalButton href="/admin/certificates" variant="ghost">
+        {t.adminCertificates.backToList}
+      </TerminalButton>
+    </div>
+
+    <section class="mt-8 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+      <CertificateForm />
+    </section>
+
+    {
+      initialDetail && (
+        <div id="cert-edit-seed" hidden data-cert-edit={JSON.stringify(initialDetail)}></div>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<script>
+  // Mode edit (?id=): teruskan seed (data-attribute hasil render server)
+  // sebagai event certificate:edit — handler CertificateForm akan prefill
+  // seluruh field dan beralih ke mode edit secara otomatis.
+  const seed = document.getElementById("cert-edit-seed");
+  const payload = seed?.dataset.certEdit;
+  if (seed && payload) {
+    try {
+      window.dispatchEvent(new CustomEvent("certificate:edit", { detail: JSON.parse(payload) }));
+    } catch (err) {
+      console.error("[admin/certificates/new] Gagal memuat data edit:", err);
+    }
+    seed.remove();
+  }
+</script>
