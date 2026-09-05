@@ -322,6 +322,11 @@ export interface Dictionary {
     heroTitle: string;
     heroTagline: string;
     shortBio: string;
+    aboutBio: string;
+    specializations: string;
+    contactInfo: string;
+    specializationsPlaceholder: string;
+    contactInfoPlaceholder: string;
     availability: string;
     availabilityOpen: string;
     availabilityClosed: string;

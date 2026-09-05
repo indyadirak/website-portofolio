@@ -66,6 +66,27 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
       </label>
 
       <label class="block">
+        <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSettings.aboutBio}</span>
+        <textarea id="s-about-bio" rows={4} maxlength={1000}
+          placeholder={t.adminSettings.contactInfoPlaceholder}
+          class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">{byKey.get("about_bio") ?? ""}</textarea>
+      </label>
+
+      <label class="block">
+        <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSettings.specializations}</span>
+        <textarea id="s-about-specializations" rows={5} maxlength={1000}
+          placeholder={t.adminSettings.specializationsPlaceholder}
+          class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">{(() => { try { return (JSON.parse(byKey.get("about_specializations") ?? "[]") as string[]).join("\n"); } catch { return ""; } })()}</textarea>
+      </label>
+
+      <label class="block">
+        <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSettings.contactInfo}</span>
+        <textarea id="s-about-contact-info" rows={3} maxlength={500}
+          placeholder={t.adminSettings.contactInfoPlaceholder}
+          class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">{byKey.get("about_contact_info") ?? ""}</textarea>
+      </label>
+
+      <label class="block">
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">availability_status *</span>
         <select id="s-availability"
           class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">
@@ -121,6 +142,9 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
     { key: "hero_title", input: document.getElementById("s-hero-title") as HTMLInputElement },
     { key: "hero_tagline", input: document.getElementById("s-hero-tagline") as HTMLInputElement },
     { key: "short_bio", input: document.getElementById("s-short-bio") as HTMLTextAreaElement },
+    { key: "about_bio", input: document.getElementById("s-about-bio") as HTMLTextAreaElement },
+    { key: "about_specializations", input: document.getElementById("s-about-specializations") as HTMLTextAreaElement },
+    { key: "about_contact_info", input: document.getElementById("s-about-contact-info") as HTMLTextAreaElement },
     { key: "availability_status", input: document.getElementById("s-availability") as HTMLSelectElement },
   ];
 
@@ -135,7 +159,11 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ value: field.input.value.trim() }),
+          body: JSON.stringify({
+            value: field.key === "about_specializations"
+              ? JSON.stringify(field.input.value.split("\n").map((item) => item.trim()).filter(Boolean))
+              : field.input.value.trim(),
+          }),
         }
       ).catch(() => null);
 

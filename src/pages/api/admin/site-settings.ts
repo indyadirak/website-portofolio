@@ -78,7 +78,7 @@ export async function PUT({ request, locals }: APIContext) {
   }
 
   const value = typeof body.value === "string" ? body.value.trim() : "";
-  if (value.length > 500) return json({ ok: false, error: "value_too_long" }, 400);
+  if (value.length > 1000) return json({ ok: false, error: "value_too_long" }, 400);
 
   if (key === "availability_status" && !(AVAILABILITY_VALUES as string[]).includes(value)) {
     return json({ ok: false, error: "availability_invalid" }, 400);

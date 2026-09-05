@@ -39,7 +39,10 @@ insert into public.site_settings (key, value) values
   ('hero_title',          'Network & Cyber Security Technician'),
   ('hero_tagline',        'Network & Cyber Security Portfolio'),
   ('short_bio',           'Penetration testing, security research, dan blue team defense — membangun sistem yang aman sejak awal.'),
-  ('availability_status', 'open-to-work')
+  ('availability_status', 'open-to-work'),
+  ('about_bio',           ''),
+  ('about_specializations', '[]'),
+  ('about_contact_info',  '')
 on conflict (key) do nothing;
 
 -- ============================================================

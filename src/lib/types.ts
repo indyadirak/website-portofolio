@@ -203,6 +203,9 @@ export const SITE_SETTING_KEYS = [
   "hero_tagline",
   "short_bio",
   "availability_status",
+  "about_bio",
+  "about_specializations",
+  "about_contact_info",
 ] as const;
 export type SiteSettingKey = (typeof SITE_SETTING_KEYS)[number];
 

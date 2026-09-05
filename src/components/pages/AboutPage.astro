@@ -19,6 +19,17 @@ const available = availabilityStatus !== "not-available";
 
 const experiences = await getExperiences();
 const socialLinks = await getSocialLinks();
+const aboutBio = (await getSiteSettingValue("about_bio"))?.trim();
+const aboutContactInfo = (await getSiteSettingValue("about_contact_info"))?.trim();
+let specializations = t.about.specializations;
+try {
+  const configured = JSON.parse((await getSiteSettingValue("about_specializations")) ?? "[]");
+  if (Array.isArray(configured) && configured.every((item) => typeof item === "string")) {
+    specializations = configured.filter(Boolean);
+  }
+} catch {
+  specializations = t.about.specializations;
+}
 
 /** Format periode terminal: "2024-03" -> "2024/03". */
 const fmtDate = (d: string) => (d ? d.slice(0, 7).replace("-", "/") : "????/??");
@@ -30,11 +41,11 @@ const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
     <SectionHeading eyebrow={t.about.eyebrow} title={t.about.title} />
 
     <div class="space-y-6 leading-relaxed text-slate-300">
-      <p>
+        <p class="font-sans text-base leading-relaxed">
         <strong class="text-cyber-primary">{author.name}</strong> —{" "}
-        {t.about.paragraphs[0]}
+        {aboutBio || t.about.paragraphs[0]}
       </p>
-      <p>{t.about.paragraphs[1]}</p>
+      {!aboutBio && <p class="font-sans text-base leading-relaxed">{t.about.paragraphs[1]}</p>}
     </div>
 
     <div class="mt-12 grid gap-6 sm:grid-cols-2">
@@ -43,8 +54,10 @@ const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
           {t.about.specializationsTitle}
         </h2>
         <ul class="mt-4 space-y-2 font-mono text-sm text-slate-300">
-          {t.about.specializations.map((item, index) => (
-            <li class={index === 0 ? "text-cyber-primary" : ""}>{item}</li>
+          {specializations.map((item) => (
+            <li class="inline-block rounded border border-cyber-border px-2 py-1 text-xs text-cyber-primary">
+              {item}
+            </li>
           ))}
         </ul>
       </div>
@@ -54,6 +67,7 @@ const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
           {t.about.contactTitle}
         </h2>
         <ul class="mt-4 space-y-2 font-mono text-sm text-slate-300">
+          {aboutContactInfo && <li class="font-sans whitespace-pre-line leading-relaxed text-slate-300">{aboutContactInfo}</li>}
           <li>
             {t.about.emailLabel}: <EmailLink />
           </li>
@@ -115,11 +129,22 @@ const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
         <p class="font-mono text-xs text-cyber-muted">{t.about.timelineEmpty}</p>
       ) : (
         <ol class="mt-8">
-          {experiences.map((exp) => (
-            <li class="relative border-l border-cyber-border/40 pb-10 pl-6 last:pb-0">
+          {(() => {
+            let previousCompany = "";
+            return experiences.map((exp) => {
+              const nested = previousCompany === exp.company;
+              previousCompany = exp.company;
+              return (
+            <li class:list={[
+              "relative pb-10 last:pb-0",
+              nested ? "ml-5 border-l border-dashed border-cyber-accent/40 pl-6" : "border-l border-cyber-border/40 pl-6",
+            ]}>
               <span
                 aria-hidden="true"
-                class="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border border-cyber-primary bg-cyber-bg"
+                class:list={[
+                  "absolute top-1.5 h-2.5 w-2.5 rounded-full border bg-cyber-bg",
+                  nested ? "-left-[5px] border-cyber-accent" : "-left-[5px] border-cyber-primary",
+                ]}
               />
               <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h3 class="font-mono text-sm font-bold text-cyber-primary md:text-base">{exp.role}</h3>
@@ -135,10 +160,12 @@ const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
                 ]
               </p>
               {exp.description && (
-                <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">{exp.description}</p>
+                <p class="mt-2 max-w-2xl font-sans text-sm leading-relaxed text-slate-300">{exp.description}</p>
               )}
             </li>
-          ))}
+              );
+            });
+          })()}
         </ol>
       )}
     </section>
