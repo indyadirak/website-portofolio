@@ -3,6 +3,49 @@
 Format: `Fase/Versi — deskripsi (commit)`. Riwayat lengkap: `git log`.
 Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
 
+## Unreleased — Final QA & Fase 3
+
+### Fase 3 — Evidence-based content dan UX publik
+- Empty state publik diperbaiki agar tidak menampilkan command debug atau
+  `total 0`; pesan Projects, Certificates, dan Skills sekarang profesional
+  serta terlokalisasi.
+- Blok `<pre><code>` write-up diberi styling terminal yang responsif:
+  monospace, background gelap, padding, border, `white-space: pre`, dan
+  horizontal scroll untuk ASCII Art Home Lab.
+- Operations Log homepage sekarang mengambil empat pengalaman terbaru dari
+  tabel `experiences`, sehingga sinkron dengan Career Timeline di About.
+- Career Timeline mendukung tampilan nested untuk promosi atau peran berurutan
+  pada perusahaan yang sama.
+- About dinamis melalui `site_settings`: bio, specializations JSON, dan contact
+  info dapat dikelola dari Admin Settings.
+- Social Links mendukung nama platform bebas, icon class, dan URL gambar custom.
+
+### Fase 2 — Write-up dan infrastructure completion
+- Keep-alive Supabase ditambahkan melalui `/api/health` dan workflow cron lima
+  hari dengan least-privilege permissions.
+- Write-up mendukung status `draft`/`published` dengan trigger sinkronisasi
+  legacy `is_published`; halaman publik hanya membaca status published.
+- Metodologi write-up menggunakan input bebas dengan datalist suggestions.
+- README proyek diperbarui untuk mendokumentasikan evidence-based portfolio,
+  security posture, arsitektur, dan cara menjalankan lokal.
+
+### Security hardening dan QA
+- `fast-uri` diperbarui melalui `npm audit fix`; audit dependency menjadi nol
+  vulnerability.
+- Header COEP `credentialless` ditambahkan pada middleware dan static headers.
+- HSTS diselaraskan menjadi `max-age=31536000; includeSubDomains; preload`.
+- Minimum TLS 1.2 di Cloudflare Edge didokumentasikan sebagai konfigurasi zone,
+  bukan perubahan kode aplikasi.
+- `security.txt` runtime dan fallback static menggunakan expiry tetap
+  `06 September 2027`.
+- Skrip `scripts/local-audit.mjs` dan `AUDIT_REPORT.md` ditambahkan untuk smoke
+  test headers, public API exposure, unauthenticated admin requests, dan route
+  availability.
+- Contact form Turnstile diperkuat dengan `getResponse()`, FormData standar,
+  dan submit button yang baru aktif setelah callback CAPTCHA berhasil.
+- Seed demo `supabase/seed-data.sql` ditambahkan untuk contoh Home Lab dan
+  sertifikat agar instalasi tidak kosong.
+
 ## Fase 2 — Peningkatan Admin UX & Fitur (2026-09)
 
 ### `ea7cd04` — Split halaman list & form Projects/Certificates
