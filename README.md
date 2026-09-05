@@ -1,240 +1,179 @@
-<div align="center">
+# 🛡️ Cybersecurity Portfolio
 
-# 🛡️ Website Portofolio — Cyber Security
+Portofolio cybersecurity **berbasis bukti nyata** untuk menampilkan kompetensi
+melalui project, security case study, sertifikasi terverifikasi, career
+timeline, dan home lab. Situs ini dibangun sebagai aplikasi web production-grade
+dengan Admin CMS, MFA, RBAC, PostgreSQL RLS, dan deployment edge.
 
-Portfolio website untuk profesional **Cyber Security**, dibangun di atas **Astro** + **Tailwind CSS v4** + **Supabase**, dilengkapi **Admin CMS** dengan autentikasi multi-faktor (MFA) dan kontrol akses berbasis peran (RBAC).
+Produksi: **[portofolio.indyadirak.my.id](https://portofolio.indyadirak.my.id)**
 
-[![Astro](https://img.shields.io/badge/Astro-7-FF5D01?logo=astro&logoColor=white)](https://astro.build)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
-[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
-[![License](https://img.shields.io/badge/License-MIT-brightgreen?style=flat-square)](LICENSE)
+## ✨ Fitur Utama
 
-</div>
+### Situs Publik
 
----
+- Landing page dengan project unggulan, skills, About, contact, dan CV.
+- **Evidence-based Projects** dengan struktur Problem, Approach, dan Impact.
+- **Security Write-ups** untuk case study THM, HTB, CTF, dan riset keamanan.
+- Sistem **Draft dan Published** untuk menyiapkan write-up sebelum dipublikasikan.
+- Dukungan blok kode terminal dan ASCII Art untuk topologi Home Lab.
+- Sertifikat dengan kategori Competency/Training, URL verifikasi issuer, dan
+  status masa berlaku.
+- About dinamis: bio, specializations, contact info, social links, dan career
+  timeline dikelola dari Admin CMS.
+- Social links dinamis dengan dukungan icon class atau URL gambar custom.
+- Contact form dengan Cloudflare Turnstile, honeypot, validasi input, dan rate
+  limiting.
+- Indonesia sebagai locale default dan English melalui `/en/*`.
+- Demo data fallback ketika Supabase belum dikonfigurasi.
 
-## 📑 Daftar Isi
+### Admin CMS
 
-- [Fitur](#-fitur)
-- [Tech Stack](#-tech-stack)
-- [Struktur Project](#-struktur-project)
-- [Cara Menjalankan](#-cara-menjalankan)
-- [Scripts](#-scripts)
-- [Deployment](#-deployment)
-- [Keamanan](#-keamanan)
-- [Lisensi](#-lisensi)
-
----
-
-## ✨ Fitur
-
-### 🌐 Situs Publik
-- **Landing page portfolio** — hero, featured projects, skills, about, contact, **halaman Sertifikat** (`/certificates`, `/en/certificates`) dengan filter kategori Compliance/Training
-- **Dukungan 2 bahasa (i18n)** — Indonesia (default, tanpa prefix) & English (`/en/*`)
-- **Sitemap dinamis** — `/sitemap.xml` (route statis + detail project dari Supabase, hreflang id/en/x-default) + `Sitemap:` di robots.txt
-- **Badge verifikasi sertifikat** — link "Lihat Sertifikat Asli" ke halaman verifikasi issuer (`verification_url`)
-- **Badge masa berlaku (Berlaku/Kedaluwarsa)** — dihitung **saat build** (halaman sertifikat di-prerender, `prerender = true`): akurasi badge = tanggal build/deploy terakhir, bukan waktu kunjungan pengunjung. Deploy ulang untuk memperbarui status.
-- **Demo data bawaan** — situs tetap tampil utuh sebelum Supabase dikonfigurasi
-- **Form kontak anti-bot** — proteksi [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/)
-- **Link Blog eksternal** — `blog.indyadirak.my.id` (Blogger) di navbar & footer, tab baru + ikon external-link
-
-### 🔐 Admin CMS (`/admin`)
-- **Login 3 langkah** — password → kode MFA 6 digit → enroll QR (TOTP)
-- **Manajemen sertifikat** — CRUD lengkap dengan upload file (PDF/PNG/JPG/WebP/GIF, maks 5 MB), kategori Compliance/Training, dan URL verifikasi opsional (`verification_url`)
-- **Validasi upload server-side** — verifikasi *magic bytes*; file dengan ekstensi bohong ditolak
-- **RBAC** — `admin` / `editor` / `viewer`; akses menu menyesuaikan peran
-- **MFA wajib (`aal2`)** untuk role `admin`/`editor` — diberlakukan di RLS database, bukan hanya UI
-- **Manajemen CV/Resume** — upload PDF per bahasa (id/en) dari GUI; tombol unduh di situs otomatis menunjuk file terbaru
-- **Backup konfigurasi** — kelola kredensial & target backup dari GUI admin
-
-### 🛡️ Keamanan
-- **RLS di semua tabel** — izin data dipaksa di level database
-- **CSP ketat** tanpa `unsafe-inline` — semua style & script file eksternal (pengecualian: `style-src 'unsafe-inline'` **hanya** di mode dev agar Vite HMR / Astro Dev Toolbar berfungsi; production tetap ketat)
-- **Security headers** di middleware (runtime), `public/_headers` sebagai fallback aset statis
-- **Brute-force protection** — rate limit + lockout bertingkat per IP/email
-- **Audit trail** — percobaan login & akses kredensial dicatat
-
-### 🚀 Infrastruktur
-- **SSR penuh** — halaman admin & API di-render server-side (Cloudflare Workers)
-- **Backup 3-2-1** — otomatis mingguan via GitHub Actions, enkripsi GPG, offload Google Drive
-
----
+- Login password + MFA TOTP dengan level assurance `aal2`.
+- RBAC tiga role: `admin`, `editor`, dan `viewer`.
+- CRUD Projects, dynamic project categories, Certificates, Write-ups, Contact
+  Messages, Site Settings, Experiences, Social Links, CV, dan backup config.
+- Halaman terpisah untuk list dan form Projects/Certificates.
+- Contact Messages: tandai dibaca dan hard delete dengan audit-friendly RLS.
+- Upload sertifikat melalui validasi MIME dan magic bytes.
+- Keep-alive Supabase melalui endpoint SSR `/api/health` dan GitHub Actions.
 
 ## 🧰 Tech Stack
 
-| Area        | Teknologi                                                       |
-| ----------- | --------------------------------------------------------------- |
-| Framework   | [Astro 7](https://astro.build) (SSR, Cloudflare Workers)        |
-| Styling     | [Tailwind CSS v4](https://tailwindcss.com)                      |
-| Bahasa      | TypeScript (strict)                                             |
-| Backend     | Supabase — Auth (MFA/TOTP), Postgres (RLS), Storage             |
-| Runtime     | Cloudflare Workers + KV (rate limiting, sessions)               |
-| Deploy      | GitHub Actions → Cloudflare Workers (auto-deploy on `main`)     |
+| Area | Teknologi |
+|---|---|
+| Framework | Astro 7 — SSR dan prerender |
+| Runtime | Cloudflare Workers dengan Cloudflare KV |
+| Styling | Tailwind CSS v4 dan global CSS |
+| Language | TypeScript strict |
+| Backend | Supabase Auth, PostgreSQL, RLS, dan Storage |
+| Authentication | PKCE, cookie session, TOTP MFA |
+| Deployment | GitHub Actions → Cloudflare Workers |
+| Localization | Bahasa Indonesia dan English |
+| Node.js | ≥ 22.12 |
 
----
+## 🏗️ Arsitektur Keamanan
 
-## 📁 Struktur Project
+Project menggunakan pendekatan **defense-in-depth**:
 
+| Lapisan | Kontrol |
+|---|---|
+| Edge | Cloudflare Workers, HSTS, TLS minimum 1.2 di Cloudflare Zone |
+| Headers | CSP ketat, COEP `credentialless`, COOP, CORP, X-Frame-Options, Permissions-Policy |
+| CSP | Production tanpa `unsafe-eval` dan tanpa `unsafe-inline`; exception style dev hanya untuk Vite HMR |
+| Authentication | PKCE, cookie session, TOTP MFA, `aal2` untuk admin/editor |
+| Authorization | API role checks + PostgreSQL RLS sebagai enforcement utama |
+| RLS role check | Selalu subquery `public.profiles`; tidak memakai `auth.jwt() ->> 'role'` |
+| Rate limiting | Per-IP, per-IP/email, lockout progresif, dan admin mutation guard |
+| Anti-bot | Cloudflare Turnstile + honeypot pada form kontak |
+| Upload | MIME allowlist, magic bytes, ukuran maksimum, dan object path validation |
+| Storage | Supabase object storage dengan regex/shape validation; bukan filesystem path resolution |
+| Audit | `login_attempts` dan `backup_config_access_log` dengan retensi 90 hari |
+| Supply chain | CodeQL, dependency review, SBOM, Dependabot, dan action pinning |
+
+Policy mutation kanonik menggunakan `aal2` dan role dari `public.profiles`:
+
+```sql
+(select auth.jwt() ->> 'aal') = 'aal2'
+and exists (
+  select 1 from public.profiles
+  where profiles.id = auth.uid()
+    and profiles.role in ('admin', 'editor')
+)
 ```
+
+`service_role` dan secret runtime tidak pernah dimasukkan ke bundle publik.
+Kredensial Worker dikelola melalui Cloudflare secrets dan GitHub Secrets.
+
+## 🧱 Struktur Proyek
+
+```text
 .
-├── .env.example               # contoh variabel environment
-├── astro.config.mjs           # konfigurasi Astro (adapter, i18n, build, CSP)
-├── wrangler.toml              # konfigurasi Cloudflare Workers (KV namespace)
-├── public/
-│   └── _headers               # security headers fallback (aset statis)
 ├── src/
-│   ├── components/            # Navbar, Hero, SkillGrid, ProjectGrid, Footer,
-│   │   │                      # ContactForm, CertificatesGrid, TerminalLog,
-│   │   │                      # ImageZoomModal, LanguageSwitcher, admin/, pages/
-│   ├── layouts/               # MainLayout (head, nav, footer)
-│   ├── lib/                   # auth, supabase, rateLimit, i18n/ (id|en), config,
-│   │   │                      # storage, cv, audit, api, types, email, data/
-│   ├── middleware.ts          # security headers + rate limit + validasi session + guard /admin
-│   ├── pages/
-│   │   ├── index.astro, about, certificates, projects, contact, 404/403/429/500   # publik (id & en/)
-│   │   ├── admin/             # index (redirect), login, dashboard, backup, cv
-│   │   └── api/               # auth/*, certificates (+upload), contact, projects,
-│   │                          # backup-config, admin/backup-config, admin/cv
-│   └── styles/global.css
-├── supabase/
-│   └── *.sql                  # skema, RLS/RBAC+MFA, storage, audit, 00-full-migration.sql
-├── docs/
-│   ├── DEPLOYMENT.md          # checklist deploy lengkap (SQL → secrets → verifikasi)
-│   ├── SECURITY_COMPLIANCE_MAPPING.md   # pemetaan kontrol ke standar (ISO 27001 dll.)
-│   └── PENDING_REVIEW_CHECKLIST.md      # checklist audit manual berkala
-└── .github/
-    ├── dependabot.yml         # update dependency bulanan (npm + actions, grouped)
-    ├── CODEOWNERS             # review wajib path sensitif (SQL, admin, workflows)
-    ├── scripts/
-    │   └── gdrive-backup.mjs  # offload backup terenkripsi ke Google Drive (3-2-1)
-    └── workflows/
-        ├── deploy.yml             # build + deploy Cloudflare Workers + runtime secrets
-        ├── codeql.yml             # CodeQL code scanning (push, PR, mingguan)
-        ├── sbom.yml               # SBOM (Syft) + upload ke Dependency Graph
-        ├── dependency-review.yml  # gate kerentanan dependency di PR
-        ├── db-backup.yml          # pg_dump mingguan (GPG AES-256, artifact 30 hari)
-        └── data-retention.yml     # purge PII terjadwal (contact, login, audit)
+│   ├── components/       # Komponen publik dan admin
+│   ├── layouts/          # MainLayout dan AdminLayout
+│   ├── lib/              # Auth, data layer, types, i18n, rate limit, storage
+│   ├── pages/             # Route publik, admin, dan API
+│   ├── styles/            # Global CSS dan design tokens
+│   └── middleware.ts      # Security headers, session, dan route guards
+├── supabase/              # Schema, migration, RLS, storage, audit
+├── public/                # Static assets dan security headers fallback
+├── docs/                  # Deployment, compliance, dan review checklist
+├── .github/workflows/     # Deploy, backup, retention, security scan, keep-alive
+├── ARCHITECTURE.md        # Desain teknis dan keamanan
+├── PROJECT_CONTEXT.md     # Aturan kerja dan memori proyek
+├── PRD.md                 # Product requirements
+├── TASKS.md               # Roadmap dan progres
+└── CHANGELOG.md           # Riwayat perubahan penting
 ```
 
----
-
-## 🚀 Cara Menjalankan
+## 🚀 Local Development
 
 ### Prasyarat
 
-- **Node.js ≥ 22.12** ([download](https://nodejs.org))
-- Akun **Supabase** — [free tier](https://supabase.com/pricing) sudah cukup
+- Node.js ≥ 22.12
+- Project Supabase untuk mengaktifkan Admin CMS
 
-### Quickstart
+### Menjalankan lokal
 
 ```bash
-# 1. Install dependensi
 npm install
-
-# 2. Salin contoh env lalu isi kredensial Supabase
 cp .env.example .env
-
-# 3. Jalankan SQL di Supabase SQL Editor
-#    Urutan wajib — lihat docs/DEPLOYMENT.md §1
-#    (rbac-mfa PERTAMA → schema → storage → sisanya; atau sekali jalan
-#    pakai file gabungan supabase/00-full-migration.sql)
-
-# 4. Jalankan dev server
 npm run dev
 ```
 
-Buka **http://localhost:4321** 🎉
+Buka `http://localhost:4321`.
 
-> **Catatan** — Halaman publik memakai demo data jika env Supabase belum diisi.
-> `/admin` hanya berfungsi setelah Supabase dikonfigurasi.
->
-> User admin dibuat via **Supabase Dashboard** (Authentication → Users), lalu set
-> `role = 'admin'` di tabel `public.profiles` (detail: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) §1).
-> MFA di-enroll pada login pertama; role `admin`/`editor` wajib `aal2`.
+Tanpa environment Supabase, halaman publik menggunakan demo data. Admin
+membutuhkan konfigurasi Supabase, profile user, role, dan MFA yang valid.
 
----
+### Verifikasi
 
-## 📜 Scripts
+```bash
+npm run check
+npm run build
+```
 
-| Script            | Fungsi                                            |
-| ----------------- | ------------------------------------------------- |
-| `npm run dev`     | Jalankan dev server (port 4321, hot-reload)       |
-| `npm run build`   | Build produksi (output Worker di `dist/`)         |
-| `npm run preview` | Preview hasil build secara lokal                  |
-| `npm run check`   | Type checking + diagnostics (`astro check`)       |
+## 🗄️ Database Setup
 
----
+Untuk instalasi baru, jalankan `supabase/00-full-migration.sql` melalui
+Supabase SQL Editor. Untuk database existing, gunakan migration spesifik di
+`supabase/` sesuai fitur, termasuk:
+
+- `writeups-status.sql` untuk Draft/Published write-up.
+- `contact-messages-crud.sql` untuk status read dan penghapusan pesan.
+- `site-settings-policy-fix.sql` untuk remediasi policy Site Settings.
+
+`rbac-mfa.sql` harus dijalankan lebih dahulu karena policy tabel lain
+bergantung pada `public.profiles`.
 
 ## ☁️ Deployment
 
-Dua opsi — keduanya mengarah ke **Cloudflare Workers** (SSR + static assets):
+Deployment production berjalan melalui GitHub Actions saat push ke `main`:
 
-| Opsi                    | Cara                                                                |
-| ----------------------- | ------------------------------------------------------------------- |
-| **Auto (disarankan)**   | Push ke `main` → GitHub Actions deploy otomatis (`.github/workflows/deploy.yml`) |
-| **Manual**              | `npx wrangler deploy dist/server/wrangler.json` setelah `npm run build` |
+- `deploy.yml`: build dan deploy Cloudflare Workers.
+- `supabase-keep-alive.yml`: ping `/api/health` setiap lima hari.
+- `db-backup.yml`: backup database terenkripsi.
+- `data-retention.yml`: purge data PII dan audit sesuai retensi.
+- `codeql.yml`, `sbom.yml`, dan `dependency-review.yml`: supply-chain security.
 
-**Sebelum deploy**: pastikan environment variables Supabase di-set
-(`PUBLIC_*` via secrets, non-publik sebagai runtime secrets Worker), dan ikuti
-checklist lengkap di **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — SQL, KV namespace,
-secrets GitHub, hingga verifikasi E2E.
+Secret runtime tidak disimpan di repository. Ikuti checklist lengkap di
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
----
+## 📚 Dokumentasi Teknis
 
-## 🔒 Keamanan
-
-Kebijakan pelaporan kerentanan lengkap: **[SECURITY.md](SECURITY.md)**
-
-Garis besar pertahanan berlapis:
-
-| Lapisan          | Mekanisme                                                            |
-| ---------------- | -------------------------------------------------------------------- |
-| **Database**     | RLS sebagai penegak izin utama — MFA `aal2` + role di level Postgres |
-| **API**          | Cek role & session di server (defense-in-depth, bukan satu-satunya)  |
-| **Upload**       | Allowlist MIME + magic bytes + limit 5 MB + path acak + rollback file yatim |
-| **Transport**    | CSP tanpa `unsafe-inline` + security headers di middleware           |
-| **Auth**         | MFA TOTP wajib, rate limit & lockout anti brute-force, audit trail   |
-| **Backup**       | Enkripsi GPG + AES-256-GCM at-rest, rotasi kredensial, akses token-gated |
-
-### 🗝️ Filosofi Keamanan Kunci API
-
-Project ini membagi kredensial Supabase dalam **dua kelas** — jangan pernah
-mencampurnya:
-
-| Kelas | Kunci | Terlihat di build? | Bisa di-commit? |
-|---|---|---|---|
-| **Publishable** (aman publik) | `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_ANON_KEY`, `PUBLIC_TURNSTILE_SITE_KEY` | Ya (`import.meta.env.PUBLIC_*`) | Ya — memang dirancang untuk frontend/browser |
-| **Secret** (rahasia) | `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`, `BACKUP_FETCH_TOKEN`, `GDRIVE_CONFIG_ENCRYPTION_SECRET` | **Tidak pernah** | **Tidak pernah** — hanya runtime secret Worker (`wrangler secret put`) |
-
-Alasan `anon` key boleh publik: anon hanya beroperasi **di bawah RLS Postgres**.
-Semua tabel produksi punya kebijakan RLS ketat (MFA `aal2` + role `admin`/`editor`
-untuk tulis, deny-by-default). Tanpa role & session yang valid, anon key hanyalah
-"kunci pintu terbuka" yang tidak bisa membuka apa pun. `service_role` adalah
-kebalikannya — melewati RLS sepenuhnya (privilege eskalasi), maka ia **hanya**
-hidup di server-side: Worker secret + endpoint `/api/backup-config` yang di-gate
-`BACKUP_FETCH_TOKEN` + rate-limit, dan tidak pernah menyentuh bundle.
-
-Konvensi penamaan di kode:
-- Prefix `PUBLIC_` (Astro) / `NEXT_PUBLIC_` (Next.js) → ekspos ke browser → **hanya** kunci publishable
-- Tanpa prefix → `env.*` di Cloudflare `cloudflare:workers` → runtime secret, wajib via `wrangler secret put`
-- Guard `src/lib/supabase.ts`: build gagal-lunak (demo data) bila `PUBLIC_*` belum di-set, sehingga key yang salah tidak pernah jatuh ke produksi dalam diam
-
-Cara memverifikasi kunci secret TIDAK bocor ke bundle: `rg "SUPABASE_SERVICE_ROLE|TURNSTILE_SECRET" dist/` → harus 0 hasil setelah `npm run build`.
-
----
+- [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — aturan engineering dan memori proyek.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — desain teknis, RLS, RBAC, dan alur data.
+- [`PRD.md`](PRD.md) — visi produk, audiens, fitur, dan scope.
+- [`TASKS.md`](TASKS.md) — roadmap dan status pekerjaan.
+- [`CHANGELOG.md`](CHANGELOG.md) — perubahan penting per fase.
+- [`SECURITY.md`](SECURITY.md) — kebijakan pelaporan vulnerability.
 
 ## 📄 Lisensi
 
-Dilisensikan di bawah [MIT License](LICENSE) — boleh digunakan, dimodifikasi,
-dan didistribusikan ulang dengan syarat menyertakan lisensi & atribusi;
-tanpa jaminan apa pun (lihat LICENSE untuk detail).
-
----
+MIT License. Lihat [`LICENSE`](LICENSE) untuk detail.
 
 <div align="center">
 
-Dibangun dengan ❤️ oleh [Indy Adira Khalfani](https://github.com/indyadirak) — *stay curious, stay secure.*
+Built with curiosity, evidence, and a security-first mindset.
 
 </div>
