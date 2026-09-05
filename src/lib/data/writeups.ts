@@ -18,6 +18,7 @@ function toWriteup(row: WriteupsRow): Writeup {
     severity: row.severity,
     findings: row.findings,
     remediation: row.remediation,
+    status: row.status,
     isPublished: row.is_published,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -33,7 +34,7 @@ export async function getWriteups(): Promise<Writeup[]> {
   const { data, error } = await supabase
     .from("writeups")
     .select("*")
-    .eq("is_published", true)
+    .eq("status", "published")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -53,7 +54,7 @@ export async function getWriteupBySlug(slug: string): Promise<Writeup | null> {
     .from("writeups")
     .select("*")
     .eq("slug", slug)
-    .eq("is_published", true)
+    .eq("status", "published")
     .maybeSingle();
 
   if (error) {

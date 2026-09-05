@@ -425,6 +425,13 @@ export const id: Dictionary = {
       updated: "DIPERBARUI",
     },
   },
+  adminWriteups: {
+    status: "Status",
+    draft: "Draft",
+    published: "Published",
+    publish: "[ terbitkan ]",
+    unpublish: "[ jadikan_draft ]",
+  },
   adminSettings: {
     eyebrow: "$ site-settings --edit",
     title: "Site Settings",

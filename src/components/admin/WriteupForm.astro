@@ -1,5 +1,6 @@
 ---
-import type { Writeup } from "../../lib/types";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
+import { WRITEUP_STATUSES, type Writeup } from "../../lib/types";
 
 interface Props {
   /** Data awal untuk mode edit; null/tidak ada = mode tambah. */
@@ -7,6 +8,7 @@ interface Props {
 }
 
 const { writeup = null } = Astro.props;
+const t = getDictionary(localeFromPathname(Astro.url.pathname) ?? "id");
 
 const editing = Boolean(writeup);
 
@@ -78,13 +80,18 @@ const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Man
       placeholder={"$ cat remediation.txt\n- Patch: parametrized query..."}>{writeup?.remediation ?? ""}</textarea>
   </label>
 
-  <label class="flex min-h-11 cursor-pointer items-center gap-3">
-    <input id="w-published" type="checkbox"
-      class="h-5 w-5 rounded border-cyber-border bg-cyber-panel accent-cyber-primary"
-      checked={writeup?.isPublished ?? false} />
-    <span class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
-      Published — tampil di halaman publik /writeups/
+  <label class="block max-w-xs">
+    <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">
+      {t.adminWriteups.status} *
     </span>
+    <select id="w-status-select" required
+      class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">
+      {WRITEUP_STATUSES.map((status) => (
+        <option value={status} selected={writeup?.status === status || (!writeup && status === "draft")}>
+          {status === "draft" ? t.adminWriteups.draft : t.adminWriteups.published}
+        </option>
+      ))}
+    </select>
   </label>
 
   <div class="flex items-center gap-4">
@@ -96,21 +103,21 @@ const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Man
       class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50">
       {editing ? "[ update_writeup ]" : "[ save_writeup ]"}
     </button>
-    <p id="w-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
+    <p id="w-form-status" role="status" aria-live="polite" class="font-mono text-xs text-cyber-danger"></p>
   </div>
 </form>
 
 <script>
   const form = document.getElementById("writeup-form") as HTMLFormElement;
   const submitBtn = document.getElementById("w-submit") as HTMLButtonElement;
-  const statusEl = document.getElementById("w-status") as HTMLParagraphElement;
+  const statusEl = document.getElementById("w-form-status") as HTMLParagraphElement;
 
   const title = document.getElementById("w-title") as HTMLInputElement;
   const targetEnv = document.getElementById("w-target-env") as HTMLInputElement;
   const methodology = document.getElementById("w-methodology") as HTMLInputElement;
   const findings = document.getElementById("w-findings") as HTMLTextAreaElement;
   const remediation = document.getElementById("w-remediation") as HTMLTextAreaElement;
-  const published = document.getElementById("w-published") as HTMLInputElement;
+  const status = document.getElementById("w-status-select") as HTMLSelectElement;
 
   if (!form || !title || !statusEl) {
     throw new Error("writeup form elements missing");
@@ -132,7 +139,7 @@ const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Man
       severity,
       findings: findings.value.trim(),
       remediation: remediation.value.trim(),
-      isPublished: published.checked,
+      status: status.value,
     };
 
     const res = await fetch(

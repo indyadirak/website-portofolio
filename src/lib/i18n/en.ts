@@ -408,7 +408,7 @@ export const en: Dictionary = {
       "Do not disclose vulnerability details publicly before confirmation and remediation (reasonable embargo)",
     ],
   },
-writeups: {
+  writeups: {
     eyebrow: "// writeups",
     title: "CTF & Security Write-ups",
     subtitle: "Technical write-ups from competitions & research - filled progressively.",
@@ -424,6 +424,13 @@ writeups: {
       published: "PUBLISHED",
       updated: "UPDATED",
     },
+  },
+  adminWriteups: {
+    status: "Status",
+    draft: "Draft",
+    published: "Published",
+    publish: "[ publish ]",
+    unpublish: "[ unpublish ]",
   },
   adminSettings: {
     eyebrow: "$ site-settings --edit",

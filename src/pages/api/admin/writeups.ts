@@ -2,7 +2,7 @@ import type { APIContext } from "astro";
 import { getSupabaseFromLocals, json } from "../../../lib/api";
 import { canManageCertificates } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
-import type { WriteupSeverity, WriteupsRow } from "../../../lib/types";
+import { WRITEUP_STATUSES, type WriteupSeverity, type WriteupStatus, type WriteupsRow } from "../../../lib/types";
 
 export const prerender = false;
 
@@ -45,7 +45,7 @@ interface WriteupInput {
   severity?: unknown;
   findings?: unknown;
   remediation?: unknown;
-  isPublished?: unknown;
+  status?: unknown;
 }
 
 function parseBody(body: WriteupInput) {
@@ -55,6 +55,7 @@ function parseBody(body: WriteupInput) {
   const severity = typeof body.severity === "string" ? body.severity : "";
   const findings = typeof body.findings === "string" ? body.findings.trim() : "";
   const remediation = typeof body.remediation === "string" ? body.remediation.trim() : "";
+  const status = typeof body.status === "string" ? body.status : "published";
   const requestedSlug =
     typeof body.slug === "string" && body.slug.trim() ? slugify(body.slug) : "";
 
@@ -66,6 +67,9 @@ function parseBody(body: WriteupInput) {
   if (!SEVERITIES.includes(severity as WriteupSeverity)) {
     return { error: "severity_invalid" } as const;
   }
+  if (!(WRITEUP_STATUSES as readonly string[]).includes(status)) {
+    return { error: "status_invalid" } as const;
+  }
   if (findings.length < 10 || findings.length > 50000) {
     return { error: "findings_invalid" } as const;
   }
@@ -73,7 +77,17 @@ function parseBody(body: WriteupInput) {
     return { error: "remediation_invalid" } as const;
   }
 
-  return { error: null, title, requestedSlug, targetEnv, methodology, severity, findings, remediation };
+  return {
+    error: null,
+    title,
+    requestedSlug,
+    targetEnv,
+    methodology,
+    severity,
+    findings,
+    remediation,
+    status: status as WriteupStatus,
+  };
 }
 
 type GuardResult =
@@ -148,7 +162,7 @@ export async function POST({ request, locals }: APIContext) {
       severity: parsed.severity as WriteupSeverity,
       findings: parsed.findings,
       remediation: parsed.remediation,
-      is_published: body.isPublished === true,
+       status: parsed.status,
       created_by: g.user.id,
     })
     .select()
@@ -178,15 +192,15 @@ export async function PUT({ request, locals }: APIContext) {
   }
 
   // ===== Jalur parsial: toggle publish (dari tabel admin) =====
-  // Body hanya berisi isPublished tanpa field lain -> update satu kolom,
+  // Body hanya berisi status tanpa field lain -> update satu kolom,
   // tanpa validasi panjang field. Body penuh tetap divalidasi ketat.
   if (typeof body.title === "undefined") {
-    if (typeof body.isPublished !== "boolean") {
-      return json({ ok: false, error: "is_published_invalid" }, 400);
+    if (typeof body.status !== "string" || !(WRITEUP_STATUSES as readonly string[]).includes(body.status)) {
+      return json({ ok: false, error: "status_invalid" }, 400);
     }
     const { data, error } = await g.supabase
       .from("writeups")
-      .update({ is_published: body.isPublished, updated_at: new Date().toISOString() })
+      .update({ status: body.status as WriteupStatus, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select("id")
       .single();
@@ -214,7 +228,7 @@ export async function PUT({ request, locals }: APIContext) {
       severity: parsed.severity as WriteupSeverity,
       findings: parsed.findings,
       remediation: parsed.remediation,
-      is_published: body.isPublished === true,
+       status: parsed.status,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

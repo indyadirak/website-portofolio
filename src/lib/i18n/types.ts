@@ -307,6 +307,13 @@ export interface Dictionary {
       updated: string;
     };
   };
+  adminWriteups: {
+    status: string;
+    draft: string;
+    published: string;
+    publish: string;
+    unpublish: string;
+  };
   /** FASE 2: Admin — edit identitas situs (site_settings). */
   adminSettings: {
     eyebrow: string;

@@ -1122,12 +1122,24 @@ create table if not exists public.writeups (
   findings     text not null,
   remediation  text not null,
   is_published boolean not null default false,
+  status       text not null default 'published'
+               check (status in ('draft', 'published')),
   created_by   uuid references auth.users (id) on delete set null,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
 
 alter table public.writeups enable row level security;
+
+alter table public.writeups
+  drop constraint if exists writeups_status_check;
+alter table public.writeups
+  add column if not exists status text not null default 'published';
+alter table public.writeups
+  add constraint writeups_status_check
+    check (status in ('draft', 'published'));
+update public.writeups
+   set status = case when is_published then 'published' else 'draft' end;
 
 drop policy if exists "writeups_public_read" on public.writeups;
 
@@ -1201,6 +1213,21 @@ create policy "writeups_delete_mfa_admin" on public.writeups
 
 grant select on public.writeups to anon, authenticated;
 grant insert, update, delete on public.writeups to authenticated;
+
+-- Trigger: status = sumber kebenaran publish; is_published = turunannya
+-- (keep sinkron agar policy RLS & query berbasis is_published tetap akurat).
+create or replace function public.sync_writeup_is_published()
+returns trigger language plpgsql as $$
+begin
+  new.is_published := (new.status = 'published');
+  return new;
+end;
+$$;
+
+drop trigger if exists writeups_status_sync_is_published on public.writeups;
+create trigger writeups_status_sync_is_published
+  before insert or update on public.writeups
+  for each row execute function public.sync_writeup_is_published();
 
 -- Migration: project-categories
 -- ============================================================

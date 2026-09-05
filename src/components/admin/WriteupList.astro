@@ -1,5 +1,6 @@
 ---
 import type { Writeup } from "../../lib/types";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 
 interface Props {
   writeups: Writeup[];
@@ -8,6 +9,7 @@ interface Props {
 }
 
 const { writeups, canDelete } = Astro.props;
+const t = getDictionary(localeFromPathname(Astro.url.pathname) ?? "id");
 
 const severityStyle: Record<Writeup["severity"], string> = {
   Critical: "border-cyber-danger/60 text-cyber-danger",
@@ -53,10 +55,10 @@ const severityStyle: Record<Writeup["severity"], string> = {
                 </span>
               </td>
               <td class="px-4 py-3">
-                {w.isPublished ? (
-                  <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-primary">published</span>
+                {w.status === "published" ? (
+                  <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-primary">{t.adminWriteups.published}</span>
                 ) : (
-                  <span class="rounded border border-cyber-border px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-muted">draft</span>
+                  <span class="rounded border border-cyber-border px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-muted">{t.adminWriteups.draft}</span>
                 )}
               </td>
               <td class="px-4 py-3 text-[11px] text-cyber-muted">
@@ -76,10 +78,10 @@ const severityStyle: Record<Writeup["severity"], string> = {
                         <button
                           type="button"
                           data-wup-toggle={w.id}
-                          data-wup-published={String(w.isPublished)}
+                          data-wup-status={w.status}
                           class="rounded border border-cyber-border px-2 py-1 text-cyber-muted transition-colors hover:border-cyber-primary hover:text-cyber-primary"
                         >
-                          {w.isPublished ? "[ unpublish ]" : "[ publish ]"}
+                          {w.status === "published" ? t.adminWriteups.unpublish : t.adminWriteups.publish}
                         </button>
                         <button
                           type="button"
@@ -106,12 +108,12 @@ const severityStyle: Record<Writeup["severity"], string> = {
   document.querySelectorAll<HTMLButtonElement>("[data-wup-toggle]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const id = btn.dataset.wupToggle as string;
-      const next = btn.dataset.wupPublished === "true" ? false : true;
+      const next = btn.dataset.wupStatus === "published" ? "draft" : "published";
       btn.disabled = true;
       const res = await fetch(`/api/admin/writeups?id=${encodeURIComponent(id)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublished: next }),
+        body: JSON.stringify({ status: next }),
       }).catch(() => null);
       if (res && res.ok) window.location.reload();
       else btn.disabled = false;

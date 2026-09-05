@@ -33,14 +33,42 @@ create table if not exists public.writeups (
   findings     text not null,
   remediation  text not null,
   is_published boolean not null default false,
+  status       text not null default 'published'
+               check (status in ('draft', 'published')),
   created_by   uuid references auth.users (id) on delete set null,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
 
+-- Status adalah sumber kebenaran; is_published dipertahankan sebagai kolom
+-- legacy agar policy dan consumer lama tetap kompatibel.
+create or replace function public.sync_writeup_is_published()
+returns trigger language plpgsql as $$
+begin
+  new.is_published := (new.status = 'published');
+  return new;
+end;
+$$;
+
+drop trigger if exists writeups_status_sync_is_published on public.writeups;
+create trigger writeups_status_sync_is_published
+  before insert or update on public.writeups
+  for each row execute function public.sync_writeup_is_published();
+
 -- ------------------------------------------------------------------
 -- 2) ROW LEVEL SECURITY (WAJIB: tanpa ini semua policy tidak berlaku)
 -- ------------------------------------------------------------------
+alter table public.writeups
+  drop constraint if exists writeups_status_check;
+alter table public.writeups
+  add column if not exists status text not null default 'published';
+alter table public.writeups
+  add constraint writeups_status_check
+    check (status in ('draft', 'published'));
+
+update public.writeups
+   set status = case when is_published then 'published' else 'draft' end;
+
 alter table public.writeups enable row level security;
 
 -- ------------------------------------------------------------------

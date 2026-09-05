@@ -135,6 +135,9 @@ export interface Profile {
 /** Severity laporan write-up — dipakai untuk badge warna di UI. */
 export type WriteupSeverity = "Critical" | "High" | "Med" | "Low";
 
+export const WRITEUP_STATUSES = ["draft", "published"] as const;
+export type WriteupStatus = (typeof WRITEUP_STATUSES)[number];
+
 /** Write-up CTF (tabel public.writeups) — format terstruktur THM/HTB. */
 export interface Writeup {
   id: string;
@@ -147,6 +150,7 @@ export interface Writeup {
   severity: WriteupSeverity;
   findings: string;
   remediation: string;
+  status: WriteupStatus;
   isPublished: boolean;
   createdBy: string | null;
   createdAt: string;
@@ -319,6 +323,7 @@ export type WriteupsRow = {
   severity: WriteupSeverity;
   findings: string;
   remediation: string;
+  status: WriteupStatus;
   is_published: boolean;
   created_by: string | null;
   created_at: string;
@@ -557,6 +562,7 @@ export interface Database {
           severity?: WriteupSeverity;
           findings: string;
           remediation: string;
+          status?: WriteupStatus;
           is_published?: boolean;
           created_by?: string | null;
           created_at?: string;
@@ -571,6 +577,7 @@ export interface Database {
           severity?: WriteupSeverity;
           findings?: string;
           remediation?: string;
+          status?: WriteupStatus;
           is_published?: boolean;
           created_by?: string | null;
           created_at?: string;
