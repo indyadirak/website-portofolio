@@ -368,8 +368,11 @@ export interface Dictionary {
     saveEdit: string;
     cancelEdit: string;
     platform: string;
+    platformPlaceholder: string;
     url: string;
     icon: string;
+    iconPlaceholder: string;
+    actions: string;
     sortOrder: string;
     total: string;
     emptyNote: string;

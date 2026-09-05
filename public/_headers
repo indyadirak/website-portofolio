@@ -8,7 +8,7 @@
   # Hash sha256-... = inline script Cloudflare Insights (Web Analytics);
   # static.cloudflareinsights.com = sumber beacon; cloudflareinsights.com
   # dibuka di connect-src untuk POST telemetri.
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'sha256-sklxf1nY7676U2gNIjaGWI0Bv9h/h8vH4fF9nQkqb6Q='; style-src 'self'; img-src 'self' data: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'sha256-sklxf1nY7676U2gNIjaGWI0Bv9h/h8vH4fF9nQkqb6Q='; style-src 'self'; img-src 'self' data: https://*.supabase.co https:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin

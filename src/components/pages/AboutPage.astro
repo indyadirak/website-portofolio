@@ -60,15 +60,27 @@ const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
           {socialLinks.length > 0 ? (
             socialLinks.map((link) => (
               <li>
-                <span class="text-cyber-muted">{link.platform}:</span>{" "}
-                <a
+                  <span class="text-cyber-muted">{link.platform}:</span>{" "}
+                  <a
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-cyber-primary hover:underline"
-                >
-                  {hostOf(link.url)}
-                </a>
+                  >
+                    {link.icon?.startsWith("http://") || link.icon?.startsWith("https://") ? (
+                      <img
+                        src={link.icon}
+                        alt=""
+                        width="16"
+                        height="16"
+                        loading="lazy"
+                        class="mr-1 inline-block h-4 w-4 object-contain align-text-bottom"
+                      />
+                    ) : link.icon ? (
+                      <i class={`${link.icon} mr-1`} aria-hidden="true"></i>
+                    ) : null}
+                    {hostOf(link.url)}
+                  </a>
               </li>
             ))
           ) : (

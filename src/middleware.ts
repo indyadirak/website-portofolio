@@ -45,7 +45,7 @@ const CSP_STYLE_SRC = import.meta.env.DEV
 
 const SECURITY_HEADERS: Record<string, string> = {
   "Content-Security-Policy":
-    `default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'sha256-sklxf1nY7676U2gNIjaGWI0Bv9h/h8vH4fF9nQkqb6Q='; ${CSP_STYLE_SRC}; img-src 'self' data: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`,
+    `default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'sha256-sklxf1nY7676U2gNIjaGWI0Bv9h/h8vH4fF9nQkqb6Q='; ${CSP_STYLE_SRC}; img-src 'self' data: https://*.supabase.co https:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`,
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",

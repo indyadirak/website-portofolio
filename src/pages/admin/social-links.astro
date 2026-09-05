@@ -59,12 +59,7 @@ const canDelete = canDeleteSiteContent(profile);
 <div class="grid gap-5 md:grid-cols-2">
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSocialLinks.platform} *</span>
-          <TerminalInput id="l-platform" type="text" required minlength={2} maxlength={40} pattern="[a-z0-9-_]+" list="platform-list" placeholder="github | linkedin | blog" />
-          <datalist id="platform-list">
-            <option value="github"></option>
-            <option value="linkedin"></option>
-            <option value="blog"></option>
-          </datalist>
+          <TerminalInput id="l-platform" type="text" required minlength={2} maxlength={80} placeholder={t.adminSocialLinks.platformPlaceholder} />
         </label>
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSocialLinks.url} *</span>
@@ -75,7 +70,7 @@ const canDelete = canDeleteSiteContent(profile);
       <div class="grid gap-5 md:grid-cols-2">
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSocialLinks.icon}</span>
-          <TerminalInput id="l-icon" type="text" maxlength={40} placeholder="github" />
+          <TerminalInput id="l-icon" type="text" maxlength={200} placeholder={t.adminSocialLinks.iconPlaceholder} />
         </label>
         <label class="block">
           <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSocialLinks.sortOrder}</span>
@@ -109,11 +104,11 @@ const canDelete = canDeleteSiteContent(profile);
           <TerminalTable
           columns={[
             { key: "#", label: "#" },
-            { key: "platform", label: "Platform" },
-            { key: "url", label: "URL" },
-            { key: "icon", label: "Icon" },
-            { key: "sort", label: "Sort" },
-            { key: "actions", label: "Actions" },
+            { key: "platform", label: t.adminSocialLinks.platform },
+            { key: "url", label: t.adminSocialLinks.url },
+            { key: "icon", label: t.adminSocialLinks.icon },
+            { key: "sort", label: t.adminSocialLinks.sortOrder },
+            { key: "actions", label: t.adminSocialLinks.actions },
           ]}
         >
           {links.map((s, i) => (
@@ -222,7 +217,7 @@ const canDelete = canDeleteSiteContent(profile);
     submitBtn.disabled = true;
 
     const payload = {
-      platform: platformInput.value.trim().toLowerCase(),
+      platform: platformInput.value.trim(),
       url: urlInput.value.trim(),
       icon: iconInput.value.trim() || null,
       sortOrder: Number(sortInput.value) || 0,

@@ -71,15 +71,16 @@ function parseBody(body: SocialLinkInput): {
   icon: string | null;
   sortOrder: number;
 } {
-  const platform = typeof body.platform === "string" ? body.platform.trim().toLowerCase() : "";
+  const platform = typeof body.platform === "string" ? body.platform.trim() : "";
   const url = typeof body.url === "string" ? body.url.trim() : "";
   const icon = typeof body.icon === "string" ? body.icon.trim() : "";
   const sortOrder = typeof body.sortOrder === "number" ? Math.floor(body.sortOrder) : 0;
 
-  if (!platform || platform.length > 40) return { error: "platform_invalid", platform, url, icon: null, sortOrder };
-  if (!/^[a-z0-9-_]+$/.test(platform)) return { error: "platform_invalid", platform, url, icon: null, sortOrder };
+  if (!platform || platform.length > 80 || /[\u0000-\u001f\u007f]/.test(platform)) {
+    return { error: "platform_invalid", platform, url, icon: null, sortOrder };
+  }
   if (!url || url.length > 500 || !/^https?:\/\//.test(url)) return { error: "url_invalid", platform, url, icon: null, sortOrder };
-  if (icon.length > 40) return { error: "icon_invalid", platform, url, icon: null, sortOrder };
+  if (icon.length > 200) return { error: "icon_invalid", platform, url, icon: null, sortOrder };
 
   return { error: null, platform, url, icon: icon || null, sortOrder };
 }
