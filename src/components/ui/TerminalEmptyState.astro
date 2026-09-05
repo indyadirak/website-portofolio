@@ -14,7 +14,7 @@ interface Props {
   class?: string;
 }
 
-const { command = "ls", directory = "/", messageId = "", id, hidden = false, class: className } = Astro.props;
+const { messageId = "", id, hidden = false, class: className } = Astro.props;
 
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
@@ -39,7 +39,5 @@ const message = resolveMessage(messageId);
   hidden={hidden || undefined}
   class={`rounded border border-cyber-border bg-cyber-card p-6 font-mono text-sm text-cyber-muted ${className ?? ""}`}
 >
-  <p class="text-cyber-primary">$ {command} {directory}</p>
-  <p>{t.ui.totalZero}</p>
-  {message && <p class="mt-2">{message}</p>}
+  {message && <p>{message}</p>}
 </div>
