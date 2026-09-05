@@ -54,7 +54,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-origin",
   "Cross-Origin-Embedder-Policy": "credentialless",
-  "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
 };
 
 /** Halaman admin yang HANYA boleh dibuka role admin (bukan editor/viewer). */
