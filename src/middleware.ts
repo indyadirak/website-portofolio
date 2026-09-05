@@ -53,6 +53,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Origin-Agent-Cluster": "?1",
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-origin",
+  "Cross-Origin-Embedder-Policy": "credentialless",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
 };
 

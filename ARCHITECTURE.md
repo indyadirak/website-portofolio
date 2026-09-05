@@ -46,6 +46,12 @@
 | Data | Enkripsi at-rest (AES-256-GCM) untuk kredensial Drive; backup GPG; retensi terjadwal (PII 12 bulan, audit 90 hari) | `data-retention.yml`, `db-backup.yml` |
 | Rantai pasokan | CodeQL, dependency review, SBOM (Syft), actions pinned ke SHA + permissions least-privilege | `.github/workflows/*` |
 
+### Edge Security — Cloudflare
+
+Minimum TLS Version pada **Cloudflare Zone Settings** harus diset ke **TLS
+1.2**. Konfigurasi edge ini mematikan TLS 1.0 dan TLS 1.1 yang deprecated;
+aplikasi tidak mengubah versi TLS melalui kode Astro atau Worker.
+
 **RBAC matrix (ringkas):**
 
 | Aksi | viewer | editor | admin |
