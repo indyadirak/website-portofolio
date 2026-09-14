@@ -563,6 +563,7 @@ export const id: Dictionary = {
   },
   ui: {
     totalZero: "total 0",
+    skipToContent: "Lewati ke konten utama",
   },
   adminMessages: {
     eyebrow: "$ contact-messages --manage",

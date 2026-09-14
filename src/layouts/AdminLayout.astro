@@ -55,6 +55,12 @@ const idleClasses =
     <title>{title} — {siteConfig.name}</title>
   </head>
   <body class="flex min-h-screen flex-col bg-cyber-bg">
+    <a
+      href="#konten"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:border focus:border-cyber-primary focus:bg-cyber-panel focus:px-4 focus:py-2 focus:font-mono focus:text-sm focus:text-cyber-primary"
+    >
+      {t.ui.skipToContent}
+    </a>
     <header class="glass sticky top-0 z-50">
       <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 md:px-6">
         <a
@@ -97,7 +103,7 @@ const idleClasses =
       </nav>
     </header>
 
-    <main class="flex-1">
+    <main id="konten" tabindex="-1" class="flex-1">
       <slot />
     </main>
 

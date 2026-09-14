@@ -28,13 +28,10 @@
     @apply bg-cyber-primary/30 text-white;
   }
 
-  /* ---- Aksesibilitas: focus & touch feedback ----
-     Layar sentuh tidak punya konsep :hover — feedback visual diberikan
-     lewat :focus-visible (keyboard) dan :active (tekanan fisik). */
-  :where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
-    outline: 2px solid var(--color-cyber-primary);
-    outline-offset: 2px;
-  }
+  /* ---- Aksesibilitas: feedback sentuh ----
+     Layar sentuh tidak punya konsep :hover — feedback tekanan fisik
+     diberikan lewat :active. Indikator fokus keyboard ada di blok
+     non-layer di bawah (menang atas utility outline-none). */
 
   .skill-filter-btn:active:not([aria-pressed="true"]),
   .cert-filter-btn:active:not([aria-pressed="true"]),
@@ -331,6 +328,48 @@
   }
   details.soc-details[open] > summary::before {
     transform: rotate(90deg);
+  }
+}
+
+/* ---- Aksesibilitas fokus keyboard (WCAG 2.4.7 / 2.4.11) ----
+   Sengaja DI LUAR @layer: deklarasi non-layer selalu menang atas
+   utility Tailwind (mis. `outline-none` yang dipakai di puluhan input
+   form admin). Tanpa ini, keyboard user kehilangan indikator fokus di
+   form — hanya border color yang berubah. */
+:where(a, button, summary, input, select, textarea, [tabindex], [role="button"]):focus-visible {
+  outline: 2px solid var(--color-cyber-primary);
+  outline-offset: 2px;
+}
+
+/* ---- prefers-reduced-motion (WCAG 2.3.3) ----
+   Matikan animasi dekoratif (typing, caret berkedip, pulse status,
+   baris terminal staggered, transisi hover) bagi pengguna dengan
+   sensitivitas vestibular/fotografik. Non-layer agar menang atas
+   utility animasi. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .type-effect,
+  .type-caret,
+  .badge-pulse,
+  .term-row,
+  details.soc-details[open] > summary + .soc-details-content {
+    animation: none !important;
+  }
+
+  /* Tanpa animasi, efek typing tidak boleh memotong teks. */
+  .type-effect {
+    overflow: visible !important;
+    white-space: normal !important;
+    width: auto !important;
+  }
+
+  .zoom-img,
+  .zoom-box,
+  details.soc-details > summary::before {
+    transition-duration: 0.01ms !important;
   }
 }
 

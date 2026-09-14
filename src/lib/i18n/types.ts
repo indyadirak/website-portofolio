@@ -433,6 +433,8 @@ export interface Dictionary {
   ui: {
     /** Baris "total 0" pada TerminalEmptyState. */
     totalZero: string;
+    /** Skip-link keyboard di MainLayout & AdminLayout (WCAG 2.4.1). */
+    skipToContent: string;
   };
   /** Manajemen pesan kontak (admin/messages) — FASE 2. */
   adminMessages: {
