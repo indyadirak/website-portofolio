@@ -226,7 +226,6 @@ export interface Dictionary {
     notConfigured: string;
     sendFailed: string;
     directEmailTitle: string;
-    revealEmail: string;
     orVia: string;
     note: string;
     captchaRequired: string;

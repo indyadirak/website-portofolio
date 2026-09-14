@@ -231,7 +231,6 @@ export const en: Dictionary = {
     notConfigured: "Supabase is not configured on the server.",
     sendFailed: "failed to send message. Try again later.",
     directEmailTitle: "Or reach me directly by email",
-    revealEmail: "Reveal Email",
     orVia: "or via",
     note: "The form above posts to the /api/contact endpoint with rate limiting and honeypot protection.",
     captchaRequired: "Please complete the Turnstile verification first.",

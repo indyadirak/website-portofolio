@@ -22,8 +22,8 @@ export const siteConfig = {
   },
 
   contact: {
-    /** Email utama — TIDAK dirender polos di HTML (lihat EmailLink.astro). */
-    email: "indyadira@indyadirak.my.id",
+    /** Email utama — ditampilkan publik sebagai user[at]domain (lihat EmailLink.astro). */
+    email: "me@indyadirak.my.id",
     /** LinkedIn boleh tampil sebagai link biasa — memang untuk dibagikan. */
     linkedinUrl: "https://www.linkedin.com/in/indyadirak",
     githubUrl: "https://github.com/indyadirak",

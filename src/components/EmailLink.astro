@@ -1,32 +1,28 @@
 ---
 import { siteConfig } from "../lib/config";
 import { reverseEmail } from "../lib/email";
-import { getDictionary, localeFromPathname } from "../lib/i18n";
 
-const locale = localeFromPathname(Astro.url.pathname) ?? "id";
-const t = getDictionary(locale);
-
-// Email TIDAK tertulis polos di HTML — dipecah & dirender client-side.
-const reversed = reverseEmail(siteConfig.contact.email);
-const [user, domain] = reversed.split("@");
+const [user, domain] = siteConfig.contact.email.split("@");
+/** Tampilan ter-obfuscasi: user[at]domain — terbaca manusia, tak kena regex scraper. */
+const display = `${user}[at]${domain}`;
+// Fragmen di atribut data ikut dibalik agar `me@...` tidak pernah muncul
+// utuh di HTML mentah; mailto: baru dirakit oleh script saat mount.
+const reversedUser = reverseEmail(user);
+const reversedDomain = reverseEmail(domain);
 ---
 
 <a
   href="#"
-  data-email-user={user}
-  data-email-domain={domain}
+  data-email-user={reversedUser}
+  data-email-domain={reversedDomain}
   class="text-cyber-primary underline-offset-4 hover:underline"
->
-  [ {t.contact.revealEmail} ]
-</a>
+  title={display}
+>{display}</a>
 
 <script>
+  const unreverse = (s: string | null) => (s ?? "").split("").reverse().join("");
   document.querySelectorAll("[data-email-user]").forEach((el) => {
-    const email = `${el.getAttribute("data-email-user")}@${el.getAttribute("data-email-domain")}`
-      .split("")
-      .reverse()
-      .join("");
+    const email = `${unreverse(el.getAttribute("data-email-user"))}@${unreverse(el.getAttribute("data-email-domain"))}`;
     el.setAttribute("href", `mailto:${email}`);
-    el.textContent = email;
   });
 </script>

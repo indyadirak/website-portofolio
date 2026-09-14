@@ -231,7 +231,6 @@ export const id: Dictionary = {
     notConfigured: "Supabase belum dikonfigurasi di server.",
     sendFailed: "gagal mengirim pesan. Coba lagi nanti.",
     directEmailTitle: "Atau langsung ke email",
-    revealEmail: "Tampilkan Email",
     orVia: "atau via",
     note: "Form di atas menggunakan API endpoint /api/contact dengan rate limiting dan proteksi honeypot.",
     captchaRequired: "Selesaikan verifikasi Turnstile terlebih dahulu.",
