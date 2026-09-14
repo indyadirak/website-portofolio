@@ -55,6 +55,19 @@ Legenda: `[DONE]` selesai & terverifikasi · `[IN PROGRESS]` sedang berjalan
 
 ## Backlog / Follow-up (di luar fase, dicatat agar tidak hilang)
 
+- [DONE] Aksesibilitas P1 (hasil review UI/UX Sprint 4B):
+  - Input admin `TerminalInput.astro` tanpa indikator fokus yang terlihat —
+    diperbaiki lewat aturan `:focus-visible` NON-LAYER di `global.css`
+    (menang atas semua utility `outline-none` di ±20 form, tanpa edit
+    per-file) — WCAG 2.4.7.
+  - Skip-link "Lewati ke konten utama" (i18n `ui.skipToContent`) ditambahkan
+    di `MainLayout` & `AdminLayout`; `<main id="konten" tabindex="-1">`.
+  - Blok `prefers-reduced-motion: reduce` di `global.css`: mematikan
+    `type-effect` (dengan fallback teks utuh), `type-caret`, `badge-pulse`,
+    `term-row`, transisi zoom/details, dan `scroll-behavior`.
+- [TODO] Aksesibilitas P2 (susulan): pesan error API snake_case -> teks
+  manusiawi di form admin, `aria-invalid` pada field gagal, teks `sr-only`
+  untuk simbol `$`/`[✓]`, pengelompokan nav admin + badge unread messages.
 - [TODO] Pin ke SHA workflow lain: `codeql.yml`, `db-backup.yml`,
   `data-retention.yml`, `dependency-review.yml` (hanya `deploy.yml` &
   `sbom.yml` yang sudah di-pin di Fase 1).
