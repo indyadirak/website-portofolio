@@ -1,5 +1,9 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json } from "../../lib/api";
+import {
+  getSupabaseFromLocals,
+  json,
+  validateCredentialFields,
+} from "../../lib/api";
 import {
   canDeleteCertificates,
   canManageCertificates,
@@ -52,9 +56,9 @@ function toRow(input: CertificateInput) {
     is_featured: input.isFeatured === true,
     short_description_id: sanitizeShortDesc(input.shortDescriptionId),
     short_description_en: sanitizeShortDesc(input.shortDescriptionEn),
-    credential_id: input.credentialId ?? null,
-    credential_url: input.credentialUrl ?? null,
-    verification_url: input.verificationUrl ?? null,
+    credential_id: input.credentialId?.trim() || null,
+    credential_url: input.credentialUrl?.trim() || null,
+    verification_url: input.verificationUrl?.trim() || null,
     skills: input.skills ?? [],
     description: input.description ?? null,
     file_url: input.fileUrl ?? null,
@@ -74,6 +78,12 @@ function validate(input: CertificateInput): string | null {
   ) {
     return "category_harus_compliance_atau_training";
   }
+  const credentialError = validateCredentialFields({
+    credentialId: input.credentialId?.trim(),
+    credentialUrl: input.credentialUrl?.trim(),
+    verificationUrl: input.verificationUrl?.trim(),
+  });
+  if (credentialError) return credentialError;
   return null;
 }
 

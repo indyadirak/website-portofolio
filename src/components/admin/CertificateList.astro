@@ -110,6 +110,7 @@ const { certificates, canWrite, isAdmin } = Astro.props;
       is_featured?: boolean;
       short_description_id?: string | null;
       short_description_en?: string | null;
+      credential_id?: string | null;
       credential_url?: string | null;
       verification_url?: string | null;
       file_url?: string | null;
@@ -130,6 +131,7 @@ const { certificates, canWrite, isAdmin } = Astro.props;
               isFeatured: Boolean(cert.is_featured),
               shortDescriptionId: cert.short_description_id,
               shortDescriptionEn: cert.short_description_en,
+              credentialId: cert.credential_id,
               credentialUrl: cert.credential_url,
               verificationUrl: cert.verification_url,
               fileUrl: cert.file_url,

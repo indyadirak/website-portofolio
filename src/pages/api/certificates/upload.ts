@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json } from "../../../lib/api";
+import { getSupabaseFromLocals, json, validateCredentialFields } from "../../../lib/api";
 import { canManageCertificates } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
 import {
@@ -20,6 +20,7 @@ interface CertificateMeta {
   isFeatured: boolean;
   shortDescriptionId?: string | null;
   shortDescriptionEn?: string | null;
+  credentialId?: string | null;
   credentialUrl?: string | null;
   verificationUrl?: string | null;
   skills: string[];
@@ -46,6 +47,7 @@ function parseMeta(formData: FormData): CertificateMeta | null {
   }
 
   const expiry = formData.get("expiryDate");
+  const credentialId = formData.get("credentialId");
   const url = formData.get("credentialUrl");
   const verificationUrl = formData.get("verificationUrl");
   const rawSkills = formData.get("skills");
@@ -65,7 +67,8 @@ function parseMeta(formData: FormData): CertificateMeta | null {
     isFeatured: rawFeatured === "on" || rawFeatured === "true" || rawFeatured === "1",
     shortDescriptionId: sanitizeShortDesc(typeof shortId === "string" ? shortId : null),
     shortDescriptionEn: sanitizeShortDesc(typeof shortEn === "string" ? shortEn : null),
-    credentialUrl: typeof url === "string" && url ? url : null,
+    credentialId: typeof credentialId === "string" && credentialId.trim() ? credentialId.trim() : null,
+    credentialUrl: typeof url === "string" && url ? url.trim() : null,
     verificationUrl: typeof verificationUrl === "string" && verificationUrl ? verificationUrl : null,
     skills:
       typeof rawSkills === "string"
@@ -84,6 +87,8 @@ function validateMeta(meta: CertificateMeta): string | null {
   if (!CERTIFICATE_CATEGORIES.includes(meta.category)) {
     return "category_harus_compliance_atau_training";
   }
+  const credentialError = validateCredentialFields(meta);
+  if (credentialError) return credentialError;
   return null;
 }
 
@@ -167,6 +172,7 @@ export async function POST({ request, locals }: APIContext) {
       is_featured: meta.isFeatured,
       short_description_id: meta.shortDescriptionId,
       short_description_en: meta.shortDescriptionEn,
+      credential_id: meta.credentialId,
       credential_url: meta.credentialUrl,
       verification_url: meta.verificationUrl,
       skills: meta.skills,
@@ -277,6 +283,7 @@ export async function PUT({ request, locals }: APIContext) {
         is_featured: meta.isFeatured,
         short_description_id: meta.shortDescriptionId,
         short_description_en: meta.shortDescriptionEn,
+        credential_id: meta.credentialId,
         credential_url: meta.credentialUrl,
         verification_url: meta.verificationUrl,
         skills: meta.skills,

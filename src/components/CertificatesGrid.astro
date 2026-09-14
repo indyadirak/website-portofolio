@@ -89,7 +89,22 @@ function expiryBadgeClasses(status: "valid" | "expired"): string {
       class="flex flex-col gap-3 rounded border border-cyber-border bg-cyber-card p-5"
     >
       <div class="flex items-start justify-between gap-2">
-        <h3 class="font-mono text-sm font-bold leading-snug text-white">{cert.title}</h3>
+        <h3 class="font-mono text-sm font-bold leading-snug">
+          {
+            cert.verificationUrl ? (
+              <a
+                href={cert.verificationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-white transition-colors hover:text-cyber-primary"
+              >
+                {cert.title}
+              </a>
+            ) : (
+              <span class="text-white">{cert.title}</span>
+            )
+          }
+        </h3>
         <span class="flex shrink-0 items-center gap-2">
           {cert.isFeatured && (
             <span class="rounded border border-cyber-primary/50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-cyber-primary">
@@ -111,6 +126,14 @@ function expiryBadgeClasses(status: "valid" | "expired"): string {
       <p class="font-mono text-xs text-cyber-muted">
         {cert.issuer} — {formatDate(cert.issueDate)}
       </p>
+      {
+        cert.credentialId && (
+          <p class="-mt-1 font-mono text-[11px] text-cyber-muted">
+            <span class="uppercase tracking-wider text-cyber-accent">{t.certificates.credentialId}:</span>{" "}
+            <span class="text-slate-300">{cert.credentialId}</span>
+          </p>
+        )
+      }
       {
         (() => {
           const status = expiryStatus(cert);
@@ -140,7 +163,7 @@ function expiryBadgeClasses(status: "valid" | "expired"): string {
           <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016Z" />
           </svg>
-          {t.certificates.verify}
+          {t.certificates.verifyCredential}
         </a>
       )}
       {cert.credentialUrl && (

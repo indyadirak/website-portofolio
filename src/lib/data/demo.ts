@@ -185,7 +185,7 @@ export const demoCertificates: Certificate[] = [
     isFeatured: true,
     shortDescriptionId: "Sertifikasi ethical hacking dengan fokus metodologi penilaian kerentanan end-to-end.",
     shortDescriptionEn: "Ethical hacking certification focused on end-to-end vulnerability assessment methodology.",
-    credentialId: null,
+    credentialId: "ECC-DEMO-VERIFY-2026",
     credentialUrl: "https://www.eccouncil.org/",
     verificationUrl: "https://aspen.eccouncil.org/verifyBadge",
     skills: ["Penetration Testing", "Network Security", "Vulnerability Assessment"],

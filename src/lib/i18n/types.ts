@@ -94,7 +94,11 @@ export interface Dictionary {
     empty: string;
     /** Empty state UTUH (tidak ada sertifikat sama sekali) — tampilan terminal. */
     emptyAll: string;
-    verify: string;
+    /** Label field/ID kredensial — diverifikasi publik (SP: verifiable credentials). */
+    credentialId: string;
+    verificationUrl: string;
+    /** Tombol verifikasi kredensial pada kartu sertifikat. */
+    verifyCredential: string;
     featured: string;
     /** Template badge masa berlaku — placeholder {date} diganti format locale. */
     validUntil: string;
