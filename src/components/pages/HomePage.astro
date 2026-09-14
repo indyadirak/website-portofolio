@@ -2,6 +2,7 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import Hero from "../Hero.astro";
 import TerminalLog from "../TerminalLog.astro";
+import SecurityStatusPanel from "../SecurityStatusPanel.astro";
 import SectionHeading from "../SectionHeading.astro";
 import ProjectGrid from "../ProjectGrid.astro";
 import SkillGrid from "../SkillGrid.astro";
@@ -25,6 +26,8 @@ const recentExperiences = (await getExperiences()).slice(0, 4);
   <Hero />
 
   <TerminalLog experiences={recentExperiences} />
+
+  <SecurityStatusPanel />
 
   <section id="projects" class="mx-auto max-w-6xl px-6 py-16">
     <SectionHeading
