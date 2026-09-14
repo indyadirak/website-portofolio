@@ -1,10 +1,14 @@
-PLACEHOLDER — PGP public key belum dipublikasikan.
+-----BEGIN PGP PUBLIC KEY BLOCK-----
 
-Ganti isi file ini dengan output:
-  gpg --armor --export <KEYID>
-
-Fingerprint yang ditampilkan di halaman kontak HARUS disamakan dengan
-fingerprint key asli. Verifikasi fingerprint out-of-band sebelum
-mempercayainya.
-
-Ref: /.well-known/security.txt (Encryption field, RFC 9116)
+mDMEaqhMSBYJKwYBBAHaRw8BAQdAfwu1J2MKJzsEpXulYRX21hfFbG6MbguwJmRt
+8UN/4Qi0TEluZHkgQWRpcmEgS2hhbGZhbmkgKGlzIGZvciB3b3JrIGFuZCByZXNl
+YXJjaCBzdXBwb3J0KSA8bWVAaW5keWFkaXJhay5teS5pZD6IjwQTFgoAOBYhBIKl
+ut4YkyGS5Apen/dRZE2eDb8fBQJqqExIAhsDBQsJCAcCBhUKCQgLAgQWAgMBAh4B
+AheAAAoJEPdRZE2eDb8ff0QA9jVeq3/HMQvYRraUxXQ4Cm1MHt1gp+3ux2ExkCqo
+/HEBAPp2QZM+lno3LKrLc5iT2OM0EdJJlFedGT7Xxa+0SsMKuDgEaqhMSBIKKwYB
+BAGXVQEFAQEHQFX1l5tG8p/jzP2tWYQJUL0fB3/GEIogrqJjGlvnzB1NAwEIB4h4
+BBgWCgAgFiEEgqW63hiTIZLkCl6f91FkTZ4Nvx8FAmqoTEgCGwwACgkQ91FkTZ4N
+vx/1tQEA0fLwNqm8BjGhlzPwiipTl7v+Ju+vHtOck/Y7M9FvCUIA/2cGjsTVe+GF
+OglZeUKxYMOxIaHchoyKmn2VjAnWnwwP
+=0j3I
+-----END PGP PUBLIC KEY BLOCK-----
