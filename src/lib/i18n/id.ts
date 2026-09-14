@@ -258,7 +258,9 @@ export const id: Dictionary = {
   privacy: {
     eyebrow: "// privasi",
     title: "Kebijakan Privasi",
-    lastUpdated: "Terakhir diperbarui: 17 Agustus 2026",
+    description:
+      "Kebijakan privasi situs ini — data minimum, nol pelacakan, dan hak Anda sesuai UU PDP.",
+    lastUpdated: "Terakhir diperbarui: 6 September 2026",
     sections: {
       collectedTitle: "1. Data yang dikumpulkan",
       collected: [
@@ -292,11 +294,13 @@ export const id: Dictionary = {
       ],
       rightsTitle: "7. Hak Anda",
       rights: [
+        "Hak Anda dijamin oleh UU No. 27 Tahun 2022 tentang Perlindungan Data Pribadi (UU PDP): hak atas informasi, akses, koreksi, penghapusan, dan penarikan persetujuan.",
         "Anda berhak meminta akses, koreksi, atau penghapusan data pribadi Anda kapan saja — cukup hubungi kami melalui email di halaman kontak.",
+        "Permintaan penghapusan data diproses paling lambat 3x24 jam setelah pesan terverifikasi, dan konfirmasinya dikirim balik ke email Anda.",
       ],
       contactTitle: "8. Kontak",
       contact: [
-        "Pertanyaan seputar kebijakan ini: silakan gunakan form kontak di situs ini.",
+        "Pertanyaan seputar kebijakan ini atau penggunaan hak data: gunakan form kontak atau email yang tertera di halaman kontak.",
       ],
     },
   },

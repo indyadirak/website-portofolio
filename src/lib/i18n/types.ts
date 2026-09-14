@@ -261,6 +261,7 @@ export interface Dictionary {
   privacy: {
     eyebrow: string;
     title: string;
+    description: string;
     lastUpdated: string;
     sections: {
       collectedTitle: string;

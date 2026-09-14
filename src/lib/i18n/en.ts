@@ -258,7 +258,9 @@ export const en: Dictionary = {
   privacy: {
     eyebrow: "// privacy",
     title: "Privacy Policy",
-    lastUpdated: "Last updated: August 17, 2026",
+    description:
+      "This site's privacy policy — minimum data, zero tracking, and your rights under Indonesia's Personal Data Protection Law (PDP Law).",
+    lastUpdated: "Last updated: September 6, 2026",
     sections: {
       collectedTitle: "1. Data we collect",
       collected: [
@@ -292,11 +294,13 @@ export const en: Dictionary = {
       ],
       rightsTitle: "7. Your rights",
       rights: [
+        "Your rights are guaranteed by Law No. 27 of 2022 on Personal Data Protection (PDP Law): rights to information, access, correction, erasure, and consent withdrawal.",
         "You may request access, correction, or deletion of your personal data at any time — just reach out via the contact page email.",
+        "Erasure requests are processed within 3x24 hours after the message is verified, with a confirmation sent back to your email.",
       ],
       contactTitle: "8. Contact",
       contact: [
-        "Questions about this policy: please use the contact form on this site.",
+        "Questions about this policy or exercising your data rights: use the contact form or the email listed on the contact page.",
       ],
     },
   },
