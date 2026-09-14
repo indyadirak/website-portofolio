@@ -1,0 +1,10 @@
+PLACEHOLDER — PGP public key belum dipublikasikan.
+
+Ganti isi file ini dengan output:
+  gpg --armor --export <KEYID>
+
+Fingerprint yang ditampilkan di halaman kontak HARUS disamakan dengan
+fingerprint key asli. Verifikasi fingerprint out-of-band sebelum
+mempercayainya.
+
+Ref: /.well-known/security.txt (Encryption field, RFC 9116)

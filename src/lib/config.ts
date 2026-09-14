@@ -60,6 +60,13 @@ export const siteConfig = {
   security: {
     contactUrl: "/contact",
     pgpKeyUrl: "/.well-known/pgp.txt",
+    /**
+     * PLACEHOLDER — ganti setelah key PGP asli dipublikasikan (gpg --armor
+     * --export) di public/.well-known/pgp.txt. Fingerprint harus dicocokkan
+     * out-of-band (mis. lewat video call) sebelum dipercaya.
+     */
+    pgpFingerprint: "9F2C 4E81 7A63 0B5D 2C9E 1F44 A8B7 6C03 5D2E 8A91",
+    pgpKeyId: "0x5D2E8A91",
   },
 } as const;
 

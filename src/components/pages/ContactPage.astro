@@ -35,6 +35,30 @@ const t = getDictionary(locale);
       </p>
     </div>
 
+    <div class="mt-6 rounded border border-cyber-border bg-cyber-card p-6">
+      <p class="font-mono text-sm text-cyber-accent">{t.contact.pgpTitle}</p>
+      <p class="mt-2 font-mono text-sm leading-relaxed text-cyber-muted">
+        {t.contact.pgpDescription}
+      </p>
+      <dl class="mt-4 space-y-1 font-mono text-xs">
+        <div class="flex flex-wrap items-baseline gap-x-2">
+          <dt class="uppercase tracking-wider text-cyber-muted">{t.contact.pgpFingerprintLabel}:</dt>
+          <dd class="break-all text-cyber-primary">{siteConfig.security.pgpFingerprint}</dd>
+        </div>
+        <div class="flex flex-wrap items-baseline gap-x-2">
+          <dt class="uppercase tracking-wider text-cyber-muted">{t.contact.pgpKeyIdLabel}:</dt>
+          <dd class="text-cyber-primary">{siteConfig.security.pgpKeyId}</dd>
+        </div>
+      </dl>
+      <a
+        href={siteConfig.security.pgpKeyUrl}
+        download="pgp.asc"
+        class="mt-4 inline-flex min-h-11 items-center rounded border border-cyber-primary/50 px-4 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary/10"
+      >
+        {t.contact.pgpDownload}
+      </a>
+    </div>
+
     <p class="mt-6 font-mono text-xs text-cyber-muted">
       $ note: {t.contact.note}
     </p>
