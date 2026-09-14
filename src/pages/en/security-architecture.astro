@@ -1,7 +1,6 @@
 ---
-import SecurityArchitecturePage from "../../components/pages/SecurityArchitecturePage.astro";
+export const prerender = false;
 
-export const prerender = true;
+// SP4A.1: content merged into the /en/security page (single source of truth).
+return Astro.redirect("/en/security", 301);
 ---
-
-<SecurityArchitecturePage />

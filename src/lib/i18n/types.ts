@@ -10,6 +10,7 @@ export interface Dictionary {
     writeups: string;
     certificates: string;
     about: string;
+    security: string;
     contact: string;
     blog: string;
     downloadCv: string;
@@ -57,6 +58,17 @@ export interface Dictionary {
     skillsEyebrow: string;
     skillsTitle: string;
     skillsDescription: string;
+    /** SP4A.4: panel "System Status" bergaya dashboard SOC di homepage. */
+    statusEyebrow: string;
+    statusTitle: string;
+    statusWebsite: string;
+    statusWebsiteValue: string;
+    statusHttps: string;
+    statusHttpsValue: string;
+    statusCsp: string;
+    statusCspValue: string;
+    statusAudit: string;
+    statusNote: string;
   };
   skills: {
     all: string;
@@ -219,6 +231,12 @@ export interface Dictionary {
     note: string;
     captchaRequired: string;
     captchaUnavailable: string;
+    /** SP4A.2: komunikasi terenkripsi PGP di bawah form kontak. */
+    pgpTitle: string;
+    pgpDescription: string;
+    pgpFingerprintLabel: string;
+    pgpKeyIdLabel: string;
+    pgpDownload: string;
   };
   footer: {
     /** Label link GitHub (dipakai juga di Hero.astro). */
@@ -260,10 +278,19 @@ export interface Dictionary {
       contact: string[];
     };
   };
+  /** SP4A.1: halaman threat model publik di /security. */
   security: {
     eyebrow: string;
     title: string;
+    description: string;
     lastUpdated: string;
+    diagramTitle: string;
+    /** Baris ASCII art — di-render monospace dengan pewarnaan per baris. */
+    diagram: string[];
+    controlsTitle: string;
+    /** Tabel kontrol keamanan aktif (bukan klaim — sesuai middleware/_headers). */
+    controls: { name: string; status: string; detail: string }[];
+    implementationTitle: string;
     sections: {
       architectureTitle: string;
       architecture: string[];
@@ -277,27 +304,19 @@ export interface Dictionary {
       decisions: string[];
       threatModelTitle: string;
       threatModel: string[];
-      disclosureTitle: string;
-      disclosure: string[];
     };
-  };
-  securityArch: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    lastUpdated: string;
-    diagramTitle: string;
-    diagram: string[];
-    postureTitle: string;
-    posture: string[];
     disclosureTitle: string;
     disclosureIntro: string;
+    responseTitle: string;
+    responseTime: string;
     scopeTitle: string;
     scope: string[];
     outOfScopeTitle: string;
     outOfScope: string[];
     safeHarborTitle: string;
     safeHarbor: string[];
+    channelsTitle: string;
+    channels: string[];
   };
   writeups: {
     eyebrow: string;
@@ -314,6 +333,15 @@ export interface Dictionary {
       remediation: string;
       published: string;
       updated: string;
+    };
+    /** SP4A.3: header kanonik case study — pemetaan judul bagian dalam konten. */
+    caseStudy: {
+      overview: string;
+      methodology: string;
+      attackPath: string;
+      detection: string;
+      mitigation: string;
+      lessonsLearned: string;
     };
   };
   adminWriteups: {
