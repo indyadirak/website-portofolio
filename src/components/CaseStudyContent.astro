@@ -1,0 +1,60 @@
+---
+/**
+ * SP4A.3: renderer bagian case study — menerima hasil parse dari halaman
+ * detail write-up dan merendernya sebagai blok laporan terstruktur
+ * (border kiri aksen) dengan dukungan paragraf + blok kode/ASCII art.
+ */
+
+export interface ContentBlock {
+  type: "paragraph" | "code";
+  text: string;
+}
+
+export interface CaseSection {
+  title: string | null;
+  blocks: ContentBlock[];
+}
+
+interface Props {
+  sections: CaseSection[];
+}
+
+const { sections } = Astro.props;
+---
+
+<div class="space-y-4">
+  {
+    sections.map((section) =>
+      section.title === null ? (
+        <div class="space-y-3">
+          {section.blocks.map((block) =>
+            block.type === "code" ? (
+              <pre class="writeup-code-block"><code>{block.text}</code></pre>
+            ) : (
+              <p class="font-mono text-sm leading-relaxed whitespace-pre-line text-slate-200">
+                {block.text}
+              </p>
+            )
+          )}
+        </div>
+      ) : (
+        <section class="case-study-section">
+          <h3 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-primary">
+            {section.title}
+          </h3>
+          <div class="mt-2 space-y-3">
+            {section.blocks.map((block) =>
+              block.type === "code" ? (
+                <pre class="writeup-code-block"><code>{block.text}</code></pre>
+              ) : (
+                <p class="font-mono text-sm leading-relaxed whitespace-pre-line text-slate-200">
+                  {block.text}
+                </p>
+              )
+            )}
+          </div>
+        </section>
+      )
+    )
+  }
+</div>
