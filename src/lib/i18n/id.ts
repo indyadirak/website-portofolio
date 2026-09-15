@@ -95,6 +95,7 @@ export const id: Dictionary = {
     credentialId: "Credential ID",
     verificationUrl: "Verification URL",
     verifyCredential: "Verifikasi Kredensial",
+    credentialLink: "Lihat kredensial {title} di halaman issuer",
     featured: "Featured",
     validUntil: "Berlaku hingga {date}",
     expired: "Kedaluwarsa {date}",
@@ -180,6 +181,45 @@ export const id: Dictionary = {
     noticeMessage:
       "Dokumen CV sedang dalam proses penyusunan — akan segera tersedia.",
     closeLabel: "[ ok ]",
+    noticePrintLink: "[ pakai versi cetak_security_cv ]",
+    securityCv: {
+      eyebrow: "$ cv --security --print",
+      title: "Security CV",
+      description:
+        "Ringkasan profesional Network & Cyber Security dalam format siap cetak — sertifikasi terverifikasi, home lab, dan keterampilan per domain.",
+      intro:
+        "Versi ringkas dari portofolio ini — dicetak atau disimpan sebagai PDF langsung dari browser (Ctrl/Cmd + P).",
+      printLabel: "[ cetak / simpan_pdf ]",
+      printHint:
+        "Gunakan dialog cetak browser untuk menyimpan sebagai PDF. Warna gelap dinonaktifkan otomatis saat cetak.",
+      summaryTitle: "RINGKASAN PROFIL",
+      homeLabTitle: "SECURITY HOME LAB",
+      homeLabNote:
+        "Topologi ringkas home lab — dokumentasi lengkap dengan konfigurasi per-host tersedia pada halaman proyek.",
+      homeLabDiagram: [
+        "   [ INTERNET ]",
+        "        |  ISP + pfSense (WAN filter)",
+        "   [ CORE SWITCH ]",
+        "     |          |",
+        "  [ SOC ]   [ LAB VLAN ]",
+        "  Wazuh |    AD DC +",
+        "  Suricata|   victim hosts",
+        "  Kibana  |",
+      ],
+      certTitle: "SECURITY CERTIFICATIONS",
+      certEmpty: "(sertifikasi sedang diverifikasi — lihat situs untuk daftar terbaru)",
+      credentialLabel: "Credential ID",
+      skillsTitle: "TECHNICAL SKILLS (per domain)",
+      experienceTitle: "PENGALAMAN TERKAIT",
+      experienceEmpty: "(linimasa pengalaman dikelola via CMS)",
+      contactTitle: "KONTAK",
+      footerNote:
+        "Dokumen ini digenerate langsung dari portofolio live — semua klaim bukti (sertifikat, proyek, write-up) dapat diverifikasi publik.",
+    },
+    aboutCtaTitle: "Butuh versi ringkas?",
+    aboutCtaDescription:
+      "Security CV — satu halaman siap cetak berisi sertifikasi terverifikasi, home lab, dan keterampilan per domain.",
+    aboutCtaButton: "[ buka security_cv ]",
   },
   about: {
     eyebrow: "$ cat ./about.txt",
@@ -488,6 +528,8 @@ export const id: Dictionary = {
     published: "Published",
     publish: "[ terbitkan ]",
     unpublish: "[ jadikan_draft ]",
+    caseStudyHint: "agar hasil render terstruktur seperti laporan profesional, awali bagian dengan header kanonik:",
+    caseStudyFenceHint: "— blok ``` fenced ``` dirender sebagai kode/ASCII art.",
   },
   adminSettings: {
     eyebrow: "$ site-settings --edit",

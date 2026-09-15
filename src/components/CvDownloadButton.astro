@@ -29,6 +29,7 @@ const heroClass =
     <a
       href={resolveCvUrl(locale)}
       download
+      aria-label={t.hero.downloadCv}
       class={`${common} ${variant === "nav" ? navClass : heroClass}`}
     >
       {label}
@@ -38,6 +39,7 @@ const heroClass =
       type="button"
       data-cv-unavailable
       aria-haspopup="dialog"
+      aria-label={`${t.hero.downloadCv} — ${t.cv.noticeMessage}`}
       title={t.cv.noticeMessage}
       class={`${common} ${variant === "nav" ? navClass : heroClass}`}
     >

@@ -65,9 +65,9 @@ const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Man
       Findings *
       <span class="text-[10px] text-cyber-muted">min 10 karakter — temuan teknis terstruktur</span>
     </span>
-    <textarea id="w-findings" rows={8} required minlength={10} maxlength={50000}
+    <textarea id="w-findings" rows={10} required minlength={10} maxlength={50000}
       class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
-      placeholder={"$ cat findings.txt\n- Step 1: enumeration...\n- Step 2: exploit..."}>{writeup?.findings ?? ""}</textarea>
+      placeholder={"Overview:\n- konteks target & skenario...\n\nAttack Path:\n- step 1: enumeration...\n- step 2: eksploitasi...\n\nDetection:\n```\nalert rule / log contoh\n```"}>{writeup?.findings ?? ""}</textarea>
   </label>
 
   <label class="block">
@@ -75,10 +75,18 @@ const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Man
       Remediation *
       <span class="text-[10px] text-cyber-muted">min 10 karakter — langkah perbaikan / pelajaran</span>
     </span>
-    <textarea id="w-remediation" rows={5} required minlength={10} maxlength={50000}
+    <textarea id="w-remediation" rows={6} required minlength={10} maxlength={50000}
       class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary"
-      placeholder={"$ cat remediation.txt\n- Patch: parametrized query..."}>{writeup?.remediation ?? ""}</textarea>
+      placeholder={"Mitigation:\n- patch / hardening steps...\n\nLessons Learned:\n- apa yang berubah di proses saya..."}>{writeup?.remediation ?? ""}</textarea>
   </label>
+
+  <p class="font-mono text-[11px] leading-relaxed text-cyber-muted">
+    $ {t.adminWriteups.caseStudyHint}{" "}
+    <span class="text-cyber-primary">
+      {[t.writeups.caseStudy.overview, t.writeups.caseStudy.methodology, t.writeups.caseStudy.attackPath, t.writeups.caseStudy.detection, t.writeups.caseStudy.mitigation, t.writeups.caseStudy.lessonsLearned].join(" · ")}
+    </span>
+    {" "}{t.adminWriteups.caseStudyFenceHint}
+  </p>
 
   <label class="block max-w-xs">
     <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">

@@ -4,6 +4,7 @@ import SectionHeading from "../SectionHeading.astro";
 import EmailLink from "../EmailLink.astro";
 import CtaSection from "../CtaSection.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { getRelativeLocaleUrl } from "astro:i18n";
 import { siteConfig } from "../../lib/config";
 import { getExperiences } from "../../lib/data/experiences";
 import { getSocialLinks } from "../../lib/data/social-links";
@@ -120,6 +121,26 @@ const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
             </span>
           </li>
         </ul>
+      </div>
+    </div>
+
+    <div class="mt-6 rounded border border-cyber-primary/40 bg-cyber-primary/5 p-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="font-mono text-sm font-bold text-cyber-primary">
+            {t.cv.aboutCtaTitle}
+          </h2>
+          <p class="mt-1 font-mono text-xs leading-relaxed text-cyber-muted">
+            {t.cv.aboutCtaDescription}
+          </p>
+        </div>
+        <a
+          href={getRelativeLocaleUrl(locale, "security-cv")}
+          aria-label={t.cv.securityCv.title}
+          class="inline-flex min-h-11 shrink-0 items-center rounded border border-cyber-primary/60 px-4 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg"
+        >
+          {t.cv.aboutCtaButton}
+        </a>
       </div>
     </div>
 

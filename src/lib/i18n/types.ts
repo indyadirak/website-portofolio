@@ -99,6 +99,8 @@ export interface Dictionary {
     verificationUrl: string;
     /** Tombol verifikasi kredensial pada kartu sertifikat. */
     verifyCredential: string;
+    /** aria-label tautan credential halaman issuer — placeholder {title}. */
+    credentialLink: string;
     featured: string;
     /** Template badge masa berlaku — placeholder {date} diganti format locale. */
     validUntil: string;
@@ -191,6 +193,34 @@ export interface Dictionary {
     noticeTitle: string;
     noticeMessage: string;
     closeLabel: string;
+    /** Tautan alternatif ke halaman Security CV saat PDF belum tersedia. */
+    noticePrintLink: string;
+    /** Label & isi halaman /security-cv — CV siap cetak, terformat terminal. */
+    securityCv: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      intro: string;
+      printLabel: string;
+      printHint: string;
+      summaryTitle: string;
+      homeLabTitle: string;
+      homeLabNote: string;
+      /** Placeholder topologi ASCII — ganti via CMS saat lab dokumentatif siap. */
+      homeLabDiagram: string[];
+      certTitle: string;
+      certEmpty: string;
+      credentialLabel: string;
+      skillsTitle: string;
+      experienceTitle: string;
+      experienceEmpty: string;
+      contactTitle: string;
+      footerNote: string;
+    };
+    /** Kartu tautan Security CV di halaman About. */
+    aboutCtaTitle: string;
+    aboutCtaDescription: string;
+    aboutCtaButton: string;
   };
   about: {
     eyebrow: string;
@@ -354,6 +384,9 @@ export interface Dictionary {
     published: string;
     publish: string;
     unpublish: string;
+    /** Panduan header case study di form write-up. */
+    caseStudyHint: string;
+    caseStudyFenceHint: string;
   };
   /** FASE 2: Admin — edit identitas situs (site_settings). */
   adminSettings: {

@@ -6,6 +6,7 @@ import type {
   SiteSettingRow,
   Skill,
   SocialLink,
+  Writeup,
 } from "../types";
 
 /**
@@ -338,4 +339,84 @@ export const demoSocialLinks: SocialLink[] = [
   { id: "sl-github", platform: "github", url: "https://github.com/indyadirak", icon: "github", sortOrder: 10, createdAt: "2025-01-01T00:00:00.000Z" },
   { id: "sl-linkedin", platform: "linkedin", url: "https://www.linkedin.com/in/indyadirak", icon: "linkedin", sortOrder: 20, createdAt: "2025-01-01T00:00:00.000Z" },
   { id: "sl-blog", platform: "blog", url: "https://blog.indyadirak.my.id", icon: "blog", sortOrder: 30, createdAt: "2025-01-01T00:00:00.000Z" },
+];
+
+/** Write-up demo — mencerminkan baris DEMO di supabase/seed-data.sql. */
+export const demoWriteups: Writeup[] = [
+  {
+    id: "w1",
+    title: "DEMO - Analytics Web Server (Web Exploitation Case Study)",
+    slug: "demo-analytics-web-server-case-study",
+    targetEnv: "DEMO - TryHackMe-style machine",
+    methodology: "OWASP",
+    severity: "High",
+    findings: `Overview:
+Mesin demo dengan web analytics yang mengekspos endpoint debug ke publik. Write-up contoh ini menampilkan struktur laporan profesional yang dirender otomatis oleh situs - ganti seluruh isinya dengan hasil riset Anda sendiri melalui Admin CMS.
+
+Attack Path:
+- step 1: directory busting menemukan /debug/status tanpa autentikasi
+- step 2: endpoint membocorkan versi framework + path absolut aplikasi
+- step 3: error handler menampilkan stack trace dengan connection string
+- step 4: rantai berakhir pada remote code execution via fitur import
+
+Detection:
+\`\`\`
+# log WAF yang menjadi titik balik investigasi
+POST /import 400 - user-agent python-requests/2.31
+GET  /debug/status 200 - source ip 203.0.113.10
+\`\`\`
+
+Lessons Learned:
+- endpoint debug tidak boleh ada di build production, bukan sekadar dibatasi IP`,
+    remediation: `Mitigation:
+- hapus modul debug dari konfigurasi production (fail-closed)
+- matikan stack trace publik; log detail hanya di server side
+- validasi tipe file dan ukuran pada fitur import
+- wrapper WAF rule untuk /debug/* -> 404
+
+Lessons Learned:
+- amankan rantai build, bukan hanya runtime
+- biasakan threat model kecil sebelum fitur import-like dirilis`,
+    status: "published",
+    isPublished: true,
+    createdBy: null,
+    createdAt: "2026-08-20T00:00:00.000Z",
+    updatedAt: "2026-09-01T00:00:00.000Z",
+  },
+  {
+    id: "w2",
+    title: "DEMO - Deteksi Lateral Movement di Home Lab AD",
+    slug: "demo-ad-lateral-movement-detection",
+    targetEnv: "DEMO - Home Lab Active Directory",
+    methodology: "MITRE ATT&CK",
+    severity: "Med",
+    findings: `Overview:
+Latihan blue team di lab: mensimulasikan Pass-the-Hash antar host Windows dan mengukur berapa cepat SOC stack (Wazuh + Suricata) mendeteksinya.
+
+Attack Path:
+- initial access: phishing simulasi pada host user01
+- credential dumping via sekurlsa saat LSASS tidak di-protection
+- lateral movement SMB admin$ ke host server01
+
+Detection:
+\`\`\`
+EventID 4624 type 3  -> logon jaringan mencurigakan (admin$)
+EventID 4672         -> special privileges assigned
+sysmon 10            -> access to LSASS process
+\`\`\``,
+    remediation: `Mitigation:
+- group policy: batasi admin lokal hanya ke JIT group
+- LAPS untuk rotate password admin lokal
+- enable RunAsPPL agar LSASS dilindungi dari read
+
+Lessons Learned:
+- deteksi berbasis event ID saja cukup untuk lab, tapi di produksi
+  korelasi multi-host memperkecil false positive
+- dokumentasikan baseline dulu sebelum pasang alert`,
+    status: "published",
+    isPublished: true,
+    createdBy: null,
+    createdAt: "2026-08-25T00:00:00.000Z",
+    updatedAt: "2026-09-02T00:00:00.000Z",
+  },
 ];

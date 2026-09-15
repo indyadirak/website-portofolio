@@ -95,6 +95,7 @@ export const en: Dictionary = {
     credentialId: "Credential ID",
     verificationUrl: "Verification URL",
     verifyCredential: "Verify Credential",
+    credentialLink: "View {title} credential on issuer page",
     featured: "Featured",
     validUntil: "Valid until {date}",
     expired: "Expired {date}",
@@ -180,6 +181,45 @@ export const en: Dictionary = {
     noticeMessage:
       "CV document is currently under construction. Will be available soon.",
     closeLabel: "[ ok ]",
+    noticePrintLink: "[ use printable_security_cv ]",
+    securityCv: {
+      eyebrow: "$ cv --security --print",
+      title: "Security CV",
+      description:
+        "A Network & Cyber Security professional summary in print-ready format — verified certifications, home lab, and domain-grouped skills.",
+      intro:
+        "A condensed version of this portfolio — print it or save as PDF straight from the browser (Ctrl/Cmd + P).",
+      printLabel: "[ print / save_pdf ]",
+      printHint:
+        "Use the browser print dialog to save as PDF. Dark colors are disabled automatically when printing.",
+      summaryTitle: "PROFILE SUMMARY",
+      homeLabTitle: "SECURITY HOME LAB",
+      homeLabNote:
+        "Condensed home lab topology — full per-host documentation is available on the projects page.",
+      homeLabDiagram: [
+        "   [ INTERNET ]",
+        "        |  ISP + pfSense (WAN filter)",
+        "   [ CORE SWITCH ]",
+        "     |          |",
+        "  [ SOC ]   [ LAB VLAN ]",
+        "  Wazuh |    AD DC +",
+        "  Suricata|   victim hosts",
+        "  Kibana  |",
+      ],
+      certTitle: "SECURITY CERTIFICATIONS",
+      certEmpty: "(certifications under verification — see the site for the latest list)",
+      credentialLabel: "Credential ID",
+      skillsTitle: "TECHNICAL SKILLS (by domain)",
+      experienceTitle: "RELEVANT EXPERIENCE",
+      experienceEmpty: "(career timeline managed via CMS)",
+      contactTitle: "CONTACT",
+      footerNote:
+        "This document is generated straight from the live portfolio — every evidence claim (certificates, projects, write-ups) is publicly verifiable.",
+    },
+    aboutCtaTitle: "Need the condensed version?",
+    aboutCtaDescription:
+      "Security CV — a one-page print-ready summary with verified certifications, home lab, and domain-grouped skills.",
+    aboutCtaButton: "[ open security_cv ]",
   },
   about: {
     eyebrow: "$ cat ./about.txt",
@@ -487,7 +527,9 @@ export const en: Dictionary = {
     draft: "Draft",
     published: "Published",
     publish: "[ publish ]",
-    unpublish: "[ unpublish ]",
+    unpublish: "[ revert_to_draft ]",
+    caseStudyHint: "for a professional-report render, start each part with a canonical header:",
+    caseStudyFenceHint: "— ``` fenced ``` blocks render as code/ASCII art.",
   },
   adminSettings: {
     eyebrow: "$ site-settings --edit",

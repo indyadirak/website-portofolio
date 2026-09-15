@@ -1,5 +1,6 @@
 import type { Writeup, WriteupsRow } from "../types";
 import { getSupabase } from "../supabase";
+import { demoWriteups } from "./demo";
 
 /**
  * Data layer publik untuk tabel public.writeups (CMS CTF).
@@ -26,10 +27,10 @@ function toWriteup(row: WriteupsRow): Writeup {
   };
 }
 
-/** Semua write-up yang diterbitkan, terbaru dulu. */
+/** Semua write-up yang diterbitkan, terbaru dulu (fallback: demo data). */
 export async function getWriteups(): Promise<Writeup[]> {
   const supabase = getSupabase();
-  if (!supabase) return [];
+  if (!supabase) return demoWriteups;
 
   const { data, error } = await supabase
     .from("writeups")
@@ -45,10 +46,10 @@ export async function getWriteups(): Promise<Writeup[]> {
   return (data ?? []).map(toWriteup);
 }
 
-/** Satu write-up berdasarkan slug (hanya yang diterbitkan). */
+/** Satu write-up berdasarkan slug (hanya yang diterbitkan; fallback: demo). */
 export async function getWriteupBySlug(slug: string): Promise<Writeup | null> {
   const supabase = getSupabase();
-  if (!supabase) return null;
+  if (!supabase) return demoWriteups.find((writeup) => writeup.slug === slug) ?? null;
 
   const { data, error } = await supabase
     .from("writeups")

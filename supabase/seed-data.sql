@@ -117,3 +117,106 @@ where not exists (
   select 1 from public.certificates
   where credential_id = 'DEMO-SOC-FUNDAMENTALS-2026'
 );
+
+-- 3) CONTOH WRITE-UP (struktur case study: Overview / Attack Path /
+--    Detection / Mitigation / Lessons Learned + fenced code block).
+--    Trigger sync_writeup_is_published menjadikan is_published otomatis.
+insert into public.writeups (
+  slug,
+  title,
+  target_env,
+  methodology,
+  severity,
+  findings,
+  remediation,
+  status
+)
+select
+  'demo-analytics-web-server-case-study',
+  'DEMO - Analytics Web Server (Web Exploitation Case Study)',
+  'DEMO - TryHackMe-style machine',
+  'OWASP',
+  'High',
+  $$Overview:
+Mesin demo dengan web analytics yang mengekspos endpoint debug ke publik. Write-up contoh ini menampilkan struktur laporan profesional yang dirender otomatis oleh situs - ganti seluruh isinya dengan hasil riset Anda sendiri melalui Admin CMS.
+
+Attack Path:
+- step 1: directory busting menemukan /debug/status tanpa autentikasi
+- step 2: endpoint membocorkan versi framework + path absolut aplikasi
+- step 3: error handler menampilkan stack trace dengan connection string
+- step 4: rantai berakhir pada remote code execution via fitur import
+
+Detection:
+```
+# log WAF yang menjadi titik balik investigasi
+POST /import 400 - user-agent python-requests/2.31
+GET  /debug/status 200 - source ip 203.0.113.10
+```
+
+Lessons Learned:
+- endpoint debug tidak boleh ada di build production, bukan sekadar dibatasi IP$$,
+  $$Mitigation:
+- hapus modul debug dari konfigurasi production (fail-closed)
+- matikan stack trace publik; log detail hanya di server side
+- validasi tipe file dan ukuran pada fitur import
+- wrapper WAF rule untuk /debug/* -> 404
+
+Detection Coverage:
+```
+Sigma rule (conceptual):
+title: Debug Endpoint Access
+selection: cs-uri-stem|contains: '/debug/'
+condition: selection
+```
+
+Lessons Learned:
+- amankan rantai build, bukan hanya runtime
+- biasakan threat model kecil sebelum fitur import-like dirilis$$,
+  'published'
+where not exists (
+  select 1 from public.writeups where slug = 'demo-analytics-web-server-case-study'
+);
+
+insert into public.writeups (
+  slug,
+  title,
+  target_env,
+  methodology,
+  severity,
+  findings,
+  remediation,
+  status
+)
+select
+  'demo-ad-lateral-movement-detection',
+  'DEMO - Deteksi Lateral Movement di Home Lab AD',
+  'DEMO - Home Lab Active Directory',
+  'MITRE ATT&CK',
+  'Med',
+  $$Overview:
+Latihan blue team di lab: mensimulasikan Pass-the-Hash antar host Windows dan mengukur berapa cepat SOC stack (Wazuh + Suricata) mendeteksinya.
+
+Attack Path:
+- initial access: phishing simulasi pada host user01
+- credential dumping via sekurlsa saat LSASS tidak di-protection
+- lateral movement SMB admin$ ke host server01
+
+Detection:
+```
+EventID 4624 type 3  -> logon jaringan mencurigakan (admin$)
+EventID 4672         -> special privileges assigned
+sysmon 10            -> access to LSASS process
+```$$,
+  $$Mitigation:
+- group policy: batasi admin lokal hanya ke JIT group
+- LAPS untuk rotate password admin lokal
+- enable RunAsPPL agar LSASS dilindungi dari read
+
+Lessons Learned:
+- deteksi berbasis event ID saja cukup untuk lab, tapi di produksi
+  korelasi multi-host memperkecil false positive
+- dokumentasikan baseline dulu sebelum pasang alert$$,
+  'published'
+where not exists (
+  select 1 from public.writeups where slug = 'demo-ad-lateral-movement-detection'
+);
