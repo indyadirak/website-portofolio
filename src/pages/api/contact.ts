@@ -47,11 +47,6 @@ async function verifyTurnstile(token: string | null, remoteIp: string): Promise<
   if (!turnstile.siteKey) return true;
 
   const secret = getTurnstileSecretKey();
-  // Debug sementara: hanya 5 karakter pertama — JANGAN log secret penuh.
-  console.log(
-    "[TURNSTILE DEBUG] Secret Key starts with:",
-    secret ? secret.substring(0, 5) : "UNDEFINED",
-  );
   if (!secret) {
     console.error(
       "[api/contact] TURNSTILE_SECRET_KEY tidak tersedia di runtime — " +
@@ -60,7 +55,6 @@ async function verifyTurnstile(token: string | null, remoteIp: string): Promise<
     return false;
   }
   if (!token) {
-    console.log("[TURNSTILE DEBUG] Token: MISSING (missing-input-response)");
     return false;
   }
 
@@ -75,7 +69,7 @@ async function verifyTurnstile(token: string | null, remoteIp: string): Promise<
     body: form,
   }).catch(() => null);
   if (!res) {
-    console.log("[TURNSTILE DEBUG] siteverify fetch FAILED (network/timeout)");
+    console.error("[api/contact] Turnstile verification request failed");
     return false;
   }
 
@@ -85,16 +79,6 @@ async function verifyTurnstile(token: string | null, remoteIp: string): Promise<
     action?: string;
     hostname?: string;
   } | null;
-
-  // ===== DEBUG SEMENTARA — hapus setelah root cause terkonfirmasi =====
-  console.log("[TURNSTILE DEBUG] HTTP status:", res.status);
-  console.log("[TURNSTILE DEBUG] Success:", data?.success);
-  console.log(
-    "[TURNSTILE DEBUG] Error Codes:",
-    JSON.stringify(data?.["error-codes"] ?? []),
-  );
-  console.log("[TURNSTILE DEBUG] Action:", data?.action);
-  console.log("[TURNSTILE DEBUG] Hostname:", data?.hostname);
 
   return data?.success === true;
 }
@@ -107,11 +91,6 @@ function json(body: Record<string, unknown>, status = 200): Response {
 }
 
 export const POST: APIRoute = async ({ request }) => {
-  // ===== DEBUG TURNSTILE — baris pertama handler: membuktikan request
-  // benar-benar sampai ke worker (kalau log ini absen, request diblokir
-  // di edge: Cloudflare WAF / Access / Rate Limit) =====
-  console.log("[BACKEND DEBUG] Request received at /api/contact. Method:", request.method);
-
   const ip = clientIp(request);
 
   let body: Record<string, unknown>;

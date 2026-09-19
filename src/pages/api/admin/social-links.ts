@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json } from "../../../lib/api";
+import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canDeleteSiteContent, canManageSiteContent } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
 import type { SocialLinkRow } from "../../../lib/types";
@@ -25,12 +25,16 @@ type GuardResult =
 async function guard(
   supabase: ReturnType<typeof getSupabaseFromLocals>,
   locals: App.Locals,
+  write = false,
 ): Promise<GuardResult> {
   if (!supabase) return { error: json({ ok: false, error: "supabase_not_configured" }, 503) };
   const { user, profile } = locals;
   if (!user) return { error: json({ ok: false, error: "unauthorized" }, 401) };
   if (!canManageSiteContent(profile)) {
     return { error: json({ ok: false, error: "forbidden_role" }, 403) };
+  }
+  if (write && !(await isAal2Session(supabase))) {
+    return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
   const decision = await adminMutationGuard.check(user.id);
   if (decision.reason === "kv_unavailable") {
@@ -46,12 +50,16 @@ async function guard(
 async function guardAdminOnly(
   supabase: ReturnType<typeof getSupabaseFromLocals>,
   locals: App.Locals,
+  write = true,
 ): Promise<GuardResult> {
   if (!supabase) return { error: json({ ok: false, error: "supabase_not_configured" }, 503) };
   const { user, profile } = locals;
   if (!user) return { error: json({ ok: false, error: "unauthorized" }, 401) };
   if (!canDeleteSiteContent(profile)) {
     return { error: json({ ok: false, error: "forbidden_role" }, 403) };
+  }
+  if (write && !(await isAal2Session(supabase))) {
+    return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
   const decision = await adminMutationGuard.check(user.id);
   if (decision.reason === "kv_unavailable") {
@@ -106,7 +114,7 @@ export async function GET({ locals }: APIContext) {
 
 /** Buat social link baru. */
 export async function POST({ request, locals }: APIContext) {
-  const g = await guard(getSupabaseFromLocals(locals), locals);
+  const g = await guard(getSupabaseFromLocals(locals), locals, true);
   if (g.error) return g.error;
 
   let body: SocialLinkInput;
@@ -136,7 +144,7 @@ export async function POST({ request, locals }: APIContext) {
 
 /** Perbarui social link (id via query param `?id=`). */
 export async function PUT({ request, locals }: APIContext) {
-  const g = await guard(getSupabaseFromLocals(locals), locals);
+  const g = await guard(getSupabaseFromLocals(locals), locals, true);
   if (g.error) return g.error;
 
   const id = new URL(request.url).searchParams.get("id");

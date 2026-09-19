@@ -7,7 +7,7 @@ dan estimasi prioritas tercatat di sini dan diperbarui setiap sesi.
 - Status: `[x]` selesai, `[ ]` pending, `[-]` closed (diverifikasi, tidak butuh tindakan).
 - Estimasi: **BLOCKER** = harus selesai SEBELUM deploy 15 langkah dimulai;
   **PASCA-LIVE** = aman ditunda setelah live sebagai peningkatan lanjutan.
-- Catatan terakhir: 2026-08-18.
+- Catatan terakhir: 2026-09-19.
 
 ---
 
@@ -17,7 +17,7 @@ dan estimasi prioritas tercatat di sini dan diperbarui setiap sesi.
 |---|------|--------|----------|
 | 0.a | Kebocoran `error.message` DB/Supabase di respons API (10 titik: projects, certificates, upload, admin/cv, logout) — diganti pesan generik, detail tetap di `console.error` | [x] | selesai |
 | 0.b | Source maps di production — diverifikasi: tidak ada opsi sourcemap & 0 file `.map` di `dist` | [-] | selesai |
-| 0.c | Sisa kode test/debug — hanya easter-egg devtools MainLayout (sengaja); semua `console.*` lain = error/warn server | [-] | selesai |
+| 0.c | Sisa kode test/debug — easter egg console MainLayout sudah dihapus; log production publik dibersihkan, `console.error/warn` operasional tetap dipertahankan | [x] | selesai |
 | 0.d | Rate limit mutasi admin (`adminMutationGuard`, 30 mutasi/menit/user, key `ratelimit:adminmut:`) + wiring di 10 handler | [x] | selesai |
 | 0.e | Hardening JSON-LD `set:html` (escape `<` → `\u003c`) di CertificatesPage + MainLayout | [x] | selesai |
 | 0.f | **PENINGKATAN BARU:** `adminMutationGuard` diubah FAIL-OPEN → **FAIL-CLOSED** (KV tidak terjangkau ⇒ 503 `service_unavailable`, konsisten dengan `loginAttemptGuard`) — komit sesi ini | [x] | selesai |

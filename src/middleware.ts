@@ -121,7 +121,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // ===== Rate limit navigasi halaman HTML =====
   // API endpoint punya guard masing-masing (lebih ketat & fail-closed);
   // halaman HTML dilindungi dari hammering/scraping (fail-open).
-  if (!isApi && !isErrorPage) {
+  // Static routes are rendered during `astro build`, where navigation rate
+  // limiting has no meaningful client IP and a rewrite can break prerendering.
+  // Apply this guard only to runtime requests handled by the Worker.
+  if (!context.isPrerendered && !isApi && !isErrorPage) {
     const pageDecision = await pageNavigationGuard.check(clientIp(context.request));
     if (!pageDecision.allowed) {
       return withSecurityHeaders(await context.rewrite("/429"), context.cookies);

@@ -131,14 +131,14 @@ Legenda tingkat adopsi:
 
 | # | Gap | Kerangka | Mengapa penting | Bukti belum ada |
 |---|---|---|---|---|
-| G1 | **Kebijakan privasi untuk pengunjung** — form kontak mengumpulkan PII (nama, email, pesan) yang disimpan di `contact_messages`; tidak ada halaman/privacy policy, tidak ada penyebutan UU PDP/GDPR, tidak ada data retention untuk pesan kontak | ISO A.5.34, A.5.31 · NIST GV.PO, PR.DS | PII pengunjung dikumpulkan tanpa informasi hukum; retention pesan kontak tidak terjawab | `src/pages/api/contact.ts` (insert PII), tidak ada `src/pages/privacy.astro`, footer tanpa link privasi |
+| G1 | **Kebijakan privasi pengunjung** | ISO A.5.34, A.5.31 · NIST GV.PO, PR.DS | PII contact message harus dijelaskan dan memiliki retensi | Ditangani: `/privacy`, link footer, retention workflow 12 bulan |
 | G2 | **RTO/RPO tidak terdokumentasi & restore BELUM pernah diuji end-to-end** — backup jalan 3-2-1, tetapi tidak ada target pemulihan tertulis dan tidak ada bukti `pg_restore` sukses ke project lain; checklist hanya "restore test" manual di DEPLOYMENT | ISO A.5.24, A.5.30, A.8.13 · NIST RC.RP | Backup tanpa restore teruji = ilusi pemulihan | `docs/DEPLOYMENT.md:182` (checklist saja), tidak ada workflow/dokumen hasil drill |
-| G3 | **Rate limit lapisan aplikasi untuk endpoint MFA** (`mfa-verify`, `mfa-enroll-verify`) — hanya guard pada langkah password; brute-force TOTP 6 digit hanya dibatasi throttle bawaan Supabase (bukan kendali app) | ISO A.8.5 · NIST PR.AA | Kode TOTP 6 digit mudah ditebak ulang bila throttle vendor tidak memadai | `src/pages/api/auth/mfa-verify.ts` (tanpa rateLimit guard) |
-| G4 | **CI tidak memverifikasi efek keamanan secara otomatis** — tidak ada step yang curl-check security headers hasil deploy; `npm audit` hanya dijalankan manual; secret scanning push-protection belum bisa diverifikasi aktif untuk repo privat | ISO A.8.9, A.8.29 · NIST DE.CM | Regresi header/CSP bisa lolos tanpa disadari | `deploy.yml` (tanpa step verifikasi headers); tidak ada `security_e2e` workflow |
+| G3 | **Rate limit lapisan aplikasi untuk endpoint MFA** | ISO A.8.5 · NIST PR.AA | Kode TOTP 6 digit mudah ditebak ulang bila throttle vendor tidak memadai | Ditangani: `mfaVerifyGuard` dipakai oleh `mfa-verify.ts` dan `mfa-enroll-verify.ts` |
+| G4 | **Verifikasi CI dan secret scanning** | ISO A.8.9, A.8.29 · NIST DE.CM | Regresi header/CSP dan secret leak perlu dideteksi otomatis | Sebagian ditangani: `deploy.yml` menjalankan audit, type-check, build, dan verifikasi header; push protection tetap bergantung konfigurasi GitHub |
 | G5 | **Dokumentasi sinkronisasi tertinggal** — `README.md:124` masih menulis urutan migrasi lama `(schema → rbac-mfa → storage)`, bertentangan dengan `DEPLOYMENT.md` yang sudah dikoreksi (`rbac-mfa` pertama) | ISO A.5.37 · NIST GV.OS | Fresh installer mengikuti README bisa gagal 42P01 | `README.md:121-124` vs `docs/DEPLOYMENT.md:45-46` |
 | G6 | **Branch protection belum terverifikasi** — CODEOWNERS menyebut "wajib dipasang branch protection rule" tapi tidak ada bukti (screenshot/pengaturan) bahwa rule aktif di repo | ISO A.8.32 · NIST GV.OV | Review mandatory bisa tak benar-benar berlaku | `.github/CODEOWNERS:3` (komentar "wajib dipasang") |
 | G7 | **Lisensi & ketentuan hukum tertunda** ("License: TBD") + SBOM belum diekspor | ISO A.5.31, A.5.21 · NIST GV.SC | Kepatuhan lisensi dependency & reuse rights tidak jelas | `README.md:12` (badge TBD), `README.md:209-211` |
-| G8 | **Retensi konten admin-audit** — `login_attempts`/`backup_config_access_log` punya cleanup (90 hari) hanya di jalur akses endpoint, bukan jalur login; tidak ada arsip/retensi tertulis untuk `contact_messages` | ISO A.5.33, A.8.10 · NIST PR.DS | Pertumbuhan data & kepatuhan retention tidak terjawab | `src/lib/audit.ts` (tanpa purge), `src/pages/api/backup-config.ts:96-101` (purge hanya di backup-config path) |
+| G8 | **Retensi konten admin-audit** | ISO A.5.33, A.8.10 · NIST PR.DS | Pertumbuhan data dan hygiene PII | ✅ Ditangani: `data-retention.yml` menjalankan purge contact 12 bulan dan audit 90 hari |
 
 ### 3.2 Gap yang secara WAJAR di LUAR SCOPE (project satu orang)
 
@@ -161,15 +161,15 @@ Legenda tingkat adopsi:
 
 | Prioritas | Rekomendasi | Menutup gap | Upaya | Nilai |
 |---|---|---|---|---|
-| 1 | **Perbaiki README (G5)** — sinkronkan urutan migrasi ke `rbac-mfa` pertama | G5 | ~5 menit | Mencegah kegagalan deploy orang lain/masa depan |
-| 2 | **Buat halaman `/privacy` (id/en)** + link footer; jelaskan data yang dikumpulkan (form kontak), tujuan, retensi (mis. 12 bulan), hak akses/hapus | G1 | ~1–2 jam | Kepatuhan UU PDP, kepercayaan pengunjung |
+| 1 | **Pertahankan urutan migrasi terdokumentasi** — `rbac-mfa` pertama, lalu migrasi fitur | G5 | selesai | Mencegah kegagalan deploy orang lain/masa depan |
+| 2 | **Pertahankan halaman `/privacy` (id/en)** + link footer dan retensi terdokumentasi | G1 | selesai | Kepatuhan dasar dan kepercayaan pengunjung |
 | 3 | **Dokumentasikan RTO/RPO + jalankan restore drill end-to-end**: restore `backup.sql.gpg` ke Supabase project sementara via `psql`/`pg_restore`, catat hasil di `DEPLOYMENT.md` (mis. RPO ≤ 7 hari, RTO ≤ 1 hari) | G2 | ~2–4 jam sekali jalan + dokumen | Backup yang teruji nilainya jauh di atas backup yang tidak |
-| 4 | **Rate limit aplikasi untuk endpoint MFA** (reuse `loginAttemptGuard`/guard baru di `mfa-verify.ts`, `mfa-enroll-verify.ts`) | G3 | ~1 jam | Menutup celah brute-force TOTP |
-| 5 | **Step CI verifikasi keamanan**: setelah deploy, curl ke domain produksi & assert header (CSP, HSTS, nosniff); tambahkan `npm audit --audit-level=high` sebagai step | G4 | ~1–2 jam | Mendeteksi regresi sebelum publik melihat |
+| 4 | **Rate limit aplikasi untuk endpoint MFA** (`mfaVerifyGuard`) | G3 | selesai | Menutup celah brute-force TOTP |
+| 5 | **Step CI verifikasi keamanan**: type-check, audit, build, dan assert header pasca-deploy | G4 | selesai | Mendeteksi regresi sebelum publik melihat |
 | 6 | **Aktifkan & verifikasi secret scanning push protection** GitHub + **export SBOM** (Actions bawaan `dependency-submission`) | G4, G7 | ~30 menit | Pencegahan secret leak + ketelusuran dependency |
 | 7 | **Putuskan lisensi** (MIT/Apache-2.0 atau teks hak cipta tegas) | G7 | ~15 menit | Kejelasan hukum reuse |
 | 8 | **Verifikasi branch protection aktif** (PR wajib review 1 orang, code owners) & dokumentasikan di DEPLOYMENT | G6 | ~30 menit | Menutup sisa governance |
-| 9 | **Kebijakan retensi tertulis**: hapus `contact_messages` > X bulan (bisa cron/API dihapus manual terjadwal), purge konsisten di semua tabel audit | G8 | ~1–2 jam | Hygiene PII & volume |
+| 9 | **Pertahankan kebijakan retensi tertulis**: purge `contact_messages` dan tabel audit melalui workflow terjadwal | G8 | selesai | Hygiene PII & volume |
 
 ---
 

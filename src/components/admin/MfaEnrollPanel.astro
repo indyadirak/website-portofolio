@@ -99,6 +99,9 @@
       "Enrollment gagal (mungkin faktor TOTP lama belum diverifikasi) — coba [ retry ]. Jika berulang, hubungi admin.",
     timeout: "waktu tunggu habis — server tidak merespons. Coba lagi.",
     invalid_response: "respons server tidak valid. Coba lagi.",
+    session_gagal: "kode benar, tetapi sesi aman gagal disimpan. Login ulang dan coba lagi.",
+    network_error: "koneksi gagal — periksa jaringan lalu coba lagi.",
+    too_many_attempts: "terlalu banyak percobaan kode — tunggu sebentar lalu coba lagi.",
   };
 
   // Batas tunggu API enrollment — tanpa ini fetch bisa hang selamanya
@@ -144,9 +147,15 @@
       return;
     }
 
-    factorId = data.factorId ?? null;
-    qrImg.src = data.qrDataUrl ?? "";
-    secretEl.textContent = data.secret ?? "";
+    if (!data.factorId || !data.qrDataUrl || !data.secret) {
+      loading.textContent = `$ error: ${FAIL_MESSAGES.invalid_response}`;
+      retryBtn.hidden = false;
+      return;
+    }
+
+    factorId = data.factorId;
+    qrImg.src = data.qrDataUrl;
+    secretEl.textContent = data.secret;
     loading.hidden = true;
     content.hidden = false;
   }
@@ -166,15 +175,23 @@
     verifyBtn.disabled = true;
     statusEl.textContent = "";
 
-    const res = await fetch("/api/auth/mfa-enroll-verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ factorId, code }),
-    });
-    const data = await res.json();
+    let res: Response;
+    let data: { ok?: boolean; error?: string };
+    try {
+      res = await fetch("/api/auth/mfa-enroll-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ factorId, code }),
+      });
+      data = await res.json();
+    } catch {
+      statusEl.textContent = "$ error: network_error";
+      verifyBtn.disabled = false;
+      return;
+    }
 
     if (!res.ok || !data.ok) {
-      statusEl.textContent = `$ error: ${data.error ?? "kode tidak valid"}`;
+      statusEl.textContent = `$ error: ${FAIL_MESSAGES[data.error ?? ""] ?? data.error ?? "kode tidak valid"}`;
       verifyBtn.disabled = false;
       return;
     }

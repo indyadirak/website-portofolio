@@ -32,8 +32,8 @@ const links = (rawLinks ?? []) as SocialLinkRow[];
 const canDelete = canDeleteSiteContent(profile);
 ---
 
-<AdminLayout title="Social Links — Admin" description={t.adminSocialLinks.title}>
-  <div class="mx-auto max-w-5xl px-6 py-14">
+<AdminLayout title="Social Links — Admin" description={t.adminSocialLinks.title} current="socialLinks">
+  <div class="mx-auto max-w-5xl py-8 md:py-10">
     <div>
       <p class="font-mono text-sm text-cyber-accent">{t.adminSocialLinks.eyebrow}</p>
       <h1 class="mt-2 font-mono text-3xl font-bold text-white">
@@ -45,6 +45,7 @@ const canDelete = canDeleteSiteContent(profile);
       id="link-form"
       data-i18n-delete-confirm={t.adminSocialLinks.deleteConfirm}
       data-i18n-error-prefix={t.adminSocialLinks.errorPrefix}
+      data-i18n-errors={JSON.stringify(t.errors)}
       data-i18n-saved={t.adminSocialLinks.saved}
       data-i18n-new-mode={t.adminSocialLinks.newMode}
       data-i18n-edit-mode={t.adminSocialLinks.editMode}
@@ -167,6 +168,13 @@ const canDelete = canDeleteSiteContent(profile);
   const form = document.getElementById("link-form") as HTMLFormElement;
   const tDeleteConfirm = form.dataset.i18nDeleteConfirm ?? "";
   const errorPrefix = form.dataset.i18nErrorPrefix ?? "";
+  let errorTexts: Record<string, string> = {};
+  try {
+    errorTexts = JSON.parse(form.dataset.i18nErrors ?? "{}") as Record<string, string>;
+  } catch {
+    errorTexts = {};
+  }
+  const errText = (code: string): string => errorTexts[code] ?? code;
   const savedMsg = form.dataset.i18nSaved ?? "";
   const newMode = form.dataset.i18nNewMode ?? "";
   const editMode = form.dataset.i18nEditMode ?? "";
@@ -243,7 +251,7 @@ const canDelete = canDeleteSiteContent(profile);
     submitBtn.disabled = false;
 
     if (!res.ok || !data.ok) {
-      statusEl.textContent = `${errorPrefix} ${data.error ?? "gagal menyimpan"}`;
+      statusEl.textContent = `${errorPrefix} ${errText(data.error ?? "unknown")}`;
       return;
     }
 

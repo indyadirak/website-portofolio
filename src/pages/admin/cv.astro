@@ -1,5 +1,5 @@
 ---
-import MainLayout from "../../layouts/MainLayout.astro";
+import AdminLayout from "../../layouts/AdminLayout.astro";
 import { canManageCv } from "../../lib/auth";
 import type { CvFilesRow } from "../../lib/types";
 
@@ -43,11 +43,12 @@ for (const row of cvRows ?? []) {
 }
 ---
 
-<MainLayout
+<AdminLayout
   title="CV & Resume"
   description="Admin — kelola file CV/Resume yang diunduh pengunjung dari navbar & hero."
+  current="cv"
 >
-  <div class="mx-auto max-w-3xl px-6 py-14">
+  <div class="mx-auto max-w-3xl py-8 md:py-10">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
         <p class="font-mono text-sm text-cyber-accent">$ cv --manage</p>
@@ -130,7 +131,7 @@ for (const row of cvRows ?? []) {
           })}
     </div>
   </div>
-</MainLayout>
+</AdminLayout>
 
 <script>
   function setStatus(locale: string, message: string, isError = false) {

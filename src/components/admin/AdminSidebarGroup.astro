@@ -1,0 +1,26 @@
+---
+interface SidebarItem { key: string; label: string; href: string; icon: string; }
+interface Props { label: string; items: SidebarItem[]; active: string; }
+const { label, items, active } = Astro.props;
+---
+
+<section>
+  <h2 class="px-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-cyber-muted/60">{label}</h2>
+  <div class="mt-2 space-y-1">
+    {items.map((item) => (
+      <a
+        href={item.href}
+        aria-current={active === item.key ? "page" : undefined}
+        class:list={[
+          "flex min-h-10 items-center gap-3 rounded px-3 font-mono text-xs transition-colors",
+          active === item.key
+            ? "bg-cyber-primary/10 text-cyber-primary"
+            : "text-cyber-muted hover:bg-cyber-card hover:text-cyber-primary",
+        ]}
+      >
+        <span aria-hidden="true" class="w-4 text-center text-sm">{item.icon}</span>
+        <span>{item.label}</span>
+      </a>
+    ))}
+  </div>
+</section>

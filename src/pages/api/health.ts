@@ -1,8 +1,15 @@
 import type { APIRoute } from "astro";
 import { getSupabase } from "../../lib/supabase";
 import { json } from "../../lib/api";
+import { createRateLimiter } from "../../lib/rateLimit";
 
 export const prerender = false;
+
+const healthRateLimiter = createRateLimiter({
+  max: 30,
+  windowMs: 60_000,
+  keyPrefix: "ratelimit:health:",
+});
 
 /**
  * Health check publik ringan: GET /api/health
@@ -16,7 +23,11 @@ export const prerender = false;
  * - Anti-500: error DB -> 503 {ok:false}; Supabase belum dikonfigurasi
  *   (mode demo) -> 200 {ok:true, db:"not_configured"}.
  */
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
+  const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
+  if (!(await healthRateLimiter.isAllowed(ip))) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
+  }
   const supabase = getSupabase();
 
   if (!supabase) {

@@ -26,6 +26,11 @@
 
 - **Astro 7** pada **Cloudflare Workers**: halaman admin + API = SSR;
   beberapa halaman publik (mis. `/certificates`) = prerender (statik).
+- Homepage publik mengikuti alur recruiter: hero/positioning → featured projects
+  → skills → contact CTA. Operations Log dan System Status bukan bagian dari
+  alur utama homepage.
+- **AdminLayout** memakai sidebar desktop, drawer mobile, dan profile menu
+  account. Menu CV/backup hanya ditampilkan untuk role `admin`.
 - **Cloudflare KV** untuk state rate limiting (edge-consistent) dan session.
 - **Supabase** satu proyek: Auth (PKCE + cookie via `@supabase/ssr`),
   PostgreSQL dengan RLS, Storage (bucket `certificates` privat, `cv` publik).
@@ -71,7 +76,7 @@ aplikasi tidak mengubah versi TLS melalui kode Astro atau Worker.
 | `project_categories` | kategori dinamis (seed 14, `is_active`) | aal2 + admin/editor |
 | `skills` | skill + kategori + level | aal2 + admin/editor |
 | `certificates` | sertifikat, kategori, featured, `verification_url`, `file_url` | aal2 + admin/editor (hapus: admin) |
-| `contact_messages` | PII pengunjung + `is_read` | insert publik; select semua role login; update/delete aal2 + admin/editor |
+| `contact_messages` | PII pengunjung + `is_read` | insert publik; select sesuai policy aktif; update/delete aal2 + admin/editor |
 | `writeups` | case study CTF terstruktur + `is_published` | aal2 + admin/editor |
 | `site_settings` | key/value identitas (hero, tagline, bio, availability) | aal2 + admin/editor (hapus: admin) |
 | `experiences`, `social_links` | career timeline, tautan sosial | aal2 + admin/editor |

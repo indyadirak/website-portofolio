@@ -127,15 +127,23 @@ const errorParam = Astro.url.searchParams.get("error");
     loginBtn.disabled = true;
     showStatus("verifying...");
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: emailInput.value.trim(),
-        password: passwordInput.value,
-      }),
-    });
-    const data = await res.json();
+    let res: Response;
+    let data: { ok?: boolean; step?: string; factorId?: string; error?: string };
+    try {
+      res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailInput.value.trim(),
+          password: passwordInput.value,
+        }),
+      });
+      data = await res.json();
+    } catch {
+      loginBtn.disabled = false;
+      showStatus("network_error");
+      return;
+    }
 
     loginBtn.disabled = false;
 
@@ -147,7 +155,7 @@ const errorParam = Astro.url.searchParams.get("error");
         service_unavailable: "Layanan sementara tidak tersedia, coba lagi nanti.",
       };
       showStatus(
-        (generic as Record<string, string | undefined>)[data.error] ?? data.error ?? "login gagal"
+         (data.error ? (generic as Record<string, string | undefined>)[data.error] : undefined) ?? data.error ?? "login gagal"
       );
       return;
     }
@@ -158,7 +166,7 @@ const errorParam = Astro.url.searchParams.get("error");
         break;
       case "mfa":
         // MFA aktif: tampilkan input kode 6 digit, sesi belum penuh.
-        factorId = data.factorId;
+        factorId = data.factorId ?? null;
         loginForm.hidden = true;
         mfaStep.hidden = false;
         showStatus("mfa_required", true);
@@ -191,15 +199,26 @@ const errorParam = Astro.url.searchParams.get("error");
 
     showStatus("verifying_mfa...");
 
-    const res = await fetch("/api/auth/mfa-verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ factorId, code }),
-    });
-    const data = await res.json();
+    const verifyBtn = mfaForm.querySelector("button") as HTMLButtonElement;
+    verifyBtn.disabled = true;
+    let res: Response;
+    let data: { ok?: boolean; error?: string };
+    try {
+      res = await fetch("/api/auth/mfa-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ factorId, code }),
+      });
+      data = await res.json();
+    } catch {
+      verifyBtn.disabled = false;
+      showStatus("network_error");
+      return;
+    }
 
     if (!res.ok || !data.ok) {
       showStatus(data.error ?? "kode MFA tidak valid");
+      verifyBtn.disabled = false;
       return;
     }
 

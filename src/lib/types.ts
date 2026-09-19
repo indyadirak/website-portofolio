@@ -37,6 +37,10 @@ export interface Project {
   problem: string | null;
   solution: string | null;
   impact: string | null;
+  /** Security Case Study (SPRINT 1) — nullable untuk project lama. */
+  methodology: string | null;
+  attackPath: string | null;
+  detection: string | null;
   createdAt: string;
 }
 
@@ -179,6 +183,9 @@ export type ProjectsRow = {
   problem: string | null;
   solution: string | null;
   impact: string | null;
+  methodology: string | null;
+  attack_path: string | null;
+  detection: string | null;
   created_at: string;
 };
 
@@ -355,6 +362,9 @@ export interface Database {
           problem?: string | null;
           solution?: string | null;
           impact?: string | null;
+          methodology?: string | null;
+          attack_path?: string | null;
+          detection?: string | null;
           created_at?: string;
         };
         Update: {
@@ -374,6 +384,9 @@ export interface Database {
           problem?: string | null;
           solution?: string | null;
           impact?: string | null;
+          methodology?: string | null;
+          attack_path?: string | null;
+          detection?: string | null;
           created_at?: string;
         };
         Relationships: [

@@ -31,7 +31,7 @@ const CERT_PATH_RE = new RegExp(
  * absolut, dan segment ".." / "." / kosong. Return false = path tidak
  * pernah dikirim ke Storage API (fail-closed).
  */
-function isSafeStoragePath(path: string): boolean {
+export function isSafeStoragePath(path: string): boolean {
   if (typeof path !== "string" || path.length === 0 || path.length > 512) return false;
   if (path.includes("\0") || path.includes("\\") || path.startsWith("/")) return false;
   return path.split("/").every((seg) => seg.length > 0 && seg !== "." && seg !== "..");
@@ -247,4 +247,45 @@ export async function removeCvFile(
   if (error) {
     console.error("[storage] Gagal menghapus CV (mungkin orphan):", error.message);
   }
+}
+
+// ---------------------------------------------------------------------------
+// File sertifikat eksternal (Google Drive) — hemat storage bucket.
+// ---------------------------------------------------------------------------
+
+/** URL file eksternal penuh (bukan path bucket internal). */
+export function isExternalFileUrl(value: string): boolean {
+  return /^https:\/\//i.test(value);
+}
+
+const DRIVE_ID = "[A-Za-z0-9_-]{10,120}";
+const DRIVE_PATTERNS: RegExp[] = [
+  // https://drive.google.com/file/d/<id>/view (± params)
+  new RegExp(`^https://drive\\.google\\.com/file/d/(${DRIVE_ID})/(?:view|edit)?(?:\\?.*)?$`, "i"),
+  // https://drive.google.com/uc?export=download&id=<id> | open?id=<id>
+  new RegExp(`^https://drive\\.google\\.com/(?:uc|open)\\?(?:.*&)?id=(${DRIVE_ID})(?:&.*)?$`, "i"),
+  // https://drive.google.com/thumbnail?id=<id>
+  new RegExp(`^https://drive\\.google\\.com/thumbnail\\?(?:.*&)?id=(${DRIVE_ID})(?:&.*)?$`, "i"),
+];
+
+/**
+ * Validasi share-link Google Drive dan normalisasi menjadi tautan
+ * direct-download seragam: https://drive.google.com/uc?export=download&id=<id>
+ * Return null bila bukan link Drive yang dikenali (hindari SSRF/redirect
+ * ke host sembarang via kolom file_url).
+ */
+export function normalizeDriveFileUrl(raw: string): string | null {
+  const value = raw.trim();
+  for (const pattern of DRIVE_PATTERNS) {
+    const match = value.match(pattern);
+    if (match) {
+      return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    }
+  }
+  return null;
+}
+
+/** true bila nilai adalah URL file Drive yang sudah ternormalisasi. */
+export function isNormalizedDriveUrl(value: string): boolean {
+  return /^https:\/\/drive\.google\.com\/uc\?export=download&id=[A-Za-z0-9_-]{10,120}$/.test(value);
 }

@@ -1,5 +1,5 @@
 ---
-import MainLayout from "../../../layouts/MainLayout.astro";
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 import WriteupForm from "../../../components/admin/WriteupForm.astro";
 import { canManageCertificates } from "../../../lib/auth";
 
@@ -16,11 +16,12 @@ if (!canManageCertificates(profile)) {
 }
 ---
 
-<MainLayout
+<AdminLayout
   title="New Write-up — Admin"
   description="Buat laporan CTF terstruktur (THM / HTB)."
+  current="writeups"
 >
-  <div class="mx-auto max-w-3xl px-6 py-14">
+  <div class="mx-auto max-w-3xl py-8 md:py-10">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
         <p class="font-mono text-sm text-cyber-accent">$ writeups --new</p>
@@ -40,4 +41,4 @@ if (!canManageCertificates(profile)) {
       <WriteupForm />
     </div>
   </div>
-</MainLayout>
+</AdminLayout>

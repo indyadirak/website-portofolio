@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json } from "../../../lib/api";
+import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canManageMessages } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
 
@@ -37,6 +37,10 @@ async function guard(
   if (!user) return { error: json({ ok: false, error: "unauthorized" }, 401) };
   if (!canManageMessages(profile)) {
     return { error: json({ ok: false, error: "forbidden_role" }, 403) };
+  }
+  // Endpoint ini khusus tulis — policy RLS contact_messages wajib aal2.
+  if (!(await isAal2Session(supabase))) {
+    return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
   const decision = await adminMutationGuard.check(user.id);
   if (decision.reason === "kv_unavailable") {

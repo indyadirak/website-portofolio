@@ -20,8 +20,7 @@ export function getSupabaseFromLocals(
   return locals.supabase ?? null;
 }
 
-/** Field kredensial sertifikat (opsional) — dipakai API JSON & multipart. */
-export interface CredentialFields {
+/** Field kredensial sertifikat (opsional) — dipakai API JSON & multipart. */export interface CredentialFields {
   credentialId?: string | null;
   credentialUrl?: string | null;
   verificationUrl?: string | null;
@@ -56,4 +55,33 @@ export function validateCredentialFields(input: CredentialFields): string | null
     return "verificationUrl_harus_http_https";
   }
   return null;
+}
+
+/**
+ * Pemeriksaan AAL2 (MFA terverifikasi) pada sesi server-side.
+ * Policy RLS tulis di produksi mensyaratkan `(select auth.jwt()->>'aal')='aal2'`
+ * — sesi lama aal1 membuat UPDATE tidak match baris apa pun dan INSERT
+ * ditolak, yang selama ini tampil sebagai "db_operation_failed" samar.
+ * Deteksi di aplikasi menghasilkan pesan yang jelas + status 403 khusus.
+ */
+export async function isAal2Session(
+  supabase: SupabaseClient<Database>
+): Promise<boolean> {
+  try {
+    // API MFA berubah nama antar versi supabase-js (getAuthenticatorAssuranceLevel
+    // -> getAALLevel). Deteksi kedua bentuk; tidak ada = anggap bukan aal2.
+    const mfa = (supabase.auth as unknown as {
+      mfa?: {
+        getAALLevel?: () => Promise<{ data?: { currentLevel?: string }; error?: unknown }>;
+        getAuthenticatorAssuranceLevel?: () => Promise<{ data?: { currentLevel?: string }; error?: unknown }>;
+      };
+    }).mfa;
+    const fn = mfa?.getAALLevel ?? mfa?.getAuthenticatorAssuranceLevel;
+    if (!fn || !mfa) return false;
+    const { data, error } = await fn.call(mfa);
+    return !error && data?.currentLevel === "aal2";
+  } catch {
+    // Fail-closed konsisten dengan kebijakan rate limit: tidak yakin = tolak.
+    return false;
+  }
 }

@@ -46,7 +46,9 @@ const { certificates, canWrite, isAdmin } = Astro.props;
               )}
               {cert.file_url && (
                 <span class="ml-2 text-cyber-muted">
-                  [ file: {cert.file_url.split("/").pop()} ]
+                  {cert.file_url.startsWith("https://")
+                    ? "[ file: google_drive ]"
+                    : `[ file: ${cert.file_url.split("/").pop()} ]`}
                 </span>
               )}
             </p>

@@ -106,13 +106,20 @@ write-up CTF) + **Admin CMS** dengan MFA TOTP wajib dan RBAC tiga role.
 
 - **RBAC**: `viewer` (baca), `editor` (tulis konten + aal2), `admin`
   (tulis + hapus + halaman khusus `/admin/backup`, `/admin/cv` + aal2).
-- **Pola halaman admin**: `AdminLayout` (nav + guard visual) → query SSR
-  dengan try/catch → `TerminalTable`/`TerminalButton`/`TerminalInput`
-  (`src/components/admin/ui/`) → script vanilla `<script>` Astro.
+- **Pola halaman admin**: `AdminLayout` (sidebar desktop, drawer mobile, profile
+  menu account, dan guard visual) → query SSR dengan try/catch →
+  `TerminalTable`/`TerminalButton`/`TerminalInput` (`src/components/admin/ui/`)
+  → script vanilla `<script>` Astro. Halaman login tetap memakai `MainLayout`.
 - **Edit lintas halaman** (Fase 2): tombol edit di halaman list dispatch
   CustomEvent; dari halaman list event dikonversi jadi navigasi
   `?id=<uuid>` ke halaman form yang mem-prefill via seed `data-*`.
 - **Demo data**: bila `PUBLIC_SUPABASE_*` belum di-set, situs publik tetap
   render dari `src/lib/data/` — sengaja, bukan bug.
+- **Schema fitur terbaru**: database existing wajib menjalankan migrasi
+  `projects-case-study.sql` dan `contact-messages-crud.sql` sebelum memakai
+  field case study project atau aksi read/delete pesan.
+- **CVE**: belum diimplementasikan; jangan menambahkan field CVE ke UI/DB tanpa
+  migrasi idempotent, validasi, dan keputusan apakah project/write-up mendukung
+  satu atau banyak CVE.
 - **Jangan commit** `node_modules`, `dist`, `.env*`; secret hanya di
   GitHub Secrets + `wrangler secret put`.

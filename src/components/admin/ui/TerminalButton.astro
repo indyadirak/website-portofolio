@@ -11,6 +11,13 @@ interface Props {
   /** Atribut data-* tambahan (data-locale, data-cv-delete, dsb). */
   data?: Record<string, string>;
   class?: string;
+  /**
+   * Atribut data-* tambahan boleh ditulis langsung sebagai props
+   * (mis. data-msg-read={id}) — diteruskan apa adanya ke elemen.
+   * Tanpa ini, querySelector("[data-msg-read]") di halaman pemakai
+   * tidak menemukan apa pun (bug tombol messages).
+   */
+  [key: `data-${string}`]: string | number | boolean | undefined;
 }
 
 const {
@@ -22,7 +29,13 @@ const {
   hidden = false,
   data,
   class: className,
+  ...rest
 } = Astro.props;
+
+/** Hanya atribut data-* yang boleh lolos ke DOM (jangan bisikan props TS). */
+const passthrough = Object.fromEntries(
+  Object.entries(rest).filter(([key]) => key.startsWith("data-"))
+);
 
 const variantClasses: Record<"primary" | "ghost" | "danger", string> = {
   primary:
@@ -38,11 +51,11 @@ const classes = `inline-flex min-h-10 items-center rounded border px-4 py-2 font
 
 {
   href ? (
-    <a href={href} id={id} hidden={hidden} class={classes} {...(data ?? {})}>
+    <a href={href} id={id} hidden={hidden} class={classes} {...(data ?? {})} {...passthrough}>
       <slot />
     </a>
   ) : (
-    <button type={type} id={id} disabled={disabled} hidden={hidden} class={classes} {...(data ?? {})}>
+    <button type={type} id={id} disabled={disabled} hidden={hidden} class={classes} {...(data ?? {})} {...passthrough}>
       <slot />
     </button>
   )

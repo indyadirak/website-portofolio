@@ -27,6 +27,26 @@ export async function POST({ locals }: APIContext) {
       return json({ ok: false, error: "unauthorized" }, 401);
     }
 
+    // A failed retry can leave an unverified factor behind. Remove only those
+    // stale factors so a retry creates one clean enrollment flow, while never
+    // touching an already verified authenticator.
+    const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+    if (factorsError) {
+      console.error("[api/auth/mfa-enroll] list factors failed:", factorsError.message);
+      return json({ ok: false, error: "enroll_gagal" }, 502);
+    }
+    for (const factor of factors?.totp ?? []) {
+      // auth-js currently types listed TOTP factors as verified only, but the
+      // API can still return a pending factor during a failed enrollment.
+      if ((factor as { status?: string }).status === "unverified") {
+        const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+        if (unenrollError) {
+          console.error("[api/auth/mfa-enroll] stale factor cleanup failed:", unenrollError.message);
+          return json({ ok: false, error: "enroll_gagal" }, 502);
+        }
+      }
+    }
+
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: "totp",
     });
@@ -35,12 +55,25 @@ export async function POST({ locals }: APIContext) {
       return json({ ok: false, error: "enroll_gagal" }, 400);
     }
 
-    const otpauthUrl = data.totp.qr_code;
-    const qrDataUrl = await QRCode.toDataURL(otpauthUrl, {
-      width: 256,
-      margin: 1,
-      errorCorrectionLevel: "M",
-    });
+    // Supabase versions differ: qr_code may already be a data image, while
+    // newer responses expose the original otpauth URI separately.
+    const providerQrCode = data.totp.qr_code;
+    const otpauthUrl = data.totp.uri ??
+      (providerQrCode?.startsWith("otpauth://") ? providerQrCode : "");
+    const qrDataUrl = providerQrCode?.startsWith("data:image/")
+      ? providerQrCode
+      : otpauthUrl
+        ? await QRCode.toDataURL(otpauthUrl, {
+            width: 256,
+            margin: 1,
+            errorCorrectionLevel: "M",
+          })
+        : "";
+
+    if (!qrDataUrl || !otpauthUrl) {
+      console.error("[api/auth/mfa-enroll] Supabase returned an invalid TOTP QR payload");
+      return json({ ok: false, error: "enroll_gagal" }, 502);
+    }
 
     return json({
       ok: true,

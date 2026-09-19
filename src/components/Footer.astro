@@ -1,12 +1,14 @@
 ---
 import { getDictionary, localeFromPathname } from "../lib/i18n";
 import { siteConfig } from "../lib/config";
+import { getRelativeLocaleUrl } from "astro:i18n";
 
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
 
 const securityHref = locale === "en" ? "/en/security" : "/security";
 const privacyHref = locale === "en" ? "/en/privacy" : "/privacy";
+const contactHref = getRelativeLocaleUrl(locale, "contact");
 const copyright = t.footer.copyright
   .replace("{year}", String(new Date().getFullYear()))
   .replace("{author}", siteConfig.author.name);
@@ -18,7 +20,16 @@ const columnHeadingClass =
 
 <footer class="border-t border-cyber-border/60 bg-cyber-panel/60">
   <div class="mx-auto max-w-6xl px-4 py-10 md:px-6">
-    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr]">
+      <div>
+        <a href={getRelativeLocaleUrl(locale, "")} class="font-mono text-lg font-bold tracking-tight text-cyber-primary glow-text">
+          {siteConfig.name}<span class="text-cyber-accent">_</span>
+        </a>
+        <p class="mt-3 max-w-sm text-sm leading-relaxed text-cyber-muted">{t.hero.description}</p>
+        <a href={contactHref} class="mt-5 inline-flex min-h-11 items-center rounded border border-cyber-primary/50 bg-cyber-primary/10 px-4 font-mono text-xs text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg">
+          {t.hero.contactMe} →
+        </a>
+      </div>
       <div>
         <p class={columnHeadingClass}>
           <span class="text-cyber-accent">$</span> {t.footer.legalSecurity}
@@ -66,7 +77,7 @@ const columnHeadingClass =
       </div>
 
       <div>
-        <p class="mt-2 rounded border border-cyber-border/40 bg-cyber-card/50 px-3 py-2 font-mono text-xs text-cyber-primary">
+        <p class="rounded border border-cyber-border/40 bg-cyber-card/50 px-3 py-2 font-mono text-xs text-cyber-primary">
           {t.footer.systemStatus}
         </p>
       </div>

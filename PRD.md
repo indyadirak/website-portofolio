@@ -2,7 +2,7 @@
 
 **Produk:** Website Portofolio Cyber Security — `portofolio.indyadirak.my.id`
 **Pemilik:** Indy Adira Khalfani · **Status:** LIVE (produksi)
-**Diperbarui:** Fase 2 (lihat `CHANGELOG.md`)
+**Diperbarui:** Public UX dan Admin Workspace (lihat `CHANGELOG.md`)
 
 ## 1. Visi
 
@@ -24,7 +24,9 @@ merupakan identitas visual sekaligus sinyal kompetensi.
 ## 3. Fitur Inti
 
 ### 3.1 Situs Publik
-- Landing: hero, featured projects, skills, about, contact.
+- Landing: positioning hero, featured projects, skills, dan contact CTA.
+  Operations Log/System Status bukan bagian dari alur utama landing page agar
+  bukti karya dan CTA recruiter muncul lebih cepat.
 - **Halaman Sertifikat** (`/certificates`, `/en/certificates`): filter
   Compliance/Training, badge verifikasi issuer, badge masa berlaku
   (dihitung saat build — halaman prerender).
@@ -32,6 +34,8 @@ merupakan identitas visual sekaligus sinyal kompetensi.
   (target environment, methodology, severity, findings, remediation).
 - **Projects** dengan kategori **dinamis** dari database (FK
   `project_categories`, 14 seed) + filter publik.
+- **CVE opsional** direncanakan untuk project dan write-up; implementasi harus
+  mencakup migrasi, validasi format, dan link NVD sebelum dianggap selesai.
 - **Identitas dinamis** (FASE 2/3): hero title, tagline, short bio,
   availability status, career timeline, social links — semua dari
   `site_settings`/`experiences`/`social_links`.
@@ -55,6 +59,8 @@ merupakan identitas visual sekaligus sinyal kompetensi.
 - **Write-ups**: CMS CRUD terstruktur.
 - **Site settings, experiences, social links, CV, backup config** — CRUD GUI.
 - **RBAC** `admin`/`editor`/`viewer`; menu & tombol menyesuaikan role.
+- Admin workspace menggunakan sidebar/drawer terkelompok dan profile menu
+  account; halaman login tetap memakai layout autentikasi publik.
 
 ### 3.3 Keamanan & Infrastruktur
 - RLS sebagai penegak izin utama (MFA `aal2` + role di level database).

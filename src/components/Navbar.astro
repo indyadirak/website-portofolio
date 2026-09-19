@@ -15,7 +15,6 @@ const navLinks = [
   { label: t.nav.writeups, href: getRelativeLocaleUrl(locale, "writeups") },
   { label: t.nav.certificates, href: getRelativeLocaleUrl(locale, "certificates") },
   { label: t.nav.about, href: getRelativeLocaleUrl(locale, "about") },
-  { label: t.nav.security, href: getRelativeLocaleUrl(locale, "security") },
   { label: t.nav.contact, href: getRelativeLocaleUrl(locale, "contact") },
 ];
 const normalizePath = (p: string) => p.replace(/\/+$/, "") || "/";
@@ -77,7 +76,7 @@ const blogUrl = siteConfig.blogUrl;
       <button
         id={btnId}
         type="button"
-        aria-label="Toggle navigation menu"
+        aria-label={t.nav.menu}
         aria-expanded="false"
         aria-controls={menuId}
         class="flex h-11 w-11 items-center justify-center rounded border border-cyber-border text-cyber-primary transition-colors hover:border-cyber-primary/50"
@@ -131,11 +130,36 @@ const blogUrl = siteConfig.blogUrl;
   const iconOpen = document.getElementById("icon-open");
   const iconClose = document.getElementById("icon-close");
   if (btn && menu) {
+    const closeMenu = () => {
+      menu.classList.add("hidden");
+      btn.setAttribute("aria-expanded", "false");
+      iconOpen?.classList.remove("hidden");
+      iconClose?.classList.add("hidden");
+    };
+
     btn.addEventListener("click", () => {
       const isOpen = menu.classList.toggle("hidden");
       btn.setAttribute("aria-expanded", String(!isOpen));
       iconOpen?.classList.toggle("hidden", !isOpen);
       iconClose?.classList.toggle("hidden", isOpen);
+    });
+
+    menu.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !menu.classList.contains("hidden")) {
+        closeMenu();
+        btn.focus();
+      }
+    });
+    document.addEventListener("click", (event) => {
+      if (
+        !menu.classList.contains("hidden") &&
+        event.target instanceof Node &&
+        !menu.contains(event.target) &&
+        !btn.contains(event.target)
+      ) {
+        closeMenu();
+      }
     });
   }
 </script>

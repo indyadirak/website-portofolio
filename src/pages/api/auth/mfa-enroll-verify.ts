@@ -55,8 +55,8 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "invalid_json" }, 400);
   }
 
-  const factorId = body.factorId;
-  const code = body.code;
+  const factorId = typeof body.factorId === "string" ? body.factorId.trim() : "";
+  const code = typeof body.code === "string" ? body.code.trim() : "";
 
   if (!factorId || !code || !/^\d{6}$/.test(code)) {
     return json({ ok: false, error: "kode_wajib_6_digit" }, 400);
@@ -83,7 +83,12 @@ export async function POST({ request, locals }: APIContext) {
   // Kode benar — reset counter.
   await mfaVerifyGuard.recordSuccess(ip);
 
-  await persistMfaSession(supabase, verified);
+  try {
+    await persistMfaSession(supabase, verified);
+  } catch (error) {
+    console.error("[api/auth/mfa-enroll-verify] failed to persist AAL2 session:", error);
+    return json({ ok: false, error: "session_gagal" }, 502);
+  }
 
   return json({ ok: true, step: "done" });
 }

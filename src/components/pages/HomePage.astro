@@ -1,15 +1,12 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import Hero from "../Hero.astro";
-import TerminalLog from "../TerminalLog.astro";
-import SecurityStatusPanel from "../SecurityStatusPanel.astro";
 import SectionHeading from "../SectionHeading.astro";
 import ProjectGrid from "../ProjectGrid.astro";
 import SkillGrid from "../SkillGrid.astro";
 import CtaSection from "../CtaSection.astro";
 import { getProjects } from "../../lib/data/projects";
 import { getSkills } from "../../lib/data/skills";
-import { getExperiences } from "../../lib/data/experiences";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
 import { siteConfig } from "../../lib/config";
 import { getRelativeLocaleUrl } from "astro:i18n";
@@ -19,15 +16,10 @@ const t = getDictionary(locale);
 
 const featuredProjects = await getProjects({ featuredOnly: true });
 const skills = await getSkills();
-const recentExperiences = (await getExperiences()).slice(0, 4);
 ---
 
 <MainLayout title={siteConfig.name} description={t.meta.home}>
   <Hero />
-
-  <TerminalLog experiences={recentExperiences} />
-
-  <SecurityStatusPanel />
 
   <section id="projects" class="mx-auto max-w-6xl px-6 py-16">
     <SectionHeading

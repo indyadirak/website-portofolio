@@ -32,8 +32,8 @@ const experiences = (rawExperiences ?? []) as ExperienceRow[];
 const canDelete = canDeleteSiteContent(profile);
 ---
 
-<AdminLayout title="Experiences — Admin" description={t.adminExperiences.title}>
-  <div class="mx-auto max-w-5xl px-6 py-14">
+<AdminLayout title="Experiences — Admin" description={t.adminExperiences.title} current="experiences">
+  <div class="mx-auto max-w-5xl py-8 md:py-10">
     <div>
       <p class="font-mono text-sm text-cyber-accent">{t.adminExperiences.eyebrow}</p>
       <h1 class="mt-2 font-mono text-3xl font-bold text-white">
@@ -50,6 +50,7 @@ const canDelete = canDeleteSiteContent(profile);
       data-i18n-edit-mode={t.adminExperiences.editMode}
       data-i18n-save-new={t.adminExperiences.saveNew}
       data-i18n-save-edit={t.adminExperiences.saveEdit}
+      data-i18n-errors={JSON.stringify(t.errors)}
       class="mt-8 space-y-5 rounded border border-cyber-border bg-cyber-panel p-6"
     >
       <p id="experience-form-mode" class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
@@ -84,6 +85,7 @@ const canDelete = canDeleteSiteContent(profile);
           </label>
         </div>
       </div>
+      <p class="-mt-3 font-mono text-[11px] text-cyber-muted">{t.adminExperiences.dateHelper}</p>
 
       <label class="block">
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminExperiences.description}</span>
@@ -187,6 +189,13 @@ const canDelete = canDeleteSiteContent(profile);
   const form = document.getElementById("experience-form") as HTMLFormElement;
   const tDeleteConfirm = form.dataset.i18nDeleteConfirm ?? "";
   const errorPrefix = form.dataset.i18nErrorPrefix ?? "";
+  let errorTexts: Record<string, string> = {};
+  try {
+    errorTexts = JSON.parse(form.dataset.i18nErrors ?? "{}") as Record<string, string>;
+  } catch {
+    errorTexts = {};
+  }
+  const errText = (code: string): string => errorTexts[code] ?? code;
   const savedMsg = form.dataset.i18nSaved ?? "";
   const newMode = form.dataset.i18nNewMode ?? "";
   const editMode = form.dataset.i18nEditMode ?? "";
@@ -290,7 +299,7 @@ const canDelete = canDeleteSiteContent(profile);
     submitBtn.disabled = false;
 
     if (!res.ok || !data.ok) {
-      statusEl.textContent = `${errorPrefix} ${data.error ?? "gagal menyimpan"}`;
+      statusEl.textContent = `${errorPrefix} ${errText(data.error ?? "unknown")}`;
       return;
     }
 

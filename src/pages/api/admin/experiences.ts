@@ -1,8 +1,9 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json } from "../../../lib/api";
+import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canDeleteSiteContent, canManageSiteContent } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
 import type { ExperienceRow } from "../../../lib/types";
+import { isDateRangeValid, normalizeDateInput } from "../../../lib/dates";
 
 export const prerender = false;
 
@@ -28,12 +29,16 @@ type GuardResult =
 async function guard(
   supabase: ReturnType<typeof getSupabaseFromLocals>,
   locals: App.Locals,
+  write = false,
 ): Promise<GuardResult> {
   if (!supabase) return { error: json({ ok: false, error: "supabase_not_configured" }, 503) };
   const { user, profile } = locals;
   if (!user) return { error: json({ ok: false, error: "unauthorized" }, 401) };
   if (!canManageSiteContent(profile)) {
     return { error: json({ ok: false, error: "forbidden_role" }, 403) };
+  }
+  if (write && !(await isAal2Session(supabase))) {
+    return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
   const decision = await adminMutationGuard.check(user.id);
   if (decision.reason === "kv_unavailable") {
@@ -49,12 +54,16 @@ async function guard(
 async function guardAdminOnly(
   supabase: ReturnType<typeof getSupabaseFromLocals>,
   locals: App.Locals,
+  write = true,
 ): Promise<GuardResult> {
   if (!supabase) return { error: json({ ok: false, error: "supabase_not_configured" }, 503) };
   const { user, profile } = locals;
   if (!user) return { error: json({ ok: false, error: "unauthorized" }, 401) };
   if (!canDeleteSiteContent(profile)) {
     return { error: json({ ok: false, error: "forbidden_role" }, 403) };
+  }
+  if (write && !(await isAal2Session(supabase))) {
+    return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
   const decision = await adminMutationGuard.check(user.id);
   if (decision.reason === "kv_unavailable") {
@@ -87,11 +96,15 @@ function validate(body: ExperienceInput): {
 
   if (!role || role.length > 120) return { error: "role_invalid", role, company, startDate: rawStartDate, endDate: rawEndDate || null, isCurrent, description, sortOrder };
   if (!company || company.length > 120) return { error: "company_invalid", role, company, startDate: rawStartDate, endDate: rawEndDate || null, isCurrent, description, sortOrder };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(rawStartDate)) return { error: "start_date_invalid", role, company, startDate: rawStartDate, endDate: rawEndDate || null, isCurrent, description, sortOrder };
-  if (rawEndDate && !/^\d{4}-\d{2}-\d{2}$/.test(rawEndDate)) return { error: "end_date_invalid", role, company, startDate: rawStartDate, endDate: rawEndDate, isCurrent, description, sortOrder };
-  if (isCurrent) return { error: null, role, company, startDate: rawStartDate, endDate: null, isCurrent, description, sortOrder };
-  if (!rawEndDate) return { error: "end_date_required", role, company, startDate: rawStartDate, endDate: null, isCurrent, description, sortOrder };
-  return { error: null, role, company, startDate: rawStartDate, endDate: rawEndDate, isCurrent, description, sortOrder };
+  const startDate = normalizeDateInput(rawStartDate);
+  if (!startDate) return { error: "start_date_invalid", role, company, startDate: rawStartDate, endDate: rawEndDate || null, isCurrent, description, sortOrder };
+  let endDate: string | null = null;
+  if (isCurrent) return { error: null, role, company, startDate, endDate: null, isCurrent, description, sortOrder };
+  if (!rawEndDate) return { error: "end_date_required", role, company, startDate, endDate: null, isCurrent, description, sortOrder };
+  endDate = normalizeDateInput(rawEndDate);
+  if (!endDate) return { error: "end_date_invalid", role, company, startDate, endDate: null, isCurrent, description, sortOrder };
+  if (!isDateRangeValid(startDate, endDate)) return { error: "end_date_before_start", role, company, startDate, endDate, isCurrent, description, sortOrder };
+  return { error: null, role, company, startDate, endDate, isCurrent, description, sortOrder };
 }
 
 /** Daftar semua pengalaman — urut sort_order, lalu start_date baru dulu. */
@@ -115,7 +128,7 @@ export async function GET({ locals }: APIContext) {
 
 /** Buat pengalaman baru. */
 export async function POST({ request, locals }: APIContext) {
-  const g = await guard(getSupabaseFromLocals(locals), locals);
+  const g = await guard(getSupabaseFromLocals(locals), locals, true);
   if (g.error) return g.error;
 
   let body: ExperienceInput;
@@ -152,7 +165,7 @@ export async function POST({ request, locals }: APIContext) {
 
 /** Perbarui pengalaman (id via query param `?id=`). */
 export async function PUT({ request, locals }: APIContext) {
-  const g = await guard(getSupabaseFromLocals(locals), locals);
+  const g = await guard(getSupabaseFromLocals(locals), locals, true);
   if (g.error) return g.error;
 
   const id = new URL(request.url).searchParams.get("id");

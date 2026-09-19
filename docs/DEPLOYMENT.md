@@ -8,7 +8,7 @@
 > sinkronisasi dokumen ini bagian rutin dari setiap penambahan fitur besar,
 > bukan pekerjaan terpisah yang gampang terlupa.
 >
-> Sinkronisasi terakhir: sesi audit keamanan (SECURITY_COMPLIANCE_MAPPING.md)
+> Sinkronisasi terakhir: public UX, Admin Workspace, dan MFA hardening
 > — halaman `/privacy` (id/en), rate limit MFA, step CI `npm audit` +
 > verifikasi security headers pasca-deploy, workflow SBOM, workflow retensi
 > data mingguan, dokumen RTO/RPO & retensi (§8), README urutan migrasi
@@ -46,7 +46,9 @@ Versi infrastruktur saat ini:
   - [ ] `backup-config.sql` (konfigurasi Drive, RLS aal2+admin — **SETELAH `rbac-mfa.sql`**)
   - [ ] `backup-config-access-log.sql` (audit endpoint backup-config — **SETELAH `rbac-mfa.sql`**)
   - [ ] `cv.sql` (bucket publik `cv` + tabel `cv_files` — **SETELAH `rbac-mfa.sql`**)
-  - [ ] `public-features.sql` (kolom `problem`/`solution`/`impact` di projects, kategori skills, RLS write projects — **SETELAH `schema.sql` + `rbac-mfa.sql`**)
+   - [ ] `public-features.sql` (kolom `problem`/`solution`/`impact` di projects, kategori skills, RLS write projects — **SETELAH `schema.sql` + `rbac-mfa.sql`**)
+   - [ ] `projects-case-study.sql` (kolom `methodology`/`attack_path`/`detection` — **SETELAH `schema.sql`**)
+   - [ ] `contact-messages-crud.sql` (kolom `is_read` + policy UPDATE/DELETE — **SETELAH `schema.sql`**)
   - [ ] `certificates-category.sql` (kategori Compliance/Training — **butuh `rbac-mfa.sql`**; data lama otomatis `'training'`)
   - [ ] `certificates-verification-url.sql` (kolom `verification_url` — **butuh `rbac-mfa.sql`**; NULL = tanpa badge)
   - [ ] `certificates-issue-date.sql` (kolom `issue_date` WAJIB + `DEFAULT CURRENT_DATE`; backfill NULL dari `created_at`)
@@ -162,6 +164,8 @@ npx wrangler secret put GDRIVE_CONFIG_ENCRYPTION_SECRET
 
 - [ ] Buka `/admin/login` → login admin pertama → **enroll MFA TOTP** (wajib untuk admin)
 - [ ] `/admin/dashboard` → `[ backup ]` → paste JSON key SA + folder ID Drive → **simpan** (status ter-mask: email SA & tail folder ID tampil)
+- [ ] Admin workspace: sidebar desktop/drawer mobile, profile menu account, role badge,
+      status MFA, dan logout berfungsi; CV/backup hanya tampil untuk role `admin`
 - [ ] `/admin/dashboard` → `[ cv ]` → upload CV/Resume PDF per bahasa (id & en) — tombol unduh di navbar/hero otomatis menunjuk ke file terbaru di bucket publik `cv`; fallback ke `public/cv-*.pdf` bila belum di-upload
 - [ ] (Opsional) Cek status key SA: `https://www.googleapis.com/auth/drive.file` aktif di IAM
 
@@ -210,7 +214,8 @@ Skenario: aplikasi authenticator tidak bisa diakses → login admin terkunci di 
 **Yang TIDAK hilang**: akses ke **data** tetap terbuka lewat jalur alternatif — Dashboard Supabase (login email/password, tanpa MFA aplikasi) dan backup GPG terenkripsi. Runbook ini hanya memulihkan **akses ke CMS/Worker app**.
 
 - [ ] **Jalur GUI** (disarankan): `https://supabase.com/dashboard` → project → **Authentication → Users** → pilih user admin → tab **Factors** → hapus faktor TOTP yang ada
-      → logout/login ulang di `/admin/login` → **enroll MFA baru** (QR baru) di `/admin/mfa`
+       → logout/login ulang di `/admin/login` → enrollment MFA baru melalui panel
+         login (QR baru)
 - [ ] **Jalur SQL** (bila GUI faktor tidak tersedia): SQL Editor →
       ```sql
       select id, user_id, factor_type, created_at from auth.mfa_factors;

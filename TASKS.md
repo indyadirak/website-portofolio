@@ -32,13 +32,25 @@ Legenda: `[DONE]` selesai & terverifikasi · `[IN PROGRESS]` sedang berjalan
   `/admin/certificates/new` pola sama; dashboard dirampingkan (KPI, quick
   actions, activity, status, peringatan kedaluwarsa, pesan kontak); nav
   view/add terpisah. Commit: `ea7cd04`.
+- [DONE] Admin workspace UX — sidebar desktop, drawer mobile, profile menu
+  account, role-aware menu CV/backup, dan migrasi halaman khusus admin ke
+  `AdminLayout`.
+- [DONE] Public homepage UX — alur recruiter dipadatkan; Operations Log/System
+  Status dikeluarkan dari homepage; header dipangkas dan footer menjadi
+  navigasi sekunder.
+- [DONE] MFA hardening — cleanup faktor TOTP `unverified` saat retry enrollment,
+  dukungan format QR Supabase, error handling session AAL2, dan network timeout UI.
+- [DONE] Quality gates — `npm run check`, `npm run build`, dan `npm audit` bersih.
+- [DONE] Mobile audit — public/admin routes, responsive grids/forms/tables,
+  modal sizing, admin drawer, dan sticky sidebar diverifikasi; padding admin
+  mobile dirapikan.
 
 ### In progress
-- [IN PROGRESS] **Supabase Keep-Alive** — workflow
+- [DONE] **Supabase Keep-Alive** — workflow
   `.github/workflows/supabase-keep-alive.yml`, cron `0 0 */5 * *` (tiap
   5 hari), GET endpoint ringan produksi (`/` atau `/api/health` bila dibuat),
   `permissions: contents: read`. Tujuan: cegah auto-pause free tier.
-- [IN PROGRESS] **Write-ups: status draft + metodologi kustom**
+- [DONE] **Write-ups: status draft + metodologi kustom**
   - Kolom `status` (`draft`/`published`) di `writeups` (script migrasi +
     sinkron `00-full-migration.sql`); filter publik hanya menampilkan `published`.
   - Form admin: dropdown Draft/Published.
@@ -80,3 +92,5 @@ Legenda: `[DONE]` selesai & terverifikasi · `[IN PROGRESS]` sedang berjalan
   di dashboard admin — policy SELECT admin sudah ada, belum terpakai UI.
 - [TODO] Pertimbangkan batasi baca `contact_messages` (PII pengunjung)
   hanya admin/editor saat ini semua role login bisa baca.
+- [TODO] Implementasi CVE pada project/write-up: migrasi schema, field admin,
+  validasi `CVE-YYYY-NNNN`, badge detail, dan link NVD.

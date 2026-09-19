@@ -35,9 +35,33 @@ export interface ProjectInput {
   problem?: string | null;
   solution?: string | null;
   impact?: string | null;
+  methodology?: string | null;
+  attackPath?: string | null;
+  detection?: string | null;
 }
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_TEXT = {
+  slug: 120,
+  title: 200,
+  summary: 500,
+  description: 10000,
+  category: 80,
+  tag: 80,
+  tags: 30,
+  narrative: 20000,
+} as const;
+
+function validHttpUrl(value: string | null | undefined): boolean {
+  if (!value) return true;
+  if (value.length > 500) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 /** Konversi input (camelCase) -> kolom tabel (snake_case).
  *  category_id: diteruskan bila ada (validasi FK dilakukan sebelumnya).
@@ -60,6 +84,9 @@ function toRow(input: ProjectInput) {
     problem: input.problem?.trim() || null,
     solution: input.solution?.trim() || null,
     impact: input.impact?.trim() || null,
+    methodology: input.methodology?.trim() || null,
+    attack_path: input.attackPath?.trim() || null,
+    detection: input.detection?.trim() || null,
   };
 }
 
@@ -84,14 +111,32 @@ async function resolveCategory(
  *  adalah baris kategori dari DB (sudah diverifikasi di handler) — dipakai
  *  untuk mengisi kolom legacy `category` secara otomatis. */
 function validate(input: ProjectInput, resolved: { name: string } | null): string | null {
-  if (!input.title?.trim() || !input.summary?.trim() || !input.slug?.trim()) {
+  const slug = input.slug?.trim() ?? "";
+  const title = input.title?.trim() ?? "";
+  const summary = input.summary?.trim() ?? "";
+  const description = input.description?.trim() ?? "";
+  const category = input.category?.trim() ?? "";
+  const tags = Array.isArray(input.tags) ? input.tags : [];
+  if (!title || !summary || !slug) {
     return "title_summary_slug_wajib_diisi";
   }
-  if (!SLUG_RE.test(input.slug.trim())) {
+  if (slug.length > MAX_TEXT.slug || !SLUG_RE.test(slug)) {
     return "slug_format_lowercase_hyphen";
   }
-  if (!input.category?.trim() && !input.categoryId) {
+  if (title.length > MAX_TEXT.title || summary.length > MAX_TEXT.summary || description.length > MAX_TEXT.description) {
+    return "project_text_terlalu_panjang";
+  }
+  if (category.length > MAX_TEXT.category || (!category && !input.categoryId)) {
     return "category_wajib_diisi";
+  }
+  if (tags.length > MAX_TEXT.tags || tags.some((tag) => typeof tag !== "string" || tag.trim().length > MAX_TEXT.tag)) {
+    return "tags_tidak_valid";
+  }
+  for (const value of [input.problem, input.solution, input.impact, input.methodology, input.attackPath, input.detection]) {
+    if (value && value.length > MAX_TEXT.narrative) return "project_narrative_terlalu_panjang";
+  }
+  if (!validHttpUrl(input.imageUrl) || !validHttpUrl(input.repoUrl) || !validHttpUrl(input.liveUrl)) {
+    return "url_tidak_valid";
   }
   if (!(PROJECT_STATUSES as readonly string[]).includes(input.status)) {
     return "status_tidak_valid";

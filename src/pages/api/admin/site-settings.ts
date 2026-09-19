@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json } from "../../../lib/api";
+import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canManageSiteContent } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
 import {
@@ -20,16 +20,23 @@ type GuardResult =
       user: NonNullable<App.Locals["user"]>;
     };
 
-/** Guard terpusat: session + role admin/editor + rate limit mutasi. */
+/** Guard terpusat: session + role admin/editor + rate limit mutasi.
+ *  `write=true` menuntut AAL2 (hanya jalur tulis — policy RLS tulis
+ *  mensyaratkan aal2; GET tetap bisa dengan sesi aal1). */
 async function guard(
   supabase: ReturnType<typeof getSupabaseFromLocals>,
   locals: App.Locals,
+  write = false,
 ): Promise<GuardResult> {
   if (!supabase) return { error: json({ ok: false, error: "supabase_not_configured" }, 503) };
   const { user, profile } = locals;
   if (!user) return { error: json({ ok: false, error: "unauthorized" }, 401) };
   if (!canManageSiteContent(profile)) {
     return { error: json({ ok: false, error: "forbidden_role" }, 403) };
+  }
+  if (write && !(await isAal2Session(supabase))) {
+    // Sesi belum AAL2 — policy RLS tulis pasti menolak; beri tahu sebabnya.
+    return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
   const decision = await adminMutationGuard.check(user.id);
   if (decision.reason === "kv_unavailable") {
@@ -61,7 +68,7 @@ export async function GET({ locals }: APIContext) {
 
 /** Perbarui satu setting (`?key=`). Insert bila row belum ada. */
 export async function PUT({ request, locals }: APIContext) {
-  const g = await guard(getSupabaseFromLocals(locals), locals);
+  const g = await guard(getSupabaseFromLocals(locals), locals, true);
   if (g.error) return g.error;
 
   const key = new URL(request.url).searchParams.get("key");
@@ -84,27 +91,17 @@ export async function PUT({ request, locals }: APIContext) {
     return json({ ok: false, error: "availability_invalid" }, 400);
   }
 
-  const { data, error } = await g.supabase
+  // Upsert atomik (key punya UNIQUE constraint) — menggantikan pola
+  // update-lalu-insert yang bisa race: UPDATE 0 rows karena RLS/aal1
+  // kemudian INSERT menabrak unique(key) -> pesan error samar.
+  const { error } = await g.supabase
     .from("site_settings")
-    .update({ value })
-    .eq("key", settingKey)
-    .select("id")
-    .maybeSingle();
+    .upsert({ key: settingKey, value }, { onConflict: "key" });
 
   if (error) {
-    console.error("[admin/site-settings] UPDATE gagal:", error.message);
+    console.error("[admin/site-settings] UPSERT gagal:", error.message);
+    if (error.code === "42501") return json({ ok: false, error: "mfa_required" }, 403);
     return json({ ok: false, error: "db_operation_failed" }, 403);
-  }
-
-  if (!data) {
-    const { error: insertError } = await g.supabase
-      .from("site_settings")
-      .insert({ key: settingKey, value });
-
-    if (insertError) {
-      console.error("[admin/site-settings] INSERT gagal:", insertError.message);
-      return json({ ok: false, error: "db_operation_failed" }, 403);
-    }
   }
 
   return json({ ok: true, key }, 200);

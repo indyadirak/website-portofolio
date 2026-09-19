@@ -31,8 +31,8 @@ const settings = (rawSettings ?? []) as SiteSettingRow[];
 const byKey = new Map(settings.map((s) => [s.key, s.value]));
 ---
 
-<AdminLayout title="Site Settings — Admin" description={t.adminSettings.description}>
-  <div class="mx-auto max-w-4xl px-6 py-14">
+<AdminLayout title="Site Settings — Admin" description={t.adminSettings.description} current="settings">
+  <div class="mx-auto max-w-4xl py-8 md:py-10">
     <div>
       <p class="font-mono text-sm text-cyber-accent">{t.adminSettings.eyebrow}</p>
       <h1 class="mt-2 font-mono text-3xl font-bold text-white">
@@ -47,6 +47,7 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
       id="settings-form"
       data-i18n-saved={t.adminSettings.saved}
       data-i18n-error-prefix={t.adminSettings.errorPrefix}
+      data-i18n-errors={JSON.stringify(t.errors)}
       class="mt-8 space-y-5 rounded border border-cyber-border bg-cyber-panel p-6"
     >
       <label class="block">
@@ -135,6 +136,13 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
   const form = document.getElementById("settings-form") as HTMLFormElement;
   const savedMsg = form.dataset.i18nSaved ?? "";
   const errorPrefix = form.dataset.i18nErrorPrefix ?? "";
+  let errorTexts: Record<string, string> = {};
+  try {
+    errorTexts = JSON.parse(form.dataset.i18nErrors ?? "{}") as Record<string, string>;
+  } catch {
+    errorTexts = {};
+  }
+  const errText = (code: string): string => errorTexts[code] ?? code;
   const submitBtn = document.getElementById("s-submit") as HTMLButtonElement;
   const statusEl = document.getElementById("s-status") as HTMLParagraphElement;
 
@@ -169,7 +177,7 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
 
       if (!res || !res.ok) {
         const data = res ? await res.json().catch(() => ({ error: "unknown" })) : { error: "network" };
-        statusEl.textContent = `${errorPrefix} ${data.error ?? "gagal menyimpan"} — key ${field.key}`;
+        statusEl.textContent = `${errorPrefix} ${errText(data.error ?? "unknown")} — key ${field.key}`;
         submitBtn.disabled = false;
         return;
       }

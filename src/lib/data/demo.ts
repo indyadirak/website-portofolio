@@ -35,6 +35,11 @@ export const demoProjects: Project[] = [
       "Environment lab berbasis kode (Ansible) dengan Windows Server + Kali Linux: deploy domain controller, user, GPO, dan host target dalam satu perintah, dengan skenario AD attack yang terisolasi per subnet.",
     impact:
       "Waktu setup lab turun dari hitungan hari menjadi menit, dan skenario latihan bisa dibagikan ulang secara konsisten antar anggota tim.",
+    methodology: "MITRE ATT&CK — Initial Access, Credential Access, Lateral Movement",
+    attackPath:
+      "1. Reconnaissance host & enumerasi SMB\n2. Credential dumping pada LSASS tanpa proteksi\n3. Pass-the-Hash ke host server via admin$",
+    detection:
+      "```\nEventID 4624 type 3  -> logon jaringan mencurigakan\nSysmon EventID 10   -> akses proses LSASS\n```",
     createdAt: "2025-06-01T00:00:00.000Z",
   },
   {
@@ -58,6 +63,9 @@ export const demoProjects: Project[] = [
       "Deployment Suricata IDS dengan ruleset terkini + honeypot Cowrie di DMZ, log dialirkan ke Loki dan divisualisasikan di Grafana dengan alerting Telegram.",
     impact:
       "Semua percobaan login dan scanning kini terdeteksi dalam < 1 menit, dengan riwayat serangan tersimpan untuk analisis tren dan hardening.",
+    methodology: null,
+    attackPath: null,
+    detection: null,
     createdAt: "2025-09-15T00:00:00.000Z",
   },
   {
@@ -81,6 +89,9 @@ export const demoProjects: Project[] = [
       "Prototipe chat WebSocket dengan E2E encryption X25519 + ChaCha20-Poly1305, forward secrecy via double ratchet sederhana, dan verifikasi fingerprint manual.",
     impact:
       "Membuktikan bahwa chat encrypted ujung-ke-ujung bisa dibangun dengan library ringan tanpa layanan pihak ketiga.",
+    methodology: null,
+    attackPath: null,
+    detection: null,
     createdAt: "2024-11-20T00:00:00.000Z",
   },
   {
@@ -104,6 +115,9 @@ export const demoProjects: Project[] = [
       "Web app analisis URL dengan heuristics scoring (typosquatting, usia domain, redirect), lookup reputasi ke URLhaus/PhishTank, dan skor risiko akhir.",
     impact:
       "Perencanaan: memangkas waktu verifikasi URL dari menit menjadi detik untuk tim SOC skala kecil.",
+    methodology: null,
+    attackPath: null,
+    detection: null,
     createdAt: "2026-01-05T00:00:00.000Z",
   },
   {
@@ -127,6 +141,9 @@ export const demoProjects: Project[] = [
       "Scanner Python dengan payload jndi di header HTTP standar (User-Agent, X-Forwarded-For, dll.), callback detection, dan report HTML per-target.",
     impact:
       "Memungkinkan verifikasi ratusan host dalam beberapa jam, dengan bukti callback yang dapat diaudit.",
+    methodology: null,
+    attackPath: null,
+    detection: null,
     createdAt: "2024-04-10T00:00:00.000Z",
   },
   {
@@ -150,6 +167,9 @@ export const demoProjects: Project[] = [
       "Kit portable Raspberry Pi dengan mode monitor, toolset WPA2 handshake capture, dan scanner rogue AP dengan output laporan terstruktur.",
     impact:
       "Audit lapangan menjadi one-shot boot & scan, mengurangi waktu persiapan di lokasi secara signifikan.",
+    methodology: null,
+    attackPath: null,
+    detection: null,
     createdAt: "2023-08-30T00:00:00.000Z",
   },
 ];

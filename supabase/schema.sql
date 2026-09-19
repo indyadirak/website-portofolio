@@ -25,6 +25,11 @@ create table if not exists public.projects (
   problem     text,
   solution    text,
   impact      text,
+  -- Security Case Study (SPRINT 1): Overview=problem, Methodology,
+  -- Attack Path, Detection, Mitigation=solution, Impact=impact.
+  methodology text,
+  attack_path text,
+  detection   text,
   created_at  timestamptz not null default now()
 );
 

@@ -18,6 +18,23 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Widget form native (date picker, checkbox, select dropdown) ikut
+       digambar gelap oleh browser — TANPA ini ikon kalender input[type=date]
+       nyaris tak terlihat di atas panel gelap ("date picker hilang"). */
+    color-scheme: dark;
+  }
+
+  /* Kalender indikator input date: warnai aksen cyber + mudah diklik. */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(92%) sepia(58%) saturate(457%) hue-rotate(118deg) brightness(101%) contrast(101%);
+    cursor: pointer;
+    opacity: 0.85;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="month"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
   }
 
   body {
@@ -46,6 +63,22 @@
 }
 
 @layer utilities {
+  /* Admin shell: compact workspace navigation without affecting public pages. */
+  .admin-sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 252, 241, 0.25) transparent;
+  }
+
+  .admin-profile-menu[hidden] {
+    display: none;
+  }
+
+  @media (max-width: 1023px) {
+    .admin-sidebar {
+      height: 100dvh;
+    }
+  }
+
   .font-mono {
     font-family: var(--font-mono);
   }

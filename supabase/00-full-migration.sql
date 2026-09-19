@@ -254,6 +254,11 @@ create table if not exists public.projects (
   problem     text,
   solution    text,
   impact      text,
+  -- Security Case Study (SPRINT 1): Overview=problem, Methodology,
+  -- Attack Path, Detection, Mitigation=solution, Impact=impact.
+  methodology text,
+  attack_path text,
+  detection   text,
   created_at  timestamptz not null default now()
 );
 
@@ -870,6 +875,11 @@ grant insert, update, delete on public.cv_files to authenticated;
 alter table public.projects add column if not exists problem text;
 alter table public.projects add column if not exists solution text;
 alter table public.projects add column if not exists impact text;
+
+-- Security Case Study (SPRINT 1) — supabase/projects-case-study.sql
+alter table public.projects add column if not exists methodology text;
+alter table public.projects add column if not exists attack_path text;
+alter table public.projects add column if not exists detection text;
 
 -- ------------------------------------------------------------------
 -- 2) SKILLS: perluas daftar kategori untuk profil

@@ -2,44 +2,42 @@
 import "../styles/global.css";
 import { getDictionary, localeFromPathname } from "../lib/i18n";
 import { siteConfig } from "../lib/config";
+import AdminSidebarGroup from "../components/admin/AdminSidebarGroup.astro";
 
 export interface Props {
   title: string;
   description?: string;
-  /** Kunci nav aktif untuk aria-current: dashboard|projects|addProjects|writeups|certificates|addCertificates|messages|settings|experiences|socialLinks|cv|backup. */
   current?: string;
 }
 
 const { title, description, current } = Astro.props;
-
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
-
-// AdminLayout hanya dipakai di balik guard halaman admin — tetap null-safe
-// (Astro.locals kosong di luar middleware = tampil "guest").
 const { user, profile } = Astro.locals;
 const role = profile?.role ?? (user ? "viewer" : "guest");
 const displayName = profile?.fullName?.trim() || user?.email || "operator";
+const initials = displayName.slice(0, 2).toUpperCase();
+const active = current ?? Astro.url.pathname.split("/").filter(Boolean).at(-1) ?? "dashboard";
 
-const navItems = [
-  { key: "dashboard", label: t.adminLayout.navDashboard, href: "/admin/dashboard" },
-  { key: "projects", label: t.adminLayout.navViewProjects, href: "/admin/projects" },
-  { key: "addProjects", label: t.adminLayout.navAddProjects, href: "/admin/projects/new" },
-  { key: "writeups", label: t.adminLayout.navWriteups, href: "/admin/writeups" },
-  { key: "certificates", label: t.adminLayout.navViewCertificates, href: "/admin/certificates" },
-  { key: "addCertificates", label: t.adminLayout.navAddCertificates, href: "/admin/certificates/new" },
-  { key: "messages", label: t.adminLayout.navMessages, href: "/admin/messages" },
-  { key: "settings", label: t.adminLayout.navSettings, href: "/admin/settings" },
-  { key: "experiences", label: t.adminLayout.navExperiences, href: "/admin/experiences" },
-  { key: "socialLinks", label: t.adminLayout.navSocialLinks, href: "/admin/social-links" },
-  { key: "cv", label: t.adminLayout.navCv, href: "/admin/cv" },
-  { key: "backup", label: t.adminLayout.navBackup, href: "/admin/backup" },
+const contentItems = [
+  { key: "dashboard", label: t.adminLayout.navDashboard, href: "/admin/dashboard", icon: "▦" },
+  { key: "projects", label: t.adminLayout.navViewProjects, href: "/admin/projects", icon: "◇" },
+  { key: "writeups", label: t.adminLayout.navWriteups, href: "/admin/writeups", icon: "≡" },
+  { key: "certificates", label: t.adminLayout.navViewCertificates, href: "/admin/certificates", icon: "✦" },
+  { key: "messages", label: t.adminLayout.navMessages, href: "/admin/messages", icon: "@" },
 ];
-
-const activeClasses =
-  "bg-cyber-primary/10 text-cyber-primary";
-const idleClasses =
-  "text-cyber-muted hover:bg-cyber-card hover:text-cyber-primary";
+const systemItems = [
+  { key: "settings", label: t.adminLayout.navSettings, href: "/admin/settings", icon: "⚙" },
+  { key: "experiences", label: t.adminLayout.navExperiences, href: "/admin/experiences", icon: "◷" },
+  { key: "socialLinks", label: t.adminLayout.navSocialLinks, href: "/admin/social-links", icon: "↗" },
+  { key: "categories", label: t.adminLayout.categories, href: "/admin/categories", icon: "#" },
+];
+const adminItems = [
+  { key: "cv", label: t.adminLayout.navCv, href: "/admin/cv", icon: "↓" },
+  { key: "backup", label: t.adminLayout.navBackup, href: "/admin/backup", icon: "▣" },
+];
+const canSeeAdminItems = role === "admin";
+const initialsLabel = `${t.adminLayout.profile}: ${displayName}`;
 ---
 
 <!doctype html>
@@ -54,76 +52,113 @@ const idleClasses =
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title} — {siteConfig.name}</title>
   </head>
-  <body class="flex min-h-screen flex-col bg-cyber-bg">
-    <a
-      href="#konten"
-      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:border focus:border-cyber-primary focus:bg-cyber-panel focus:px-4 focus:py-2 focus:font-mono focus:text-sm focus:text-cyber-primary"
-    >
-      {t.ui.skipToContent}
-    </a>
-    <header class="glass sticky top-0 z-50">
-      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 md:px-6">
-        <a
-          href="/admin/dashboard"
-          class="flex min-h-11 items-center font-mono text-base font-bold tracking-tight text-cyber-primary glow-text md:text-lg"
-        >
-          CyberSec<span class="text-cyber-accent">_admin</span>
-        </a>
-        <div class="flex items-center gap-3 font-mono text-xs">
-          <div class="hidden text-right sm:block">
-            <p class="text-slate-300">{displayName}</p>
-            {user?.email && <p class="text-cyber-muted">{user.email}</p>}
-          </div>
-          <span class="rounded border border-cyber-primary/50 px-2 py-1 uppercase tracking-wider text-cyber-primary">
-            {t.adminLayout.role}: {role}
-          </span>
-          <button
-            id="admin-logout"
-            type="button"
-            class="rounded border border-cyber-border px-3 py-1.5 text-slate-300 transition-colors hover:border-cyber-danger hover:text-cyber-danger"
-          >
-            [ {t.adminLayout.logout} ]
+  <body class="min-h-screen bg-cyber-bg text-slate-200">
+    <a href="#konten" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:border focus:border-cyber-primary focus:bg-cyber-panel focus:px-4 focus:py-2 focus:font-mono focus:text-sm focus:text-cyber-primary">{t.ui.skipToContent}</a>
+
+    <header class="admin-topbar sticky top-0 z-50 border-b border-cyber-border/60 bg-cyber-bg/90 backdrop-blur-xl">
+      <div class="flex h-16 items-center justify-between gap-3 px-4 md:px-6">
+        <div class="flex items-center gap-3">
+          <button id="admin-menu-toggle" type="button" aria-expanded="false" aria-controls="admin-sidebar" aria-label={t.adminLayout.openMenu} class="admin-menu-toggle flex h-10 w-10 items-center justify-center rounded border border-cyber-border text-cyber-primary hover:border-cyber-primary lg:hidden">
+            <span aria-hidden="true" class="text-lg">☰</span>
           </button>
+          <a href="/admin/dashboard" class="font-mono text-base font-bold tracking-tight text-cyber-primary glow-text md:text-lg">CyberSec<span class="text-cyber-accent">_admin</span></a>
+          <span class="hidden border-l border-cyber-border pl-3 font-mono text-xs text-cyber-muted sm:inline">{t.adminLayout.workspace}</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <a href="/" target="_blank" rel="noopener noreferrer" class="hidden min-h-10 items-center rounded px-3 font-mono text-xs text-cyber-muted hover:bg-cyber-card hover:text-cyber-primary sm:flex">↗ {t.adminLayout.viewSite}</a>
+          <div class="relative">
+            <button id="admin-profile-toggle" type="button" aria-expanded="false" aria-controls="admin-profile-menu" aria-label={initialsLabel} class="flex min-h-10 items-center gap-2 rounded border border-cyber-border bg-cyber-panel px-2.5 hover:border-cyber-primary/70">
+              <span class="flex h-7 w-7 items-center justify-center rounded bg-cyber-primary/15 font-mono text-[10px] font-bold text-cyber-primary">{initials}</span>
+              <span class="hidden max-w-32 truncate text-left font-mono text-xs text-slate-300 md:block">{displayName}</span>
+              <span aria-hidden="true" class="text-xs text-cyber-muted">⌄</span>
+            </button>
+            <div id="admin-profile-menu" hidden class="admin-profile-menu absolute right-0 top-12 z-50 w-72 rounded border border-cyber-border bg-cyber-panel p-3 shadow-2xl">
+              <div class="border-b border-cyber-border/70 px-2 pb-3">
+                <p class="font-mono text-[10px] uppercase tracking-wider text-cyber-muted">{t.adminLayout.signedInAs}</p>
+                <p class="mt-1 truncate text-sm font-semibold text-slate-100">{displayName}</p>
+                {user?.email && <p class="mt-0.5 truncate font-mono text-xs text-cyber-muted">{user.email}</p>}
+                <span class="mt-3 inline-flex rounded border border-cyber-primary/40 bg-cyber-primary/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-cyber-primary">{t.adminLayout.role}: {role}</span>
+              </div>
+              <div class="space-y-1 py-2">
+                <div class="flex items-center justify-between rounded px-2 py-2 font-mono text-xs"><span class="text-cyber-muted">{t.adminLayout.mfaStatus}</span><span class="text-cyber-primary">{profile?.mfaEnforced ? t.adminLayout.mfaEnabled : t.adminLayout.mfaUnknown}</span></div>
+                <a href="/admin/settings" class="block rounded px-2 py-2 font-mono text-xs text-slate-300 hover:bg-cyber-card hover:text-cyber-primary">⚙ {t.adminLayout.accountSettings}</a>
+                <a href="/" class="block rounded px-2 py-2 font-mono text-xs text-slate-300 hover:bg-cyber-card hover:text-cyber-primary sm:hidden">↗ {t.adminLayout.viewSite}</a>
+              </div>
+              <button id="admin-logout" type="button" class="w-full rounded border border-cyber-danger/40 px-2 py-2 text-left font-mono text-xs text-cyber-danger hover:bg-cyber-danger/10">⏻ {t.adminLayout.logout}</button>
+            </div>
+          </div>
         </div>
       </div>
-      <nav aria-label="Admin navigation" class="border-t border-cyber-border/60">
-        <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-1 px-4 py-1.5 md:px-6">
-          {navItems.map((item) => (
-            <a
-              href={item.href}
-              aria-current={current === item.key ? "page" : undefined}
-              class={`flex min-h-9 items-center rounded px-3 font-mono text-xs transition-colors ${
-                current === item.key ? activeClasses : idleClasses
-              }`}
-            >
-              {item.label}
-            </a>
-          ))}
-        </div>
-      </nav>
     </header>
 
-    <main id="konten" tabindex="-1" class="flex-1">
-      <slot />
-    </main>
+    <div id="admin-shell" class="relative lg:flex">
+      <div id="admin-sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-black/60 lg:hidden"></div>
+      <aside id="admin-sidebar" class="admin-sidebar fixed inset-y-0 left-0 z-40 w-72 -translate-x-full overflow-y-auto border-r border-cyber-border/60 bg-cyber-panel pt-20 transition-transform lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:translate-x-0 lg:pt-6">
+        <nav aria-label="Admin navigation" class="space-y-6 px-3 pb-8">
+          <AdminSidebarGroup label={t.adminLayout.contentGroup} items={contentItems} active={active} />
+          <AdminSidebarGroup label={t.adminLayout.systemGroup} items={systemItems} active={active} />
+          {canSeeAdminItems && <AdminSidebarGroup label={t.adminLayout.accountGroup} items={adminItems} active={active} />}
+          <div class="border-t border-cyber-border/50 pt-5 px-3">
+            <p class="font-mono text-[10px] leading-relaxed text-cyber-muted/70">admin://portofolio<br />{siteConfig.url.replace("https://", "")}</p>
+          </div>
+        </nav>
+      </aside>
 
-    <footer class="border-t border-cyber-border/40 py-4">
-      <p class="text-center font-mono text-xs text-cyber-muted">
-        admin://portofolio — {siteConfig.url}
-      </p>
-    </footer>
+      <main id="konten" tabindex="-1" class="min-w-0 flex-1">
+        <div class="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+          <slot />
+        </div>
+      </main>
+    </div>
 
     <script>
-      const logoutBtn = document.getElementById("admin-logout") as HTMLButtonElement;
+      const menuToggle = document.getElementById("admin-menu-toggle") as HTMLButtonElement | null;
+      const sidebar = document.getElementById("admin-sidebar");
+      const backdrop = document.getElementById("admin-sidebar-backdrop");
+      const profileToggle = document.getElementById("admin-profile-toggle") as HTMLButtonElement | null;
+      const profileMenu = document.getElementById("admin-profile-menu");
+      const logoutBtn = document.getElementById("admin-logout") as HTMLButtonElement | null;
 
-      logoutBtn.addEventListener("click", async () => {
+      const closeSidebar = () => {
+        sidebar?.classList.add("-translate-x-full");
+        backdrop?.classList.add("hidden");
+        menuToggle?.setAttribute("aria-expanded", "false");
+      };
+      const closeProfile = () => {
+        if (profileMenu) profileMenu.hidden = true;
+        profileToggle?.setAttribute("aria-expanded", "false");
+      };
+      menuToggle?.addEventListener("click", () => {
+        const isClosed = sidebar?.classList.contains("-translate-x-full") ?? true;
+        if (isClosed) {
+          sidebar?.classList.remove("-translate-x-full");
+          backdrop?.classList.remove("hidden");
+          menuToggle.setAttribute("aria-expanded", "true");
+        } else closeSidebar();
+      });
+      backdrop?.addEventListener("click", closeSidebar);
+      sidebar?.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeSidebar));
+      profileToggle?.addEventListener("click", () => {
+        if (!profileMenu) return;
+        profileMenu.hidden = !profileMenu.hidden;
+        profileToggle.setAttribute("aria-expanded", String(!profileMenu.hidden));
+      });
+      document.addEventListener("click", (event) => {
+        if (event.target instanceof Node && profileMenu && profileToggle && !profileMenu.contains(event.target) && !profileToggle.contains(event.target)) closeProfile();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeSidebar();
+          closeProfile();
+          profileToggle?.focus();
+        }
+      });
+      logoutBtn?.addEventListener("click", async () => {
         logoutBtn.disabled = true;
         const res = await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-        if (res && (await res.json().catch(() => ({ ok: false }))).ok) {
-          window.location.href = "/admin/login";
-        } else {
-          logoutBtn.disabled = false;
-        }
+        if (res && (await res.json().catch(() => ({ ok: false }))).ok) window.location.href = "/admin/login";
+        else logoutBtn.disabled = false;
       });
     </script>
   </body>

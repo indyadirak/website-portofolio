@@ -59,6 +59,9 @@ jobs:
       - name: npm audit (high/critical gate)
         run: npm audit --audit-level=high
 
+      - name: Type check
+        run: npm run check
+
       # ===== Build-time env =====
       # PUBLIC_* dibaca via import.meta.env dan di-INLINE saat build
       # (src/lib/supabase.ts, src/lib/config.ts). TURNSTILE_SECRET_KEY
@@ -137,13 +140,20 @@ jobs:
         run: |
           for path in "/" "/certificates"; do
             ok=0
-            for i in 1 2 3 4 5; do
-              H="$(curl -sSL -o /dev/null -D - -A "header-check" "${PROD_URL}${path}")"
-              if [ -n "$H" ] && printf '%s' "$H" | grep -qiE "^HTTP/[12] 200"; then ok=1; break; fi
-              [ "$i" -lt 5 ] && sleep 10
+            last="none"
+            for i in 1 2 3 4 5 6 7 8; do
+              # || true + --max-time: curl error sesaat (TLS reset, edge
+              # propagation) tidak membunuh step lewat bash -e sebelum
+              # kesempatan retry habis.
+              H="$(curl -sSL -o /dev/null -D - --max-time 20 -A "header-check" "${PROD_URL}${path}" || true)"
+              last="$(printf '%s' "$H" | tr -d '\r' | grep -oiE '^HTTP/[0-9.]+ [0-9]+' | tail -1)"
+              echo "attempt ${i} untuk ${path}: ${last:-no-response}"
+              if printf '%s' "$H" | tr -d '\r' | grep -qiE "^HTTP/[12] 200"; then ok=1; break; fi
+              if [ "$i" -lt 8 ]; then sleep 15; fi
             done
             if [ "$ok" != "1" ]; then
-              echo "::error::fetch gagal untuk ${path}"; exit 1
+              echo "::error::fetch gagal untuk ${path} (status terakhir: ${last})"
+              exit 1
             fi
             echo "=== ${path} (HTTP OK) ==="
             for h in "content-security-policy" "strict-transport-security" "x-content-type-options: nosniff" "x-frame-options: deny"; do

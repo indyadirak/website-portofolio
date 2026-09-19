@@ -46,7 +46,7 @@ export async function POST({ request, locals }: APIContext) {
   }
 
   const email = body.email?.trim().toLowerCase() ?? "";
-  const password = body.password ?? "";
+  const password = typeof body.password === "string" ? body.password : "";
 
   if (!email || !password) {
     return json({ ok: false, error: "email_dan_password_wajib_diisi" }, 400);

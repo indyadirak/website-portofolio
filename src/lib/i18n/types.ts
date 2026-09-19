@@ -73,6 +73,8 @@ export interface Dictionary {
   skills: {
     all: string;
     empty: string;
+    /** SPRINT 1: empty state UTUH (tidak ada skill sama sekali). */
+    emptyAll: string;
     /** Label kategori skill yang dilokalisasi (kunci = nilai enum kategori). */
     categories: {
       offensive: string;
@@ -164,6 +166,12 @@ export interface Dictionary {
     title: string;
     description: string;
     noProjects: string;
+    /** SPRINT 1: label bagian Security Case Study di halaman detail. */
+    overviewLabel: string;
+    methodologyLabel: string;
+    attackPathLabel: string;
+    detectionLabel: string;
+    mitigationLabel: string;
     details: string;
     repo: string;
     live: string;
@@ -387,6 +395,46 @@ export interface Dictionary {
     /** Panduan header case study di form write-up. */
     caseStudyHint: string;
     caseStudyFenceHint: string;
+    /** SPRINT 1: judul form, panduan terstruktur, dan helper per bagian. */
+    formTitleNew: string;
+    formTitleEdit: string;
+    backToList: string;
+    caseStudyTitle: string;
+    caseStudyIntro: string;
+    methodologyHelper: string;
+    findingsHelper: string;
+    findingsPlaceholder: string;
+    remediationHelper: string;
+    remediationPlaceholder: string;
+    sectionGuideTitle: string;
+  };
+  /** SPRINT 1: UI umum form admin (shell, alert, helper). */
+  adminForm: {
+    /** Judul alert error di atas tombol submit. */
+    errorTitle: string;
+    /** Pesan saat error tidak dikenal (fallback kode mentah tetap ditampilkan). */
+    errorUnknown: string;
+    /** Label bagian form (fieldset) untuk struktur case study. */
+    sectionEvidence: string;
+    sectionMeta: string;
+  };
+  /** SPRINT 1: struktur Security Case Study pada form project. */
+  adminProjectsForm: {
+    caseStudyTitle: string;
+    caseStudyIntro: string;
+    overviewHelper: string;
+    overviewPlaceholder: string;
+    methodologyHelper: string;
+    methodologyPlaceholder: string;
+    attackPathHelper: string;
+    attackPathPlaceholder: string;
+    detectionHelper: string;
+    detectionPlaceholder: string;
+    mitigationHelper: string;
+    mitigationPlaceholder: string;
+    impactHelper: string;
+    impactPlaceholder: string;
+    descriptionHelper: string;
   };
   /** FASE 2: Admin — edit identitas situs (site_settings). */
   adminSettings: {
@@ -430,6 +478,8 @@ export interface Dictionary {
     currentBadge: string;
     total: string;
     emptyNote: string;
+    /** Petunjuk format di bawah date picker. */
+    dateHelper: string;
     edit: string;
     delete: string;
     deleteConfirm: string;
@@ -469,6 +519,12 @@ export interface Dictionary {
     /** Skip-link keyboard di MainLayout & AdminLayout (WCAG 2.4.1). */
     skipToContent: string;
   };
+  /**
+   * Pemetaan kode error API (snake_case) -> pesan manusiawi untuk admin.
+   * Record longgar sengaja: fallback client = tampilkan kode mentah,
+   * sehingga key baru di API tidak pernah membuat UI rusak.
+   */
+  errors: Record<string, string>;
   /** Manajemen pesan kontak (admin/messages) — FASE 2. */
   adminMessages: {
     eyebrow: string;
@@ -483,6 +539,9 @@ export interface Dictionary {
     unread: string;
     read: string;
     markRead: string;
+    /** Tombol expand pesan lengkap pada kartu mobile (layout < md). */
+    readFull: string;
+    fullMessage: string;
     delete: string;
     /** Placeholder {name} = nama pengirim. */
     deleteConfirm: string;
@@ -491,6 +550,20 @@ export interface Dictionary {
   };
   /** Layout admin: navigasi, role, logout (AdminLayout). */
   adminLayout: {
+    workspace: string;
+    contentGroup: string;
+    systemGroup: string;
+    accountGroup: string;
+    openMenu: string;
+    closeMenu: string;
+    viewSite: string;
+    profile: string;
+    signedInAs: string;
+    mfaStatus: string;
+    mfaEnabled: string;
+    mfaUnknown: string;
+    accountSettings: string;
+    categories: string;
     navDashboard: string;
     navViewProjects: string;
     navAddProjects: string;
@@ -523,6 +596,13 @@ export interface Dictionary {
     formTitleNew: string;
     formTitleEdit: string;
     backToList: string;
+    /** Sumber file: radio upload vs Google Drive. */
+    fileSourceTitle: string;
+    fileSourceUpload: string;
+    fileSourceDrive: string;
+    driveUrlLabel: string;
+    driveUrlHint: string;
+    dateHelper: string;
   };
   notFound: {
     title: string;

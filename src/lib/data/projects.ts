@@ -29,6 +29,9 @@ function toProject(row: ProjectsRow, categoryNames: Map<string, string>): Projec
     problem: row.problem ?? null,
     solution: row.solution ?? null,
     impact: row.impact ?? null,
+    methodology: row.methodology ?? null,
+    attackPath: row.attack_path ?? null,
+    detection: row.detection ?? null,
     createdAt: row.created_at,
   };
 }

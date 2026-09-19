@@ -11,7 +11,8 @@ Produksi: **[portofolio.indyadirak.my.id](https://portofolio.indyadirak.my.id)**
 
 ### Situs Publik
 
-- Landing page dengan project unggulan, skills, About, contact, dan CV.
+- Landing page berorientasi recruiter dengan positioning, project unggulan,
+  skills, dan CTA kontak/CV yang ringkas.
 - **Evidence-based Projects** dengan struktur Problem, Approach, dan Impact.
 - **Security Write-ups** untuk case study THM, HTB, CTF, dan riset keamanan.
 - Sistem **Draft dan Published** untuk menyiapkan write-up sebelum dipublikasikan.
@@ -25,6 +26,8 @@ Produksi: **[portofolio.indyadirak.my.id](https://portofolio.indyadirak.my.id)**
   limiting.
 - Indonesia sebagai locale default dan English melalui `/en/*`.
 - Demo data fallback ketika Supabase belum dikonfigurasi.
+- Responsive UI untuk smartphone: mobile navigation, card fallback untuk tabel,
+  responsive forms/grids, modal viewport-safe, dan admin drawer.
 
 ### Admin CMS
 
@@ -34,6 +37,8 @@ Produksi: **[portofolio.indyadirak.my.id](https://portofolio.indyadirak.my.id)**
   Messages, Site Settings, Experiences, Social Links, CV, dan backup config.
 - Halaman terpisah untuk list dan form Projects/Certificates.
 - Contact Messages: tandai dibaca dan hard delete dengan audit-friendly RLS.
+- Admin workspace dengan sidebar desktop/drawer mobile, pengelompokan menu, dan
+  profile menu account yang menampilkan role, status MFA, shortcut website, serta logout.
 - Upload sertifikat melalui validasi MIME dan magic bytes.
 - Keep-alive Supabase melalui endpoint SSR `/api/health` dan GitHub Actions.
 
@@ -141,10 +146,17 @@ Supabase SQL Editor. Untuk database existing, gunakan migration spesifik di
 
 - `writeups-status.sql` untuk Draft/Published write-up.
 - `contact-messages-crud.sql` untuk status read dan penghapusan pesan.
+- `projects-case-study.sql` untuk kolom `methodology`, `attack_path`, dan
+  `detection` pada project.
 - `site-settings-policy-fix.sql` untuk remediasi policy Site Settings.
 
 `rbac-mfa.sql` harus dijalankan lebih dahulu karena policy tabel lain
 bergantung pada `public.profiles`.
+
+Database existing wajib memiliki kolom `projects.methodology`,
+`projects.attack_path`, `projects.detection`, dan `contact_messages.is_read`.
+Schema dump dari database lama dapat belum mencantumkan kolom tersebut; jalankan
+migrasi fitur terkait sebelum memakai form case study atau tombol pesan admin.
 
 ## ☁️ Deployment
 

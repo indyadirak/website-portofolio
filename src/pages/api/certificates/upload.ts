@@ -1,8 +1,9 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json, validateCredentialFields } from "../../../lib/api";
+import { getSupabaseFromLocals, isAal2Session, json, validateCredentialFields } from "../../../lib/api";
 import { canManageCertificates } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
 import {
+  isExternalFileUrl,
   removeCertificateFile,
   uploadCertificateFile,
   validateUploadFile,
@@ -116,6 +117,9 @@ export async function POST({ request, locals }: APIContext) {
   if (!canManageCertificates(profile)) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
+  if (!(await isAal2Session(supabase))) {
+    return json({ ok: false, error: "mfa_required" }, 403);
+  }
 
   const mutationDecision = await adminMutationGuard.check(user.id);
   if (mutationDecision.reason === "kv_unavailable") {
@@ -217,6 +221,9 @@ export async function PUT({ request, locals }: APIContext) {
   if (!canManageCertificates(profile)) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
+  if (!(await isAal2Session(supabase))) {
+    return json({ ok: false, error: "mfa_required" }, 403);
+  }
 
   const mutationDecision = await adminMutationGuard.check(user.id);
   if (mutationDecision.reason === "kv_unavailable") {
@@ -300,7 +307,11 @@ export async function PUT({ request, locals }: APIContext) {
     }
 
     // UPDATE sukses -> file lama boleh dihapus (jika memang ada & beda path).
-    if (existing?.file_url && existing.file_url !== path) {
+    if (
+      existing?.file_url &&
+      existing.file_url !== path &&
+      !isExternalFileUrl(existing.file_url)
+    ) {
       await removeCertificateFile(supabase, existing.file_url);
     }
 

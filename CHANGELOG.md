@@ -5,6 +5,25 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
 
 ## Unreleased — Final QA & Fase 3
 
+### Public UX dan Admin Workspace
+- Homepage dipadatkan menjadi alur positioning → featured projects → skills →
+  contact CTA; Operations Log/System Status tidak lagi menginterupsi alur utama.
+- Header public dipangkas dengan memindahkan Security ke footer; footer sekarang
+  menyediakan identity block, CTA kontak, legal/security, social links, dan status.
+- Easter egg console production dihapus agar tidak ada output dekoratif/debug pada
+  browser console.
+- AdminLayout diubah menjadi sidebar desktop + drawer mobile dengan grouping,
+  profile menu account, status MFA, role visibility, dan logout terpusat.
+- Halaman CV, backup, dan form write-up dimigrasikan dari MainLayout ke AdminLayout.
+- MFA enrollment diperkuat untuk cleanup faktor unverified, variasi payload QR
+  Supabase, dan persistensi sesi AAL2.
+- `npm run check`, `npm run build`, dan `npm audit --omit=dev` berhasil bersih.
+- Audit mobile seluruh route publik/admin selesai: grid dan form memiliki
+  breakpoint, tabel memakai overflow/card fallback, modal memakai viewport-safe
+  sizing, dan admin content tidak lagi mendapat padding horizontal ganda.
+- Sidebar admin desktop diperbaiki agar sticky tepat di bawah header, sehingga
+  tidak menimpa topbar pada viewport tablet/desktop.
+
 ### Fase 3 — Evidence-based content dan UX publik
 - Empty state publik diperbaiki agar tidak menampilkan command debug atau
   `total 0`; pesan Projects, Certificates, dan Skills sekarang profesional
@@ -12,7 +31,8 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
 - Blok `<pre><code>` write-up diberi styling terminal yang responsif:
   monospace, background gelap, padding, border, `white-space: pre`, dan
   horizontal scroll untuk ASCII Art Home Lab.
-- Operations Log homepage sekarang mengambil empat pengalaman terbaru dari
+- Riwayat versi sebelumnya: Operations Log homepage pernah mengambil empat
+  pengalaman terbaru dari
   tabel `experiences`, sehingga sinkron dengan Career Timeline di About.
 - Career Timeline mendukung tampilan nested untuk promosi atau peran berurutan
   pada perusahaan yang sama.
