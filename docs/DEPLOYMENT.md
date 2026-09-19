@@ -37,7 +37,8 @@ Versi infrastruktur saat ini:
 ## 1. Database (Supabase) — kerjakan PERTAMA
 
 - [ ] **Opsi A — TERCEPAT (disarankan untuk fresh install / re-sync penuh):** jalankan SATU file `supabase/00-full-migration.sql` di SQL Editor. Isinya gabungan SEMUA migrasi + `BEGIN;`/`COMMIT;` — jika ada satu statement gagal, semua otomatis rollback (tidak ada perubahan setengah jalan). Idempotent penuh (CREATE IF NOT EXISTS, DROP POLICY IF EXISTS, `ON CONFLICT DO NOTHING`) — aman dijalankan berulang, termasuk di database yang sudah ter-migrasi sebagian.
-- [ ] **Opsi B — bertahap (untuk patch/migrasi tambahan di masa depan):** jalankan file terpisah SATU PER SATU **hanya yang belum pernah dijalankan** (semuanya idempotent — aman dijalankan ulang):
+- [ ] **Opsi B — database existing (disarankan untuk schema dump lama):** backup database, lalu jalankan satu file `supabase/99-existing-database-sync.sql`. File ini idempotent dan menyinkronkan kolom case study project, `contact_messages.is_read`, RLS, grants, dan schema cache PostgREST tanpa menghapus data.
+- [ ] **Opsi C — bertahap (untuk patch/migrasi tambahan di masa depan):** jalankan file terpisah SATU PER SATU **hanya yang belum pernah dijalankan** (semuanya idempotent — aman dijalankan ulang):
   - [ ] `rbac-mfa.sql` (profiles + certificates + RLS + trigger auto-profil) — **WAJIB PALING AWAL**: `schema.sql`, `storage.sql`, `cv.sql`, `login-attempts.sql`, `backup-config.sql`, `backup-config-access-log.sql` dan `public-features.sql` semuanya membuat policy/subquery yang mereferensikan `public.profiles` — jika belum ada, `CREATE POLICY` gagal (42P01, ekspresi policy divalidasi saat dibuat)
   - [ ] `schema.sql` (tabel proyek/skills/contact_messages — **SETELAH `rbac-mfa.sql`**: policy write projects mereferensikan `profiles`)
   - [ ] `contact.sql` (migrasi kolom `subject` lama — **SETELAH `schema.sql`**)

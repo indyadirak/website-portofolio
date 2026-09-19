@@ -116,8 +116,8 @@ write-up CTF) + **Admin CMS** dengan MFA TOTP wajib dan RBAC tiga role.
 - **Demo data**: bila `PUBLIC_SUPABASE_*` belum di-set, situs publik tetap
   render dari `src/lib/data/` — sengaja, bukan bug.
 - **Schema fitur terbaru**: database existing wajib menjalankan migrasi
-  `projects-case-study.sql` dan `contact-messages-crud.sql` sebelum memakai
-  field case study project atau aksi read/delete pesan.
+  `99-existing-database-sync.sql` (atau dua migrasi fitur setara) sebelum
+  memakai field case study project atau aksi read/delete pesan.
 - **CVE**: belum diimplementasikan; jangan menambahkan field CVE ke UI/DB tanpa
   migrasi idempotent, validasi, dan keputusan apakah project/write-up mendukung
   satu atau banyak CVE.

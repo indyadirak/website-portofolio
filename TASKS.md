@@ -44,6 +44,9 @@ Legenda: `[DONE]` selesai & terverifikasi · `[IN PROGRESS]` sedang berjalan
 - [DONE] Mobile audit — public/admin routes, responsive grids/forms/tables,
   modal sizing, admin drawer, dan sticky sidebar diverifikasi; padding admin
   mobile dirapikan.
+- [DONE] One-shot existing database sync — `supabase/99-existing-database-sync.sql`
+  menyatukan migrasi case study project, `contact_messages.is_read`, RLS,
+  grants, dan reload schema cache.
 
 ### In progress
 - [DONE] **Supabase Keep-Alive** — workflow

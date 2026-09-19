@@ -23,6 +23,8 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
   sizing, dan admin content tidak lagi mendapat padding horizontal ganda.
 - Sidebar admin desktop diperbaiki agar sticky tepat di bawah header, sehingga
   tidak menimpa topbar pada viewport tablet/desktop.
+- Migrasi one-shot database existing ditambahkan di
+  `supabase/99-existing-database-sync.sql`.
 
 ### Fase 3 — Evidence-based content dan UX publik
 - Empty state publik diperbaiki agar tidak menampilkan command debug atau

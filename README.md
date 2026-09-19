@@ -144,6 +144,8 @@ Untuk instalasi baru, jalankan `supabase/00-full-migration.sql` melalui
 Supabase SQL Editor. Untuk database existing, gunakan migration spesifik di
 `supabase/` sesuai fitur, termasuk:
 
+- `99-existing-database-sync.sql` untuk one-shot sync database existing:
+  case study project, status read contact messages, RLS, grants, dan schema cache.
 - `writeups-status.sql` untuk Draft/Published write-up.
 - `contact-messages-crud.sql` untuk status read dan penghapusan pesan.
 - `projects-case-study.sql` untuk kolom `methodology`, `attack_path`, dan
