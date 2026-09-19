@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json } from "../../../lib/api";
+import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canManageCv } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
 import { removeCvFile, uploadCvFile, validateCvFile, type CvLocale } from "../../../lib/storage";
@@ -34,6 +34,9 @@ export async function POST({ request, locals }: APIContext) {
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
   if (!canManageCv(profile)) {
     return json({ ok: false, error: "forbidden_role" }, 403);
+  }
+  if (!(await isAal2Session(supabase))) {
+    return json({ ok: false, error: "mfa_required" }, 403);
   }
 
   const mutationDecision = await adminMutationGuard.check(user.id);
@@ -120,6 +123,9 @@ export async function DELETE({ request, locals }: APIContext) {
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
   if (!canManageCv(profile)) {
     return json({ ok: false, error: "forbidden_role" }, 403);
+  }
+  if (!(await isAal2Session(supabase))) {
+    return json({ ok: false, error: "mfa_required" }, 403);
   }
 
   const mutationDecision = await adminMutationGuard.check(user.id);

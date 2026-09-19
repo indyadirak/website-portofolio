@@ -305,16 +305,24 @@ const { categories = [] } = Astro.props;
       impact: impact.value.trim() || null,
     };
 
-    const res = await fetch(
-      editingId ? `/api/projects?id=${encodeURIComponent(editingId)}` : "/api/projects",
-      {
-        method: editingId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    const data = await res.json();
+    let res: Response;
+    let data: { ok?: boolean; error?: string };
+    try {
+      res = await fetch(
+        editingId ? `/api/projects?id=${encodeURIComponent(editingId)}` : "/api/projects",
+        {
+          method: editingId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      data = await res.json().catch(() => ({ ok: false, error: "server_response_invalid" }));
+    } catch {
+      submitBtn.disabled = false;
+      statusEl.textContent = "$ error: network_error";
+      statusEl.classList.add("text-cyber-danger");
+      return;
+    }
 
     submitBtn.disabled = false;
 

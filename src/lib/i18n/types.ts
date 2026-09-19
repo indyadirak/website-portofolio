@@ -530,6 +530,11 @@ export interface Dictionary {
     eyebrow: string;
     title: string;
     total: string;
+    unreadTotal: string;
+    allFilter: string;
+    unreadFilter: string;
+    inboxDescription: string;
+    emptyUnread: string;
     emptyNote: string;
     thSender: string;
     thDate: string;

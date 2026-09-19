@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json } from "../../../lib/api";
+import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canDeleteProjects, canManageProjects } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
 import type { ProjectCategoryRow } from "../../../lib/types";
@@ -34,12 +34,19 @@ type GuardResult =
     };
 
 /** Guard terpusat: session + role admin/editor + rate limit mutasi. */
-async function guard(supabase: ReturnType<typeof getSupabaseFromLocals>, locals: App.Locals): Promise<GuardResult> {
+async function guard(
+  supabase: ReturnType<typeof getSupabaseFromLocals>,
+  locals: App.Locals,
+  write = false,
+): Promise<GuardResult> {
   if (!supabase) return { error: json({ ok: false, error: "supabase_not_configured" }, 503) };
   const { user, profile } = locals;
   if (!user) return { error: json({ ok: false, error: "unauthorized" }, 401) };
   if (!canManageProjects(profile)) {
     return { error: json({ ok: false, error: "forbidden_role" }, 403) };
+  }
+  if (write && !(await isAal2Session(supabase))) {
+    return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
   const decision = await adminMutationGuard.check(user.id);
   if (decision.reason === "kv_unavailable") {
@@ -72,7 +79,7 @@ export async function GET({ locals }: APIContext) {
 
 /** Buat kategori baru. */
 export async function POST({ request, locals }: APIContext) {
-  const g = await guard(getSupabaseFromLocals(locals), locals);
+  const g = await guard(getSupabaseFromLocals(locals), locals, true);
   if (g.error) return g.error;
 
   let body: CategoryInput;
@@ -112,7 +119,7 @@ export async function POST({ request, locals }: APIContext) {
 
 /** Perbarui kategori (id via query param `?id=`). */
 export async function PUT({ request, locals }: APIContext) {
-  const g = await guard(getSupabaseFromLocals(locals), locals);
+  const g = await guard(getSupabaseFromLocals(locals), locals, true);
   if (g.error) return g.error;
 
   const id = new URL(request.url).searchParams.get("id");
@@ -197,6 +204,9 @@ async function guardAdminOnly(supabase: ReturnType<typeof getSupabaseFromLocals>
   if (!user) return { error: json({ ok: false, error: "unauthorized" }, 401) };
   if (!canDeleteProjects(profile)) {
     return { error: json({ ok: false, error: "forbidden_role" }, 403) };
+  }
+  if (!(await isAal2Session(supabase))) {
+    return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
   const decision = await adminMutationGuard.check(user.id);
   if (decision.reason === "kv_unavailable") {

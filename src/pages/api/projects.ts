@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { getSupabaseFromLocals, json } from "../../lib/api";
+import { getSupabaseFromLocals, isAal2Session, json } from "../../lib/api";
 import {
   canDeleteProjects,
   canManageProjects,
@@ -60,6 +60,22 @@ function validHttpUrl(value: string | null | undefined): boolean {
     return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
+  }
+}
+
+/** Map database errors to safe, actionable API codes without leaking SQL. */
+function databaseErrorResponse(error: { code?: string }): Response {
+  switch (error.code) {
+    case "42501":
+      return json({ ok: false, error: "mfa_required" }, 403);
+    case "23503":
+      return json({ ok: false, error: "category_id_tidak_valid" }, 400);
+    case "23514":
+      return json({ ok: false, error: "data_melanggar_constraint" }, 400);
+    case "42703":
+      return json({ ok: false, error: "schema_belum_diupdate" }, 503);
+    default:
+      return json({ ok: false, error: "db_operation_failed" }, 500);
   }
 }
 
@@ -203,6 +219,9 @@ export async function POST({ request, locals }: APIContext) {
   if (!canManageProjects(profile)) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
+  if (!(await isAal2Session(supabase))) {
+    return json({ ok: false, error: "mfa_required" }, 403);
+  }
 
   const mutationDecision = await adminMutationGuard.check(user.id);
   if (mutationDecision.reason === "kv_unavailable") {
@@ -231,7 +250,7 @@ export async function POST({ request, locals }: APIContext) {
     if (error.code === "23505") {
       return json({ ok: false, error: "slug_sudah_dipakai" }, 409);
     }
-    return json({ ok: false, error: "db_operation_failed" }, 403);
+    return databaseErrorResponse(error);
   }
 
   return json({ ok: true, id: data.id }, 201);
@@ -250,6 +269,9 @@ export async function PUT({ request, locals }: APIContext) {
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
   if (!canManageProjects(profile)) {
     return json({ ok: false, error: "forbidden_role" }, 403);
+  }
+  if (!(await isAal2Session(supabase))) {
+    return json({ ok: false, error: "mfa_required" }, 403);
   }
 
   const mutationDecision = await adminMutationGuard.check(user.id);
@@ -281,7 +303,7 @@ export async function PUT({ request, locals }: APIContext) {
     if (error.code === "23505") {
       return json({ ok: false, error: "slug_sudah_dipakai" }, 409);
     }
-    return json({ ok: false, error: "db_operation_failed" }, 403);
+    return databaseErrorResponse(error);
   }
 
   return json({ ok: true });
@@ -300,6 +322,9 @@ export async function DELETE({ request, locals }: APIContext) {
   if (!user) return json({ ok: false, error: "unauthorized" }, 401);
   if (!canDeleteProjects(profile)) {
     return json({ ok: false, error: "forbidden_role" }, 403);
+  }
+  if (!(await isAal2Session(supabase))) {
+    return json({ ok: false, error: "mfa_required" }, 403);
   }
 
   const mutationDecision = await adminMutationGuard.check(user.id);
@@ -322,7 +347,7 @@ export async function DELETE({ request, locals }: APIContext) {
 
   if (error) {
     console.error("[projects] DELETE gagal:", error.message);
-    return json({ ok: false, error: "db_operation_failed" }, 403);
+    return databaseErrorResponse(error);
   }
 
   return json({ ok: true });

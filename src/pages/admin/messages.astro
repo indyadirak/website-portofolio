@@ -41,6 +41,7 @@ try {
 
 const dateLocale = locale === "en" ? "en-US" : "id-ID";
 const fmt = (m: ContactMessagesRow) => new Date(m.created_at).toLocaleString(dateLocale);
+const unreadCount = messages.filter((message) => !message.is_read).length;
 const badgeReadClasses = ["border-cyber-border", "text-cyber-muted"];
 const badgeUnreadClasses = ["border-cyber-primary/60", "text-cyber-primary"];
 // Seed peta error API -> pesan manusiawi (CSP: data melewati atribut,
@@ -55,22 +56,38 @@ const errorMap = JSON.stringify(t.errors);
     data-i18n-error-prefix={t.adminMessages.errorPrefix}
     data-i18n-done={t.adminMessages.done}
     data-i18n-read={t.adminMessages.read}
-    data-i18n-total={t.adminMessages.total}
+     data-i18n-total={t.adminMessages.total}
+     data-i18n-unread-total={t.adminMessages.unreadTotal}
+     data-i18n-empty-unread={t.adminMessages.emptyUnread}
     data-i18n-errors={errorMap}
   >
-    <div>
-      <p class="font-mono text-sm text-cyber-accent">{t.adminMessages.eyebrow}</p>
-      <h1 class="mt-2 font-mono text-3xl font-bold text-white">
-        {t.adminMessages.title}<span class="text-cyber-primary">;</span>
-      </h1>
+    <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+      <div>
+        <p class="font-mono text-sm text-cyber-accent">{t.adminMessages.eyebrow}</p>
+        <h1 class="mt-2 font-mono text-3xl font-bold text-white">
+          {t.adminMessages.title}<span class="text-cyber-primary">;</span>
+        </h1>
+        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-cyber-muted">{t.adminMessages.inboxDescription}</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 sm:flex">
+        <div class="rounded border border-cyber-border bg-cyber-card px-4 py-3">
+          <p class="font-mono text-[10px] uppercase tracking-wider text-cyber-muted">{t.adminMessages.total}</p>
+          <p id="msg-total-stat" class="mt-1 font-mono text-xl font-bold text-white">{messages.length}</p>
+        </div>
+        <div class="rounded border border-cyber-primary/40 bg-cyber-primary/5 px-4 py-3">
+          <p class="font-mono text-[10px] uppercase tracking-wider text-cyber-primary">{t.adminMessages.unreadTotal}</p>
+          <p id="msg-unread-stat" class="mt-1 font-mono text-xl font-bold text-cyber-primary">{unreadCount}</p>
+        </div>
+      </div>
     </div>
 
     <section class="mt-8">
-      <div class="mb-6 flex items-center justify-between">
-        <h2 class="font-mono text-lg font-bold text-white">{t.adminMessages.title}</h2>
-        <span class="font-mono text-xs text-cyber-muted" id="msg-count">
-          {t.adminMessages.total}: {messages.length}
-        </span>
+      <div class="mb-5 flex flex-col gap-3 border-b border-cyber-border/60 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-wrap gap-2" role="group" aria-label={t.adminMessages.title}>
+          <button type="button" data-msg-filter="all" aria-pressed="true" class="msg-filter-btn rounded border border-cyber-primary/60 bg-cyber-primary/10 px-3 py-2 font-mono text-xs text-cyber-primary">{t.adminMessages.allFilter}</button>
+          <button type="button" data-msg-filter="unread" aria-pressed="false" class="msg-filter-btn rounded border border-cyber-border px-3 py-2 font-mono text-xs text-cyber-muted hover:border-cyber-primary hover:text-cyber-primary">{t.adminMessages.unreadFilter}</button>
+        </div>
+        <span class="font-mono text-xs text-cyber-muted" id="msg-count">{t.adminMessages.total}: {messages.length}</span>
       </div>
 
       <div
@@ -99,6 +116,7 @@ const errorMap = JSON.stringify(t.errors);
                 {messages.map((m, i) => (
                   <tr
                     data-msg-row={String(i)}
+                    data-msg-unread={String(!m.is_read)}
                     class:list={[
                       "border-b border-cyber-border/40 transition-colors hover:bg-cyber-panel",
                       !m.is_read && "bg-cyber-primary/5",
@@ -145,6 +163,7 @@ const errorMap = JSON.stringify(t.errors);
                             data-msg-delete={m.id}
                             data-msg-index={String(i)}
                             data-msg-name={m.name}
+                            data-msg-unread={String(!m.is_read)}
                           >
                             {t.adminMessages.delete}
                           </TerminalButton>
@@ -161,6 +180,7 @@ const errorMap = JSON.stringify(t.errors);
               {messages.map((m, i) => (
                 <article
                   data-msg-row={String(i)}
+                  data-msg-unread={String(!m.is_read)}
                   class:list={[
                     "rounded border border-cyber-border bg-cyber-card p-4",
                     !m.is_read && "bg-cyber-primary/5",
@@ -216,6 +236,7 @@ const errorMap = JSON.stringify(t.errors);
                         data-msg-delete={m.id}
                         data-msg-index={String(i)}
                         data-msg-name={m.name}
+                        data-msg-unread={String(!m.is_read)}
                       >
                         {t.adminMessages.delete}
                       </TerminalButton>
@@ -242,6 +263,8 @@ const errorMap = JSON.stringify(t.errors);
   const doneMsg = root.dataset.i18nDone ?? "";
   const readLabel = root.dataset.i18nRead ?? "read";
   const totalLabel = root.dataset.i18nTotal ?? "total";
+  const unreadTotalLabel = root.dataset.i18nUnreadTotal ?? "unread";
+  const emptyUnreadLabel = root.dataset.i18nEmptyUnread ?? "all read";
 
   let errorTexts: Record<string, string> = {};
   try {
@@ -254,9 +277,13 @@ const errorMap = JSON.stringify(t.errors);
 
   const statusEl = document.getElementById("msg-page-status") as HTMLParagraphElement;
   const countEl = document.getElementById("msg-count") as HTMLElement;
+  const totalStat = document.getElementById("msg-total-stat") as HTMLElement | null;
+  const unreadStat = document.getElementById("msg-unread-stat") as HTMLElement | null;
 
   /** Sisa baris hidup — sinkron untuk kedua view (tabel + kartu). */
   let remaining = document.querySelectorAll("[data-msg-row]").length / 2;
+  let unreadRemaining = document.querySelectorAll<HTMLElement>('[data-msg-row][data-msg-unread="true"]').length / 2;
+  let activeFilter = "all";
 
   function reportError(detail: string): void {
     statusEl.textContent = `${errorPrefix} ${detail}`;
@@ -268,12 +295,43 @@ const errorMap = JSON.stringify(t.errors);
 
   function refreshCount(): void {
     if (countEl) countEl.textContent = `${totalLabel}: ${remaining}`;
+    if (totalStat) totalStat.textContent = String(remaining);
+    if (unreadStat) unreadStat.textContent = String(unreadRemaining);
     if (remaining <= 0) {
       document.getElementById("msg-table-wrap")?.remove();
       document.getElementById("msg-cards")?.remove();
       document.getElementById("msg-empty-state")?.removeAttribute("hidden");
     }
   }
+
+  function applyFilter(): void {
+    document.querySelectorAll<HTMLElement>("[data-msg-row]").forEach((row) => {
+      const visible = activeFilter === "all" || row.dataset.msgUnread === "true";
+      row.hidden = !visible;
+    });
+    if (countEl) {
+      countEl.textContent = activeFilter === "unread"
+        ? `${unreadTotalLabel}: ${unreadRemaining}`
+        : `${totalLabel}: ${remaining}`;
+    }
+  }
+
+  document.querySelectorAll<HTMLButtonElement>("[data-msg-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeFilter = button.dataset.msgFilter ?? "all";
+      document.querySelectorAll<HTMLButtonElement>("[data-msg-filter]").forEach((item) => {
+        const selected = item === button;
+        item.setAttribute("aria-pressed", String(selected));
+        item.classList.toggle("border-cyber-primary/60", selected);
+        item.classList.toggle("bg-cyber-primary/10", selected);
+        item.classList.toggle("text-cyber-primary", selected);
+        item.classList.toggle("border-cyber-border", !selected);
+        item.classList.toggle("text-cyber-muted", !selected);
+      });
+      applyFilter();
+      if (activeFilter === "unread" && unreadRemaining === 0) statusEl.textContent = emptyUnreadLabel;
+    });
+  });
 
   document.querySelectorAll<HTMLButtonElement>("[data-msg-read]").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -292,6 +350,7 @@ const errorMap = JSON.stringify(t.errors);
       }
       for (const container of containersFor(index)) {
         container.classList.remove("bg-cyber-primary/5");
+        container.dataset.msgUnread = "false";
         const badge = container.querySelector<HTMLElement>("[data-msg-badge]");
         if (badge) {
           badge.textContent = readLabel;
@@ -299,7 +358,13 @@ const errorMap = JSON.stringify(t.errors);
           badge.classList.add(...["border-cyber-border", "text-cyber-muted"]);
         }
       }
+      unreadRemaining -= 1;
+      refreshCount();
+      applyFilter();
       document.querySelectorAll<HTMLButtonElement>(`[data-msg-read="${id}"]`).forEach((b) => b.remove());
+      document.querySelectorAll<HTMLButtonElement>(`[data-msg-delete="${id}"]`).forEach((b) => {
+        b.dataset.msgUnread = "false";
+      });
       statusEl.textContent = doneMsg;
     });
   });
@@ -323,7 +388,10 @@ const errorMap = JSON.stringify(t.errors);
       }
       containersFor(index).forEach((el) => el.remove());
       remaining -= 1;
+      const wasUnread = btn.dataset.msgUnread === "true";
+      if (wasUnread) unreadRemaining -= 1;
       refreshCount();
+      applyFilter();
       statusEl.textContent = doneMsg;
     });
   });

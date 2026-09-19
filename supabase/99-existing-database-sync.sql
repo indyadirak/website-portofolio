@@ -8,7 +8,7 @@
 -- Yang disinkronkan:
 --   1. projects.methodology, attack_path, detection
 --   2. contact_messages.is_read
---   3. RLS policy + GRANT contact_messages untuk CRUD admin/editor
+--   3. RLS policy + GRANT projects/categories/contact_messages
 --   4. Reload schema cache PostgREST
 --
 -- Prasyarat:
@@ -44,7 +44,136 @@ alter table public.contact_messages
   alter column is_read set not null;
 
 -- ---------------------------------------------------------------------------
--- 3. RLS and grants for contact message management
+-- 3. RLS and grants for project CRUD
+-- ---------------------------------------------------------------------------
+alter table public.projects enable row level security;
+
+drop policy if exists "projects_public_read" on public.projects;
+create policy "projects_public_read"
+  on public.projects
+  for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "projects_insert_mfa_admin_editor" on public.projects;
+create policy "projects_insert_mfa_admin_editor"
+  on public.projects
+  for insert
+  to authenticated
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "projects_update_mfa_admin_editor" on public.projects;
+create policy "projects_update_mfa_admin_editor"
+  on public.projects
+  for update
+  to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  )
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "projects_delete_mfa_admin" on public.projects;
+create policy "projects_delete_mfa_admin"
+  on public.projects
+  for delete
+  to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role = 'admin'
+    )
+  );
+
+grant select on public.projects to anon, authenticated;
+grant insert, update, delete on public.projects to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 4. RLS and grants for dynamic project categories
+-- ---------------------------------------------------------------------------
+alter table public.project_categories enable row level security;
+
+drop policy if exists "project_categories_public_read" on public.project_categories;
+create policy "project_categories_public_read"
+  on public.project_categories
+  for select
+  to anon
+  using (is_active = true);
+
+drop policy if exists "project_categories_auth_manage_read" on public.project_categories;
+create policy "project_categories_auth_manage_read"
+  on public.project_categories
+  for select
+  to authenticated
+  using (true);
+
+drop policy if exists "project_categories_insert_mfa_admin_editor" on public.project_categories;
+create policy "project_categories_insert_mfa_admin_editor"
+  on public.project_categories
+  for insert
+  to authenticated
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "project_categories_update_mfa_admin_editor" on public.project_categories;
+create policy "project_categories_update_mfa_admin_editor"
+  on public.project_categories
+  for update
+  to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "project_categories_delete_mfa_admin" on public.project_categories;
+create policy "project_categories_delete_mfa_admin"
+  on public.project_categories
+  for delete
+  to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role = 'admin'
+    )
+  );
+
+grant select on public.project_categories to anon, authenticated;
+grant insert, update, delete on public.project_categories to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 5. RLS and grants for contact message management
 -- ---------------------------------------------------------------------------
 alter table public.contact_messages enable row level security;
 
@@ -134,4 +263,10 @@ select policyname, cmd, roles
 from pg_policies
 where schemaname = 'public'
   and tablename = 'contact_messages'
+order by policyname;
+
+select policyname, cmd, roles
+from pg_policies
+where schemaname = 'public'
+  and tablename = 'projects'
 order by policyname;
