@@ -47,6 +47,8 @@ Legenda: `[DONE]` selesai & terverifikasi · `[IN PROGRESS]` sedang berjalan
 - [DONE] One-shot existing database sync — `supabase/99-existing-database-sync.sql`
   menyatukan migrasi case study project, `contact_messages.is_read`, RLS,
   grants, dan reload schema cache.
+- [DONE] Admin login UX — `AuthLayout` khusus autentikasi, step MFA lebih jelas,
+  dan public navigation tidak lagi tercampur dengan login/enrollment.
 
 ### In progress
 - [DONE] **Supabase Keep-Alive** — workflow

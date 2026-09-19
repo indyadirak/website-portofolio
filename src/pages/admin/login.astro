@@ -1,5 +1,5 @@
 ---
-import MainLayout from "../../layouts/MainLayout.astro";
+import AuthLayout from "../../layouts/AuthLayout.astro";
 import MfaEnrollPanel from "../../components/admin/MfaEnrollPanel.astro";
 
 export const prerender = false;
@@ -11,15 +11,18 @@ if (user) return Astro.redirect("/admin/dashboard");
 const errorParam = Astro.url.searchParams.get("error");
 ---
 
-<MainLayout
+<AuthLayout
   title="Admin Login"
   description="Command Center login — dengan verifikasi MFA TOTP."
 >
-  <div class="mx-auto max-w-md px-6 py-20">
-    <p class="font-mono text-sm text-cyber-accent">$ auth --command-center</p>
-    <h1 class="mt-2 font-mono text-3xl font-bold text-white">
-      Admin Login<span class="text-cyber-primary">;</span>
-    </h1>
+  <section class="mt-8 rounded-xl border border-cyber-border/80 bg-cyber-panel/95 p-5 shadow-2xl shadow-black/30 sm:p-7">
+    <div class="border-b border-cyber-border/60 pb-5">
+      <p class="font-mono text-xs text-cyber-accent">$ auth --command-center</p>
+      <h1 class="mt-2 font-mono text-2xl font-bold text-white sm:text-3xl">
+        Admin Login<span class="text-cyber-primary">;</span>
+      </h1>
+      <p class="mt-2 text-sm leading-relaxed text-cyber-muted">Masuk ke workspace admin untuk mengelola konten portfolio.</p>
+    </div>
 
     {
       errorParam === "supabase_not_configured" && (
@@ -30,7 +33,7 @@ const errorParam = Astro.url.searchParams.get("error");
       )
     }
 
-    <div class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6 md:p-8">
+    <div class="pt-6">
       <!-- Langkah 1: email + password -->
       <form id="login-form" class="space-y-5">
         <label class="block">
@@ -62,7 +65,7 @@ const errorParam = Astro.url.searchParams.get("error");
       </form>
 
       <!-- Langkah 2: kode MFA 6 digit (hanya muncul jika MFA aktif) -->
-      <div id="mfa-step" hidden class="mt-8 border-t border-cyber-border pt-6">
+      <div id="mfa-step" hidden class="rounded-lg border border-cyber-primary/30 bg-cyber-primary/5 p-4 sm:p-5">
         <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
           [ mfa_required ]
         </h2>
@@ -91,14 +94,14 @@ const errorParam = Astro.url.searchParams.get("error");
       </div>
 
       <!-- Langkah 3: enrollment MFA (admin/editor baru pertama login) -->
-      <div id="enroll-step" hidden class="mt-8 border-t border-cyber-border pt-6">
+      <div id="enroll-step" hidden class="rounded-lg border border-cyber-primary/30 bg-cyber-primary/5 p-4 sm:p-5">
         <MfaEnrollPanel />
       </div>
 
       <p id="auth-status" role="status" aria-live="polite" class="mt-5 min-h-[1rem] font-mono text-xs text-cyber-danger"></p>
     </div>
-  </div>
-</MainLayout>
+  </section>
+</AuthLayout>
 
 <script>
   const loginForm = document.getElementById("login-form") as HTMLFormElement;

@@ -25,6 +25,9 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
   tidak menimpa topbar pada viewport tablet/desktop.
 - Migrasi one-shot database existing ditambahkan di
   `supabase/99-existing-database-sync.sql`.
+- Halaman admin login dipisahkan ke `AuthLayout` tanpa public navbar/footer;
+  login, MFA verification, dan enrollment sekarang tampil sebagai satu alur
+  command center dengan hierarki langkah yang jelas.
 
 ### Fase 3 — Evidence-based content dan UX publik
 - Empty state publik diperbaiki agar tidak menampilkan command debug atau

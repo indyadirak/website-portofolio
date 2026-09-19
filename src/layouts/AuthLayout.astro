@@ -1,0 +1,39 @@
+---
+import "../styles/global.css";
+import { siteConfig } from "../lib/config";
+
+export interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const locale = Astro.url.pathname.startsWith("/en/") ? "en" : "id";
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description ?? title} />
+    <meta name="theme-color" content="#0b0c10" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} — {siteConfig.name}</title>
+  </head>
+  <body class="min-h-screen bg-cyber-bg text-slate-200">
+    <main class="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
+      <div aria-hidden="true" class="pointer-events-none absolute inset-0 cyber-grid opacity-[0.04]"></div>
+      <div class="relative w-full max-w-lg">
+        <a href="/" class="mx-auto flex w-fit items-center font-mono text-lg font-bold tracking-tight text-cyber-primary glow-text">
+          {siteConfig.name}<span class="text-cyber-accent">_</span>
+        </a>
+        <p class="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-cyber-muted">secure command center</p>
+        <slot />
+        <p class="mt-6 text-center font-mono text-[10px] text-cyber-muted/60">{siteConfig.url.replace("https://", "")}</p>
+      </div>
+    </main>
+  </body>
+</html>

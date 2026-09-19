@@ -6,10 +6,10 @@
  */
 ---
 
-<div id="enroll-panel" class="space-y-5">
+<div id="enroll-panel" class="space-y-4">
   <div
     id="enroll-loading"
-    class="rounded border border-cyber-border bg-cyber-card p-6 font-mono text-sm text-cyber-muted"
+    class="rounded border border-cyber-border/70 bg-cyber-card/60 p-4 font-mono text-sm text-cyber-muted"
   >
     $ generating_qr_code...
     <button
@@ -22,18 +22,19 @@
     </button>
   </div>
 
-  <div id="enroll-content" hidden class="space-y-5">
-    <div class="rounded border border-cyber-border bg-cyber-card p-6">
-      <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
-        [ mfa_enrollment_required ]
-      </h2>
-      <p class="mt-3 text-sm leading-relaxed text-cyber-muted">
-        Role Anda (admin/editor) mewajibkan Multi-Factor Authentication.
-        Scan QR berikut dengan aplikasi authenticator (Google Authenticator, Authy, dll),
-        lalu masukkan kode 6 digit untuk menyelesaikan pendaftaran.
-      </p>
+  <div id="enroll-content" hidden class="space-y-4">
+    <div>
+      <div class="flex items-start gap-3">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyber-primary/15 font-mono text-sm text-cyber-primary">2</span>
+        <div>
+          <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-white">Aktifkan MFA</h2>
+          <p class="mt-1 text-sm leading-relaxed text-cyber-muted">
+            Akun admin/editor membutuhkan MFA. Scan QR dengan authenticator, lalu verifikasi kode 6 digit.
+          </p>
+        </div>
+      </div>
 
-      <div class="mt-6 flex flex-col items-center gap-6 md:flex-row md:items-start">
+      <div class="mt-5 flex flex-col items-center gap-5 md:flex-row md:items-start">
         <img
           id="enroll-qr"
           class="h-56 w-56 rounded border border-cyber-border bg-white p-2"
@@ -42,9 +43,9 @@
           height="224"
         />
         <div class="flex-1 space-y-3">
-          <div>
+          <div class="w-full">
             <p class="mb-1 font-mono text-[11px] uppercase tracking-wider text-cyber-accent">
-              Kode manual (bila tidak bisa scan)
+              Secret manual
             </p>
             <code id="enroll-secret" class="block break-all rounded bg-cyber-panel px-3 py-2 font-mono text-xs text-cyber-primary"></code>
           </div>

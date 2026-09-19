@@ -28,6 +28,8 @@ Produksi: **[portofolio.indyadirak.my.id](https://portofolio.indyadirak.my.id)**
 - Demo data fallback ketika Supabase belum dikonfigurasi.
 - Responsive UI untuk smartphone: mobile navigation, card fallback untuk tabel,
   responsive forms/grids, modal viewport-safe, dan admin drawer.
+- Admin login memakai authentication-only layout agar alur password, MFA, dan
+  enrollment tidak tercampur dengan navigasi public site.
 
 ### Admin CMS
 
