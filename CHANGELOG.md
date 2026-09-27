@@ -28,6 +28,11 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
 - Halaman admin login dipisahkan ke `AuthLayout` tanpa public navbar/footer;
   login, MFA verification, dan enrollment sekarang tampil sebagai satu alur
   command center dengan hierarki langkah yang jelas.
+- CodeQL diubah menjadi manual-only: trigger push/PR/schedule dimatikan
+  karena upload SARIF selalu ditolak GitHub pada repo private tanpa GHAS.
+- Scanner LOW: `X-Request-ID` per respons SSR (CWE-778) + strip header
+  `server`/`x-powered-by` di middleware; penghapusan penuh
+  `Server: cloudflare` didokumentasikan sebagai Transform Rule (§11).
 - Rebuild otomatis: setiap mutasi konten CMS memicu workflow Deploy
   (cooldown 10 menit, best-effort); tombol Publish manual di dashboard.
 - Issuer TOTP enrollment di-set eksplisit (`portofolio.indyadirak.my.id`)

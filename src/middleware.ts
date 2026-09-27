@@ -94,6 +94,19 @@ function withSecurityHeaders(response: Response, cookies?: AstroCookies): Respon
       response.headers.append("set-cookie", setCookie);
     }
   }
+  // Request tracking (CWE-778): ID unik per respons SSR agar request bisa
+  // dilacak di log (Workers Logs / invocation logs). Respons statis
+  // prerender tidak lewat Worker — di sana `cf-ray` Cloudflare berperan
+  // sebagai ID request edge.
+  if (!response.headers.has("x-request-id")) {
+    response.headers.set("x-request-id", crypto.randomUUID());
+  }
+  // Fingerprinting (CWE-200): hapus header `server` bila ada di level
+  // Worker. CATATAN: edge Cloudflare menambahkan `server: cloudflare`
+  // SETELAH Worker merespons, jadi penghapusan penuh harus lewat
+  // Transform Rule di dashboard (lihat docs/DEPLOYMENT.md §11).
+  response.headers.delete("server");
+  response.headers.delete("x-powered-by");
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(name, value);
   }

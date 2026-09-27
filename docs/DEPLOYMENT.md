@@ -269,3 +269,22 @@ Setup sekali (wajib agar auto-rebuild aktif):
 
 Rotasi: buat PAT baru → update GitHub secret `CMS_DEPLOY_TOKEN` →
 run deploy.yml (disalin otomatis ke Worker seperti secret lain).
+
+## 11. Header hardening di edge (temuan scanner LOW)
+
+Dua temuan LOW dari scanner eksternal dan statusnya:
+
+- [ ] **Server header (CWE-200)**: `Server: cloudflare` ditambahkan oleh
+      edge Cloudflare SETELAH Worker merespons — kode aplikasi tidak bisa
+      menghapusnya total (middleware hanya menghapusnya di level Worker).
+      Untuk menghilangkan dari respons publik, buat Transform Rule sekali:
+      Cloudflare dashboard → domain → **Rules → Transform Rules →
+      Modify Response Header** → Create rule → jika hostname =
+      `portofolio.indyadirak.my.id` → operasi **Remove** header `server`.
+      Dampak keamanan murni ini kecil (pemakaian Cloudflare sudah terlihat
+      dari DNS/`cf-ray`), jadi boleh juga diterima sebagai accepted risk.
+- [x] **Request tracking (CWE-778)**: Worker menyet header `X-Request-ID`
+      (UUID per request) pada semua respons SSR (`src/middleware.ts`).
+      Respons statis prerender memakai `cf-ray` sebagai ID edge.
+      Korelasikan keduanya saat menelusuri log (Workers Logs / invocation
+      logs aktif via `wrangler.toml` observability).

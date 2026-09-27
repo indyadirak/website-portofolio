@@ -91,9 +91,13 @@ Legenda: `[DONE]` selesai & terverifikasi · `[IN PROGRESS]` sedang berjalan
 - [TODO] Aksesibilitas P2 (susulan): pesan error API snake_case -> teks
   manusiawi di form admin, `aria-invalid` pada field gagal, teks `sr-only`
   untuk simbol `$`/`[✓]`, pengelompokan nav admin + badge unread messages.
-- [TODO] Pin ke SHA workflow lain: `codeql.yml`, `db-backup.yml`,
+- [TODO] Pin ke SHA workflow lain: `db-backup.yml`,
   `data-retention.yml`, `dependency-review.yml` (hanya `deploy.yml` &
-  `sbom.yml` yang sudah di-pin di Fase 1).
+  `sbom.yml` yang sudah di-pin di Fase 1; `codeql.yml` tidak perlu di-pin
+  — trigger otomatisnya dinonaktifkan karena repo private tanpa GHAS).
+- [DONE] CodeQL manual-only — trigger push/PR/schedule dimatikan
+  (upload SARIF selalu ditolak GitHub pada repo private tanpa GHAS);
+  workflow tetap tersedia via `workflow_dispatch`.
 - [TODO] Migrasi API project ke `/api/admin/projects.ts` (TODO tercatat di
   `src/pages/api/projects.ts` — pemisahan read publik vs admin CRUD).
 - [TODO] Perbarui dokumen G8 di `docs/SECURITY_COMPLIANCE_MAPPING.md`

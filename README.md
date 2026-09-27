@@ -78,7 +78,7 @@ Project menggunakan pendekatan **defense-in-depth**:
 | Upload | MIME allowlist, magic bytes, ukuran maksimum, dan object path validation |
 | Storage | Supabase object storage dengan regex/shape validation; bukan filesystem path resolution |
 | Audit | `login_attempts` dan `backup_config_access_log` dengan retensi 90 hari |
-| Supply chain | CodeQL, dependency review, SBOM, Dependabot, dan action pinning |
+| Supply chain | Dependency review, SBOM, Dependabot, npm audit gate, dan action pinning (CodeQL manual-only: repo private tanpa GHAS) |
 
 Policy mutation kanonik menggunakan `aal2` dan role dari `public.profiles`:
 
