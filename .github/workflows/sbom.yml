@@ -11,8 +11,8 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: write   # diperlukan untuk unggah ke Dependency Submission API
+# TANPA permissions level workflow — setiap job mendeklarasikan sendiri
+# (least privilege; Snyk "Overly Broad Permissions").
 
 jobs:
   sbom:
@@ -24,6 +24,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # Workflow ini tidak push/commit — matikan persistensi kredensial
+          # Git (Snyk: checkout persist Git credentials).
+          persist-credentials: false
 
       - name: Generate SBOM (Syft)
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2

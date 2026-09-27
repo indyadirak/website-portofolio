@@ -32,9 +32,38 @@ const CERT_PATH_RE = new RegExp(
  * pernah dikirim ke Storage API (fail-closed).
  */
 export function isSafeStoragePath(path: string): boolean {
-  if (typeof path !== "string" || path.length === 0 || path.length > 512) return false;
-  if (path.includes("\0") || path.includes("\\") || path.startsWith("/")) return false;
-  return path.split("/").every((seg) => seg.length > 0 && seg !== "." && seg !== "..");
+  return sanitizeStoragePath(path) !== null;
+}
+
+/**
+ * Sanitasi ketat untuk path yang berasal dari luar (kolom DB file_url):
+ * menolak traversal eksplisit maupun ter-encode (`%2e`, `%2f`), backslash,
+ * null byte, karakter kontrol, dan path absolut. Return path bersih atau
+ * null (fail-closed — pemanggil WAJIB skip bila null).
+ *
+ * Catatan scanner (Snyk "path traversal in storage.ts"): aliran DB ->
+ * Storage.remove() memang terlihat tainted oleh analisis statis, tetapi
+ * dikontrol berlapis — (1) tulis DB hanya via admin/editor AAL2 + RLS,
+ * (2) path upload SELALU dibuat server (`<uuid>/<uuid>.<ext>`), tidak
+ * pernah dari input user, (3) setiap path DB lolos fungsi ini sebelum
+ * menyentuh Storage API, (4) URL eksternal (Drive) tidak pernah masuk
+ * jalur hapus (dicek isExternalFileUrl oleh pemanggil).
+ */
+export function sanitizeStoragePath(path: string | null | undefined): string | null {
+  if (typeof path !== "string") return null;
+  const trimmed = path.trim();
+  if (trimmed.length === 0 || trimmed.length > 512) return null;
+  // Tolak encoding yang bisa menyembunyikan traversal + pemisah Windows.
+  if (/[%\\]/.test(trimmed)) return null;
+  if (trimmed.startsWith("/") || trimmed.includes("\0")) return null;
+  // Tolak karakter kontrol ASCII.
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1f\x7f]/.test(trimmed)) return null;
+  const segments = trimmed.split("/");
+  if (segments.some((seg) => seg.length === 0 || seg === "." || seg === "..")) {
+    return null;
+  }
+  return trimmed;
 }
 
 interface AllowedFileType {
@@ -147,17 +176,16 @@ export async function removeCertificateFile(
   supabase: SupabaseClient<Database>,
   path: string | null
 ): Promise<void> {
-  if (!path) return;
-
-  // Path berasal dari kolom DB (file_url) — validasi dulu agar nilai
+  // Path berasal dari kolom DB (file_url) — sanitasi ketat dulu agar nilai
   // anomali tidak pernah sampai ke Storage API. Skip (best-effort) bila
-  // tidak aman, jangan dilempar.
-  if (!isSafeStoragePath(path)) {
+  // tidak lolos, jangan dilempar.
+  const safePath = sanitizeStoragePath(path);
+  if (!safePath) {
     console.error("[storage] Path tidak aman, lewati hapus (mungkin orphan):", path);
     return;
   }
 
-  const { error } = await supabase.storage.from(CERTIFICATE_BUCKET).remove([path]);
+  const { error } = await supabase.storage.from(CERTIFICATE_BUCKET).remove([safePath]);
 
   if (error) {
     console.error("[storage] Gagal menghapus file (mungkin orphan):", error.message);

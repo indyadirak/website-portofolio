@@ -33,6 +33,9 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
 - Scanner LOW: `X-Request-ID` per respons SSR (CWE-778) + strip header
   `server`/`x-powered-by` di middleware; penghapusan penuh
   `Server: cloudflare` didokumentasikan sebagai Transform Rule (§11).
+- Snyk: sanitasi path storage diperketat, permissions sbom job-level saja,
+  `persist-credentials: false` di semua checkout, undici 8.11.2 +
+  es-module-lexer 2.3.2.
 - Rebuild otomatis: setiap mutasi konten CMS memicu workflow Deploy
   (cooldown 10 menit, best-effort); tombol Publish manual di dashboard.
 - Issuer TOTP enrollment di-set eksplisit (`portofolio.indyadirak.my.id`)

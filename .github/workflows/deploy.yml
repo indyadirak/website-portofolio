@@ -30,6 +30,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # Deploy via API token Cloudflare — tidak push/commit, jadi
+          # kredensial Git tidak perlu dipersist (Snyk: persist credentials).
+          persist-credentials: false
 
       # GUARD: RATE_LIMIT_KV id wajib ASLI sebelum deploy.
       # Dengan id placeholder (00000000-...), kv.get() selalu null —

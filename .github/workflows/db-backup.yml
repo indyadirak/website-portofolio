@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          # Backup hanya membaca repo + upload artifact — tidak push/commit.
+          persist-credentials: false
 
       # Pin runtime Node secara EKSPLISIT (runner default bergeser — Node 20
       # deprecated, default sekarang Node 24). Dipakai: npm install googleapis

@@ -98,6 +98,10 @@ Legenda: `[DONE]` selesai & terverifikasi · `[IN PROGRESS]` sedang berjalan
 - [DONE] CodeQL manual-only — trigger push/PR/schedule dimatikan
   (upload SARIF selalu ditolak GitHub pada repo private tanpa GHAS);
   workflow tetap tersedia via `workflow_dispatch`.
+- [DONE] Snyk 5 temuan — storage path traversal diperkeras
+  (`sanitizeStoragePath`: tolak `%`/backslash/kontrol karakter), permissions
+  sbom dilepas ke job-level, `persist-credentials: false` di 5 workflow,
+  undici → 8.11.2 + es-module-lexer → 2.3.2 (npm audit 0).
 - [TODO] Migrasi API project ke `/api/admin/projects.ts` (TODO tercatat di
   `src/pages/api/projects.ts` — pemisahan read publik vs admin CRUD).
 - [TODO] Perbarui dokumen G8 di `docs/SECURITY_COMPLIANCE_MAPPING.md`
