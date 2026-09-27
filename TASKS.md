@@ -49,6 +49,12 @@ Legenda: `[DONE]` selesai & terverifikasi · `[IN PROGRESS]` sedang berjalan
   grants, dan reload schema cache.
 - [DONE] Admin login UX — `AuthLayout` khusus autentikasi, step MFA lebih jelas,
   dan public navigation tidak lagi tercampur dengan login/enrollment.
+- [DONE] Auto-rebuild CMS — trigger `workflow_dispatch` Deploy setelah mutasi
+  konten (`src/lib/deploy.ts`, cooldown 10 menit), endpoint
+  `POST /api/admin/deploy` + tombol Publish dashboard (admin + AAL2), dan
+  issuer TOTP eksplisit agar label authenticator rapi.
+- [DONE] Deploy verify fix — UA browser pada curl header-check; HTTP 403 dari
+  proteksi bot/WAF menjadi warning, bukan kegagalan workflow.
 
 ### In progress
 - [DONE] **Supabase Keep-Alive** — workflow

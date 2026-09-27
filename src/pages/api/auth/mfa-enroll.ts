@@ -6,8 +6,11 @@ export const prerender = false;
 
 /**
  * MFA Enrollment (first login admin/editor):
- * supabase.auth.mfa.enroll({ factorType: 'totp' }) -> faktor baru (unverified)
- * + QR code TOTP (otpauth://) + secret manual.
+ * supabase.auth.mfa.enroll({ factorType: 'totp', issuer, friendlyName })
+ * -> faktor baru (unverified) + QR code TOTP (otpauth://) + secret manual.
+ * Issuer dikirim eksplisit ("portofolio.indyadirak.my.id") agar label di
+ * aplikasi authenticator rapi — tanpa ini server memakai host default
+ * (pernah terlihat sebagai "localhost:3000").
  *
  * Error handling: seluruh body handler dibungkus try/catch — kegagalan
  * apapun (Supabase timeout, QRCode render, exception tak terduga) mengembalikan
@@ -47,8 +50,17 @@ export async function POST({ locals }: APIContext) {
       }
     }
 
+    // Issuer eksplisit agar aplikasi authenticator menampilkan nama brand
+    // yang rapi ("portofolio.indyadirak.my.id"), bukan host default server
+    // (mis. "localhost:3000"). friendlyName = email untuk identifikasi
+    // faktor di dashboard Supabase. User lama yang sudah enroll dengan
+    // issuer lama TIDAK perlu enroll ulang — entry lama tetap valid, hanya
+    // labelnya yang kurang rapi (hapus faktor lama + enroll ulang bila
+    // ingin label baru).
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: "totp",
+      issuer: "portofolio.indyadirak.my.id",
+      friendlyName: user.email ?? "CyberSec Admin",
     });
 
     if (error || !data.totp) {

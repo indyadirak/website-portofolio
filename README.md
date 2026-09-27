@@ -30,6 +30,9 @@ Produksi: **[portofolio.indyadirak.my.id](https://portofolio.indyadirak.my.id)**
   responsive forms/grids, modal viewport-safe, dan admin drawer.
 - Admin login memakai authentication-only layout agar alur password, MFA, dan
   enrollment tidak tercampur dengan navigasi public site.
+- Rebuild otomatis: mutasi konten CMS (project, sertifikat, write-up, dsb.)
+  memicu workflow Deploy via GitHub API (cooldown 10 menit); tombol Publish
+  manual tersedia di dashboard untuk admin.
 
 ### Admin CMS
 

@@ -50,6 +50,20 @@ interface Env {
    * dari secrets.GDRIVE_CONFIG_ENCRYPTION_SECRET.
    */
   GDRIVE_CONFIG_ENCRYPTION_SECRET?: string;
+  /**
+   * PAT GitHub (fine-grained, Actions: read+write pada repo ini) untuk
+   * memicu workflow_dispatch "Deploy to Cloudflare Workers" dari Worker
+   * saat ada perubahan konten CMS (lihat src/lib/deploy.ts).
+   * Dinamai CMS_DEPLOY_TOKEN karena GitHub melarang prefix GITHUB_ untuk
+   * Actions secrets. TIDAK pernah dikembalikan ke klien. Set via
+   * deploy.yml dari secrets.CMS_DEPLOY_TOKEN.
+   */
+  CMS_DEPLOY_TOKEN?: string;
+  /**
+   * Nama repo "owner/name" untuk dispatch deploy. Opsional — default
+   * "indyadirak/website-portofolio" bila tidak di-set.
+   */
+  GITHUB_REPO?: string;
 }
 
 declare module "cloudflare:workers" {

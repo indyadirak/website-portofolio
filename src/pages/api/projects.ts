@@ -5,6 +5,7 @@ import {
   canManageProjects,
 } from "../../lib/auth";
 import { adminMutationGuard } from "../../lib/rateLimit";
+import { notifyContentPublished } from "../../lib/deploy";
 import { PROJECT_STATUSES, type ProjectStatus } from "../../lib/types";
 
 export const prerender = false;
@@ -253,6 +254,9 @@ export async function POST({ request, locals }: APIContext) {
     return databaseErrorResponse(error);
   }
 
+  // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("projects");
+
   return json({ ok: true, id: data.id }, 201);
 }
 
@@ -306,6 +310,9 @@ export async function PUT({ request, locals }: APIContext) {
     return databaseErrorResponse(error);
   }
 
+  // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("projects");
+
   return json({ ok: true });
 }
 
@@ -349,6 +356,9 @@ export async function DELETE({ request, locals }: APIContext) {
     console.error("[projects] DELETE gagal:", error.message);
     return databaseErrorResponse(error);
   }
+
+  // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("projects");
 
   return json({ ok: true });
 }

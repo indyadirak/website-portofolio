@@ -2,6 +2,7 @@ import type { APIContext } from "astro";
 import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canDeleteSiteContent, canManageSiteContent } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
+import { notifyContentPublished } from "../../../lib/deploy";
 import type { SocialLinkRow } from "../../../lib/types";
 
 export const prerender = false;
@@ -139,6 +140,9 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "db_operation_failed" }, 403);
   }
 
+  // Footer publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("social_links");
+
   return json({ ok: true, id: data.id }, 200);
 }
 
@@ -173,6 +177,9 @@ export async function PUT({ request, locals }: APIContext) {
     return json({ ok: false, error: "db_operation_failed" }, 403);
   }
 
+  // Footer publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("social_links");
+
   return json({ ok: true, id: data.id }, 200);
 }
 
@@ -190,6 +197,9 @@ export async function DELETE({ request, locals }: APIContext) {
     console.error("[admin/social-links] DELETE gagal:", error.message);
     return json({ ok: false, error: "db_operation_failed" }, 403);
   }
+
+  // Footer publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("social_links");
 
   return json({ ok: true });
 }

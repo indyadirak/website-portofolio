@@ -2,6 +2,7 @@ import type { APIContext } from "astro";
 import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canManageCertificates } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
+import { notifyContentPublished } from "../../../lib/deploy";
 import { WRITEUP_STATUSES, type WriteupSeverity, type WriteupStatus, type WriteupsRow } from "../../../lib/types";
 
 export const prerender = false;
@@ -180,6 +181,9 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "db_operation_failed" }, 403);
   }
 
+  // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("writeups");
+
   return json({ ok: true, id: data.id, slug: data.slug }, 200);
 }
 
@@ -216,6 +220,8 @@ export async function PUT({ request, locals }: APIContext) {
       console.error("[admin/writeups] UPDATE publish gagal:", error.message);
       return json({ ok: false, error: "db_operation_failed" }, 403);
     }
+    // Toggle publish mengubah halaman publik — minta rebuild.
+    await notifyContentPublished("writeups");
     return json({ ok: true, id: data.id }, 200);
   }
 
@@ -247,6 +253,9 @@ export async function PUT({ request, locals }: APIContext) {
     return json({ ok: false, error: "db_operation_failed" }, 403);
   }
 
+  // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("writeups");
+
   return json({ ok: true, id: data.id, slug: data.slug }, 200);
 }
 
@@ -263,6 +272,9 @@ export async function DELETE({ request, locals }: APIContext) {
     console.error("[admin/writeups] DELETE gagal:", error.message);
     return json({ ok: false, error: "db_operation_failed" }, 403);
   }
+
+  // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("writeups");
 
   return json({ ok: true }, 200);
 }

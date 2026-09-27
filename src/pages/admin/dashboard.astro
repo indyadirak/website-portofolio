@@ -121,6 +121,7 @@ const expiredCount = (certificates ?? []).filter(
 
 const canWrite = canManageCertificates(profile); // admin | editor (quick action)
 const canWriteProjects = canManageProjects(profile); // admin | editor (quick action)
+const isAdmin = profile?.role === "admin"; // publish/deploy manual
 
 // ===== Sapaan: prefer full_name profil (camelCase di tipe Profile), fallback email =====
 const displayName = profile?.fullName?.trim() || user.email;
@@ -220,6 +221,43 @@ const statusItems = [
         </TerminalButton>
       </div>
     </section>
+
+    <!-- ===== PUBLISH / REBUILD PRODUCTION (admin saja) ===== -->
+    {
+      isAdmin && (
+        <section
+          id="publish-section"
+          class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6"
+          data-i18n-triggered={t.dashboard.publishTriggered}
+          data-i18n-cooldown={t.dashboard.publishCooldown}
+          data-i18n-unavailable={t.dashboard.publishUnavailable}
+          data-i18n-failed={t.dashboard.publishFailed}
+          data-i18n-network={t.dashboard.publishNetworkError}
+        >
+          <h2 class="font-mono text-lg font-bold text-white">
+            {t.dashboard.publishTitle}<span class="text-cyber-primary">;</span>
+          </h2>
+          <p class="mt-2 text-sm leading-relaxed text-cyber-muted">
+            {t.dashboard.publishDescription}
+          </p>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              id="publish-btn"
+              type="button"
+              class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {t.dashboard.publishButton}
+            </button>
+            <p
+              id="publish-status"
+              role="status"
+              aria-live="polite"
+              class="font-mono text-xs text-cyber-muted"
+            ></p>
+          </div>
+        </section>
+      )
+    }
 
     <!-- ===== RECENT ACTIVITY FEED (ringkasan aksi — tanpa data sensitif) ===== -->
     <section class="mt-10 rounded border border-cyber-border bg-cyber-panel p-6">
@@ -338,3 +376,35 @@ const statusItems = [
     </section>
   </div>
 </AdminLayout>
+
+<script>
+  const publishSection = document.getElementById("publish-section");
+  const publishBtn = document.getElementById("publish-btn") as HTMLButtonElement | null;
+  const publishStatus = document.getElementById("publish-status") as HTMLParagraphElement | null;
+
+  publishBtn?.addEventListener("click", async () => {
+    if (!publishBtn || !publishStatus) return;
+    publishBtn.disabled = true;
+    publishStatus.textContent = "...";
+    try {
+      const res = await fetch("/api/admin/deploy", { method: "POST" });
+      const data = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        deploy?: string;
+        error?: string;
+      } | null;
+      if (data?.deploy === "triggered") {
+        publishStatus.textContent = publishSection?.dataset.i18nTriggered ?? "ok";
+      } else if (data?.deploy === "cooldown") {
+        publishStatus.textContent = publishSection?.dataset.i18nCooldown ?? "cooldown";
+      } else if (data?.error === "deploy_token_missing") {
+        publishStatus.textContent = publishSection?.dataset.i18nUnavailable ?? "unavailable";
+      } else {
+        publishStatus.textContent = publishSection?.dataset.i18nFailed ?? "failed";
+      }
+    } catch {
+      publishStatus.textContent = publishSection?.dataset.i18nNetwork ?? "network error";
+    }
+    publishBtn.disabled = false;
+  });
+</script>

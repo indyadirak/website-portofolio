@@ -2,6 +2,7 @@ import type { APIContext } from "astro";
 import { getSupabaseFromLocals, isAal2Session, json, validateCredentialFields } from "../../../lib/api";
 import { canManageCertificates } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
+import { notifyContentPublished } from "../../../lib/deploy";
 import {
   isExternalFileUrl,
   removeCertificateFile,
@@ -192,6 +193,9 @@ export async function POST({ request, locals }: APIContext) {
       return json({ ok: false, error: "db_operation_failed" }, 403);
     }
 
+    // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+    await notifyContentPublished("certificates");
+
     return json({ ok: true, path }, 201);
   } catch (err) {
     // Jaring pengaman: error tak terduga setelah upload -> hapus file.
@@ -314,6 +318,9 @@ export async function PUT({ request, locals }: APIContext) {
     ) {
       await removeCertificateFile(supabase, existing.file_url);
     }
+
+    // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+    await notifyContentPublished("certificates");
 
     return json({ ok: true, path }, 200);
   } catch (err) {

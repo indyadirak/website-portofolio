@@ -2,6 +2,7 @@ import type { APIContext } from "astro";
 import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canManageCv } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
+import { notifyContentPublished } from "../../../lib/deploy";
 import { removeCvFile, uploadCvFile, validateCvFile, type CvLocale } from "../../../lib/storage";
 
 export const prerender = false;
@@ -97,6 +98,9 @@ export async function POST({ request, locals }: APIContext) {
       return json({ ok: false, error: "db_operation_failed" }, 403);
     }
 
+    // Tombol unduh publik di-prerender — minta rebuild (cooldown, best-effort).
+    await notifyContentPublished("cv");
+
     return json({ ok: true, path }, 200);
   } catch (err) {
     if (uploaded) {
@@ -149,6 +153,9 @@ export async function DELETE({ request, locals }: APIContext) {
     }
 
     await removeCvFile(supabase, locale);
+
+    // Tombol unduh publik di-prerender — minta rebuild (cooldown, best-effort).
+    await notifyContentPublished("cv");
 
     return json({ ok: true }, 200);
   } catch (err) {

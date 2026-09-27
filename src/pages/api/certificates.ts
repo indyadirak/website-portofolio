@@ -12,6 +12,7 @@ import {
 } from "../../lib/auth";
 import { removeCertificateFile, isSafeStoragePath, isExternalFileUrl, normalizeDriveFileUrl } from "../../lib/storage";
 import { adminMutationGuard } from "../../lib/rateLimit";
+import { notifyContentPublished } from "../../lib/deploy";
 import type { CertificateCategory, Database } from "../../lib/types";
 
 export const prerender = false;
@@ -190,6 +191,9 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "db_operation_failed" }, 403);
   }
 
+  // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("certificates");
+
   return json({ ok: true, id: data.id }, 201);
 }
 
@@ -239,6 +243,9 @@ export async function PUT({ request, locals }: APIContext) {
     console.error("[certificates] PUT update gagal:", error.message);
     return json({ ok: false, error: "db_operation_failed" }, 403);
   }
+
+  // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("certificates");
 
   return json({ ok: true });
 }
@@ -295,6 +302,9 @@ export async function DELETE({ request, locals }: APIContext) {
   if (existing?.file_url && !isExternalFileUrl(existing.file_url)) {
     await removeCertificateFile(supabase, existing.file_url);
   }
+
+  // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("certificates");
 
   return json({ ok: true });
 }

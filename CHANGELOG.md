@@ -28,6 +28,12 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
 - Halaman admin login dipisahkan ke `AuthLayout` tanpa public navbar/footer;
   login, MFA verification, dan enrollment sekarang tampil sebagai satu alur
   command center dengan hierarki langkah yang jelas.
+- Rebuild otomatis: setiap mutasi konten CMS memicu workflow Deploy
+  (cooldown 10 menit, best-effort); tombol Publish manual di dashboard.
+- Issuer TOTP enrollment di-set eksplisit (`portofolio.indyadirak.my.id`)
+  agar aplikasi authenticator menampilkan nama brand yang rapi.
+- Verifikasi header pasca-deploy memakai UA browser; 403 dari proteksi
+  bot/WAF menjadi warning (deploy Worker tetap dianggap sukses).
 
 ### Fase 3 — Evidence-based content dan UX publik
 - Empty state publik diperbaiki agar tidak menampilkan command debug atau

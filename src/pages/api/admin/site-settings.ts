@@ -2,6 +2,7 @@ import type { APIContext } from "astro";
 import { getSupabaseFromLocals, isAal2Session, json } from "../../../lib/api";
 import { canManageSiteContent } from "../../../lib/auth";
 import { adminMutationGuard } from "../../../lib/rateLimit";
+import { notifyContentPublished } from "../../../lib/deploy";
 import {
   SITE_SETTING_KEYS,
   type AvailabilityStatus,
@@ -103,6 +104,9 @@ export async function PUT({ request, locals }: APIContext) {
     if (error.code === "42501") return json({ ok: false, error: "mfa_required" }, 403);
     return json({ ok: false, error: "db_operation_failed" }, 403);
   }
+
+  // Identitas publik di-prerender — minta rebuild (cooldown, best-effort).
+  await notifyContentPublished("site_settings");
 
   return json({ ok: true, key }, 200);
 }

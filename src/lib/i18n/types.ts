@@ -138,6 +138,15 @@ export interface Dictionary {
     manageExperiences: string;
     manageSocialLinks: string;
     viewCertificates: string;
+    /** Kartu Publish: rebuild production manual (deploy otomatis CMS). */
+    publishTitle: string;
+    publishDescription: string;
+    publishButton: string;
+    publishTriggered: string;
+    publishCooldown: string;
+    publishUnavailable: string;
+    publishFailed: string;
+    publishNetworkError: string;
     systemStatus: string;
     statusDb: string;
     statusRateLimit: string;

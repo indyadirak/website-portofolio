@@ -121,5 +121,9 @@ write-up CTF) + **Admin CMS** dengan MFA TOTP wajib dan RBAC tiga role.
 - **CVE**: belum diimplementasikan; jangan menambahkan field CVE ke UI/DB tanpa
   migrasi idempotent, validasi, dan keputusan apakah project/write-up mendukung
   satu atau banyak CVE.
+- **Deploy otomatis CMS**: mutasi konten memanggil `notifyContentPublished()`
+  (`src/lib/deploy.ts`, cooldown 10 menit via KV) + tombol Publish dashboard
+  (`POST /api/admin/deploy`, admin + AAL2). PAT GitHub (`CMS_DEPLOY_TOKEN`,
+  Actions R+W) adalah runtime secret seperti aturan 9 — jangan commit/log.
 - **Jangan commit** `node_modules`, `dist`, `.env*`; secret hanya di
   GitHub Secrets + `wrangler secret put`.

@@ -75,7 +75,7 @@ Versi infrastruktur saat ini:
 
 GitHub → Settings → Secrets and variables → Actions.
 
-### Secrets (11)
+### Secrets (12)
 
 | Secret | Nilai |
 |---|---|
@@ -90,6 +90,7 @@ GitHub → Settings → Secrets and variables → Actions.
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role Supabase (paling berkuasa — hanya server-side). Format legacy `eyJ...` ATAU baru `sb_secret_...` — kode endpoint backup-config sudah kompatibel dua-duanya (header `apikey` saja) |
 | `BACKUP_FETCH_TOKEN` | Token acak gate `/api/backup-config` — nilai yang SAMA otomatis disalin ke Worker oleh deploy.yml |
 | `GDRIVE_CONFIG_ENCRYPTION_SECRET` | Kunci AES-256-GCM ≥ 32 byte (enkripsi-at-rest key SA Drive) |
+| `CMS_DEPLOY_TOKEN` | PAT GitHub untuk trigger rebuild otomatis dari CMS (lihat §10) |
 
 Generate nilai acak (PowerShell):
 ```powershell
@@ -232,3 +233,39 @@ Skenario: aplikasi authenticator tidak bisa diakses → login admin terkunci di 
 - [ ] Rotasi: `TURNSTILE_SECRET_KEY` / `BACKUP_FETCH_TOKEN` / `GDRIVE_CONFIG_ENCRYPTION_SECRET` → update GitHub secret → run deploy.yml (secret disalin otomatis ke Worker). **Catatan**: rotasi `GDRIVE_CONFIG_ENCRYPTION_SECRET` membuat key SA yang tersimpan tidak bisa didekripsi → simpan ulang via GUI setelah rotasi
 - [ ] Backup berjalan otomatis tiap Minggu — tidak perlu tindakan kecuali ada failure alert di Actions
 - [ ] **Update dokumen ini** setiap ada perubahan infrastruktur baru
+
+## 10. Rebuild otomatis setelah perubahan konten CMS
+
+Halaman publik di-prerender saat build — tanpa rebuild, project/sertifikat/
+write-up baru tidak muncul di website. Sejak versi ini, setiap mutasi konten
+yang sukses (projects, certificates, write-ups, categories, site-settings,
+experiences, social-links, cv) otomatis meminta rebuild via `POST`
+`workflow_dispatch` ke workflow Deploy (lihat `src/lib/deploy.ts`).
+
+Aturan main:
+
+- Cooldown **10 menit** via KV (`deploy:last-trigger`): edit 10 item
+  beruntun = 1 deploy, bukan 10.
+- Gagal trigger TIDAK menggagalkan penyimpanan konten — cek log Worker
+  (`[deploy-trigger]`) lalu pakai tombol Publish manual.
+- Tombol **Publish Website** di `/admin/dashboard` (admin saja, AAL2)
+  memicu rebuild manual dengan cooldown yang sama.
+
+Setup sekali (wajib agar auto-rebuild aktif):
+
+- [ ] GitHub → Settings → Developer settings → **Personal access tokens →
+      Fine-grained tokens** → Generate new token:
+      - Repository access: **Only select repositories** →
+        `indyadirak/website-portofolio`
+      - Permissions → **Actions: Read and write**
+      - Expiration: 1 tahun (catat tanggal rotasi)
+- [ ] GitHub repo → Settings → Secrets and variables → Actions → New
+      repository secret: `CMS_DEPLOY_TOKEN` = token di atas
+- [ ] Push/`workflow_dispatch` deploy.yml sekali — step
+      "Set CMS_DEPLOY_TOKEN secret (runtime)" menyalinnya ke Worker.
+      Verifikasi: `npx wrangler secret list` memuat `CMS_DEPLOY_TOKEN`.
+- [ ] Uji: tambah project test → tunggu ±3 menit → cek halaman publik.
+      Hapus project test setelahnya (ikut memicu 1 rebuild, dalam cooldown).
+
+Rotasi: buat PAT baru → update GitHub secret `CMS_DEPLOY_TOKEN` →
+run deploy.yml (disalin otomatis ke Worker seperti secret lain).
