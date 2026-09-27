@@ -1,15 +1,18 @@
 # CodeQL Code Scanning
-# DINONAKTIFKAN otomatis (2026-09-27): repo ini PRIVATE tanpa GitHub
-# Advanced Security, sehingga step upload SARIF selalu gagal dengan
-# "Code scanning is not enabled for this repository" — analisisnya sendiri
-# jalan normal, tapi hasilnya tidak bisa diterima GitHub.
-# Workflow ini hanya manual (workflow_dispatch) untuk dipakai nanti bila
-# repo menjadi public / GHAS tersedia. Jaring pengaman dependency tetap
-# jalan: npm audit (deploy.yml), dependency-review.yml, sbom.yml.
-# Hasil: GitHub > Security > Code scanning alerts (bila sudah enable)
+# Scan kerentanan pada kode JavaScript/TypeScript.
+# Jalankan pada tiap push & PR ke main, plus jadwal mingguan (Senin 06:00 UTC).
+# (2026-09-27: sempat manual-only saat repo masih private tanpa GHAS;
+#  diaktifkan kembali setelah repo go-public — upload SARIF gratis.)
+# Hasil: GitHub > Security > Code scanning alerts
 name: "CodeQL"
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 permissions:

@@ -93,11 +93,9 @@ Legenda: `[DONE]` selesai & terverifikasi · `[IN PROGRESS]` sedang berjalan
   untuk simbol `$`/`[✓]`, pengelompokan nav admin + badge unread messages.
 - [TODO] Pin ke SHA workflow lain: `db-backup.yml`,
   `data-retention.yml`, `dependency-review.yml` (hanya `deploy.yml` &
-  `sbom.yml` yang sudah di-pin di Fase 1; `codeql.yml` tidak perlu di-pin
-  — trigger otomatisnya dinonaktifkan karena repo private tanpa GHAS).
-- [DONE] CodeQL manual-only — trigger push/PR/schedule dimatikan
-  (upload SARIF selalu ditolak GitHub pada repo private tanpa GHAS);
-  workflow tetap tersedia via `workflow_dispatch`.
+  `sbom.yml` yang sudah di-pin di Fase 1).
+- [DONE] CodeQL otomatis kembali — trigger push/PR/schedule diaktifkan
+  ulang setelah repo go-public (upload SARIF gratis).
 - [DONE] Snyk 5 temuan — storage path traversal diperkeras
   (`sanitizeStoragePath`: tolak `%`/backslash/kontrol karakter), permissions
   sbom dilepas ke job-level, `persist-credentials: false` di 5 workflow,

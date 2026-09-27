@@ -28,8 +28,8 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
 - Halaman admin login dipisahkan ke `AuthLayout` tanpa public navbar/footer;
   login, MFA verification, dan enrollment sekarang tampil sebagai satu alur
   command center dengan hierarki langkah yang jelas.
-- CodeQL diubah menjadi manual-only: trigger push/PR/schedule dimatikan
-  karena upload SARIF selalu ditolak GitHub pada repo private tanpa GHAS.
+- CodeQL otomatis kembali: trigger push/PR/schedule diaktifkan ulang
+  setelah repo go-public (sebelumnya manual-only saat private tanpa GHAS).
 - Scanner LOW: `X-Request-ID` per respons SSR (CWE-778) + strip header
   `server`/`x-powered-by` di middleware; penghapusan penuh
   `Server: cloudflare` didokumentasikan sebagai Transform Rule (§11).

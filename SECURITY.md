@@ -34,7 +34,7 @@ Kami akan menghapus atau meminta izin sebelum mempublikasikan detail kerentanan 
 ## Praktik Keamanan Proyek
 
 - **Dependabot**: alert kerentanan dependensi npm + PR update rutin bulanan (version updates)
-- **CodeQL**: manual-only (`workflow_dispatch`) — repo private tanpa GitHub Advanced Security sehingga upload SARIF otomatis selalu ditolak GitHub; lihat `.github/workflows/codeql.yml`
+- **CodeQL**: code scanning otomatis pada tiap push/PR ke `main` + jadwal mingguan (lihat `.github/workflows/codeql.yml`)
 - **Dependency Review**: audit perubahan dependency pada tiap PR ke `main` — PR gagal jika ada dependency baru berkerentanan level high/critical (lihat `.github/workflows/dependency-review.yml`)
 - **CODEOWNERS**: perubahan pada schema SQL, halaman admin, middleware, auth, workflow, dan `_headers` wajib di-review pemilik
 - **CSP ketat**: security headers diterapkan di middleware (runtime), tanpa `unsafe-inline` untuk script/style; `public/_headers` hanya fallback aset statis
