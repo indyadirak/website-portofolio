@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           # Backup hanya membaca repo + upload artifact — tidak push/commit.
           persist-credentials: false
@@ -23,7 +23,7 @@ jobs:
       # deprecated, default sekarang Node 24). Dipakai: npm install googleapis
       # + script gdrive-backup.mjs. Sama dengan deploy.yml.
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
 
@@ -100,7 +100,7 @@ jobs:
 
       # Retention 30 hari (bukan default 90) — membatasi backup lama tersimpan.
       - name: Upload encrypted artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: db-backup-${{ github.run_id }}
           path: backup.sql.gpg
