@@ -13,6 +13,17 @@ const projects = await getProjects();
 // Kategori aktif utk filter charter (B2: dinamis dari project_categories).
 const categories = await getProjectCategories();
 
+// B safety-net: hitung project per nama kategori tampilan (sudah di-coalesce
+// FK -> legacy di getProjects()), lalu sembunyikan chip yang count-nya 0 agar
+// kategori baru yang belum dipakai tidak memenuhi filter bar.
+const countByCategory = new Map<string, number>();
+for (const p of projects) {
+  countByCategory.set(p.category, (countByCategory.get(p.category) ?? 0) + 1);
+}
+const visibleCategories = categories
+  .map((c) => ({ ...c, count: countByCategory.get(c.name) ?? 0 }))
+  .filter((c) => c.count > 0);
+
 // Featured vs secondary: kolom `featured` (boolean) pada tabel projects.
 const featuredProjects = projects.filter((p) => p.featured);
 const secondaryProjects = projects.filter((p) => !p.featured);
@@ -49,13 +60,14 @@ const secondaryProjects = projects.filter((p) => !p.featured);
               {t.projects.allCategories}
             </button>
             {
-              categories.map((c) => (
+              visibleCategories.map((c) => (
                 <button
                   type="button"
                   data-filter={c.name}
                   class="rounded border border-cyber-border px-3 py-1 font-mono text-xs text-cyber-muted transition hover:border-cyber-primary/60 hover:text-cyber-primary"
                 >
-                  {c.name}
+                  {c.name}{" "}
+                  <span class="text-cyber-muted/70">({c.count})</span>
                 </button>
               ))
             }
