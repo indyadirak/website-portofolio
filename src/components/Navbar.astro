@@ -4,6 +4,7 @@ import { getDictionary, localeFromPathname } from "../lib/i18n";
 import { siteConfig } from "../lib/config";
 import LanguageSwitcher from "./LanguageSwitcher.astro";
 import CvDownloadButton from "./CvDownloadButton.astro";
+import ThemeSwitcher from "./ThemeSwitcher.astro";
 
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
@@ -69,9 +70,11 @@ const blogUrl = siteConfig.blogUrl;
       </a>
       <CvDownloadButton variant="nav" />
       <LanguageSwitcher />
+      <ThemeSwitcher />
     </div>
 
     <div class="flex items-center gap-2 lg:hidden">
+      <ThemeSwitcher />
       <LanguageSwitcher />
       <button
         id={btnId}

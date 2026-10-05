@@ -117,5 +117,47 @@ const personJsonLdJson = JSON.stringify(personJsonLd).replace(/</g, "\\u003c");
     <ImageZoomModal />
     <CvUnavailableModal />
 
+    <button
+      id="to-top"
+      type="button"
+      aria-label={t.ui.backToTop}
+      class="fixed bottom-6 right-6 z-40 hidden h-11 w-11 items-center justify-center rounded-lg border border-cyber-primary/40 bg-cyber-panel font-mono text-lg text-cyber-primary shadow-lg transition-colors hover:border-cyber-primary"
+    >
+      ↑
+    </button>
+
+    <script>
+      // Scroll reveal: elemen .reveal tampil saat masuk viewport.
+      const revealEls = document.querySelectorAll(".reveal");
+      if ("IntersectionObserver" in window && revealEls.length > 0) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("in");
+                io.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.12 }
+        );
+        revealEls.forEach((el) => io.observe(el));
+      } else {
+        revealEls.forEach((el) => el.classList.add("in"));
+      }
+
+      // Back to top: muncul setelah scroll 700px.
+      const toTop = document.getElementById("to-top");
+      if (toTop) {
+        const onScroll = () => {
+          const show = window.scrollY > 700;
+          toTop.classList.toggle("hidden", !show);
+          toTop.classList.toggle("flex", show);
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+        toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+      }
+    </script>
   </body>
 </html>

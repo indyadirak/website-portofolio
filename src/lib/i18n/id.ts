@@ -14,6 +14,47 @@ export const id: Dictionary = {
     downloadCv: "Unduh CV",
     menu: "menu",
   },
+  theme: {
+    label: "Tema warna",
+    cyan: "Cyan (bawaan)",
+    green: "Hijau fosfor",
+    amber: "Amber",
+  },
+  terminal: {
+    eyebrow: "$ ./terminal --interactive",
+    title: "Terminal Interaktif",
+    description:
+      "Terminal beneran yang bisa diketik — bukan pajangan. Ketik help untuk daftar perintah.",
+    header: "visitor@cybersec: ~",
+    placeholder: "ketik 'help' lalu Enter…",
+    hint: "Coba: whoami · ls projects · theme amber · Tab autocomplete · ↑↓ riwayat · PgUp/PgDn scroll",
+    welcome: "cybersec interactive shell — ketik help untuk mulai.",
+    helpTitle: "perintah tersedia:",
+    help: [
+      { cmd: "whoami", desc: "siapa saya" },
+      { cmd: "ls", desc: "daftar direktori" },
+      { cmd: "ls projects", desc: "daftar project" },
+      { cmd: "cat skills", desc: "daftar skill per kategori" },
+      { cmd: "open <tujuan>", desc: "lompat ke section (projects, skills, writeups, contact)" },
+      { cmd: "theme <nama>", desc: "ganti tema warna (cyan, green, amber)" },
+      { cmd: "date", desc: "tanggal dan waktu saat ini" },
+      { cmd: "clear", desc: "bersihkan layar terminal" },
+      { cmd: "sudo hire-me", desc: "???" },
+    ],
+    whoami:
+      "Network & Cyber Security Technician — penetration testing, security research, blue team defense.",
+    projectsHeader: "daftar project:",
+    projectsEmpty: "belum ada project.",
+    skillsHeader: "daftar skill:",
+    opened: "membuka {target}…",
+    openUnknown: "tujuan tidak dikenal — coba: projects, skills, writeups, contact",
+    themeChanged: "tema diubah ke {name}",
+    themeUnknown: "tema tidak dikenal — pilih: cyan, green, amber",
+    sudoOk: "[sudo] akses diterima. Keputusan bagus — silakan ke ./contact, saya tunggu pesannya.",
+    sudoUnknown: "sudo: perintah tidak dikenal. Mungkin maksudmu sudo hire-me?",
+    notFound: "command not found: {cmd} — ketik help",
+    promptUser: "visitor@cybersec",
+  },
   hero: {
     eyebrow: "$ whoami",
     title: "Network & Cyber Security Technician",
@@ -97,6 +138,7 @@ export const id: Dictionary = {
     verificationUrl: "Verification URL",
     verifyCredential: "Verifikasi Kredensial",
     credentialLink: "Lihat kredensial {title} di halaman issuer",
+    viewCredential: "Lihat Kredensial",
     featured: "Featured",
     validUntil: "Berlaku hingga {date}",
     expired: "Kedaluwarsa {date}",
@@ -151,6 +193,9 @@ export const id: Dictionary = {
     activityModuleWriteup: "WRITEUP",
     activityNewWriteup: "New case study published — {title}",
     expiryTitle: "Expiry_alerts",
+    expiringInDays: "{days} hari lagi",
+    expiredWarning:
+      "$ warning: {count} sertifikat sudah lewat masa berlaku — verifikasi ulang atau perbarui expiry_date.",
     projectsTitle: "Projects",
     certificatesTitle: "Certificates",
     contactTitle: "Contact Messages",
@@ -663,6 +708,7 @@ export const id: Dictionary = {
   ui: {
     totalZero: "total 0",
     skipToContent: "Lewati ke konten utama",
+    backToTop: "Kembali ke atas",
   },
   errors: {
     mfa_required: "sesi belum terverifikasi MFA (AAL2) — logout lalu login ulang dengan kode TOTP Anda",
@@ -747,6 +793,8 @@ export const id: Dictionary = {
     driveUrlHint:
       "Format diterima: drive.google.com/file/d/<ID>/view atau uc?id=<ID>. File WAJIB dishare 'Anyone with the link'. Disimpan sebagai tautan unduh langsung.",
     dateHelper: "Format tanggal: YYYY-MM-DD (contoh: 2024-01-15) — tahun wajar 1900-2100",
+    confirmDelete: 'Hapus "{title}"? Aksi ini tidak dapat dibatalkan.',
+    deleteFailed: "Gagal menghapus: {error}",
   },
   adminLayout: {
     workspace: "Command Center",

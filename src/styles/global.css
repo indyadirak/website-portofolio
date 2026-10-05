@@ -15,6 +15,21 @@
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, monospace;
 }
 
+/* ---- Theme switcher: override token aksen via [data-theme] ----
+   Tailwind v4 menerbitkan token @theme sebagai var() di :root, jadi
+   override di sini (unlayered = menang atas @layer theme) otomatis
+   diikuti semua utility text-cyber-*, border-cyber-*, bg-cyber-*,
+   plus glow yang memakai color-mix(var(--color-cyber-primary)).
+   "cyan" = bawaan (tidak perlu override). */
+[data-theme="green"] {
+  --color-cyber-primary: #33ff66;
+  --color-cyber-accent: #33ff66;
+}
+[data-theme="amber"] {
+  --color-cyber-primary: #ffb000;
+  --color-cyber-accent: #ffb000;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -404,6 +419,40 @@
   details.soc-details > summary::before {
     transition-duration: 0.01ms !important;
   }
+
+  /* Reveal: tanpa animasi, konten langsung tampil. */
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ---- Theme switcher dots (navbar) ---- */
+.theme-dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease;
+}
+.theme-dot:hover {
+  transform: scale(1.2);
+}
+.theme-dot[data-active="true"] {
+  border-color: var(--color-cyber-muted);
+}
+
+/* ---- Scroll reveal (dipicu IntersectionObserver, script di MainLayout) ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
 }
 
 /* ---- Versi print/PDF (save-as-PDF recruiter) ----

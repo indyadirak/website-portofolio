@@ -1,0 +1,80 @@
+---
+/**
+ * ThemeSwitcher — pemilih tema warna aksen (cyan/green/amber).
+ * Override token via [data-theme] di <html> (lihat global.css).
+ * Pilihan disimpan di localStorage; script di-bundle Astro (CSP aman).
+ */
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+const themes = [
+  { id: "cyan", color: "#66fcf1", label: t.theme.cyan },
+  { id: "green", color: "#33ff66", label: t.theme.green },
+  { id: "amber", color: "#ffb000", label: t.theme.amber },
+];
+---
+
+<div class="flex items-center gap-1.5" role="group" aria-label={t.theme.label}>
+  {
+    themes.map((th) => (
+      <button
+        type="button"
+        data-theme-btn={th.id}
+        title={th.label}
+        aria-label={th.label}
+        class="theme-dot"
+        style={`background:${th.color}`}
+      />
+    ))
+  }
+</div>
+
+<script>
+  const KEY = "cyb-theme";
+  const VALID: string[] = ["cyan", "green", "amber"];
+
+  const dots = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-theme-btn]"));
+
+  function paint(name: string): void {
+    document.documentElement.setAttribute("data-theme", name);
+    dots.forEach((d) => {
+      d.setAttribute("data-active", String(d.getAttribute("data-theme-btn") === name));
+    });
+  }
+
+  function current(): string {
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved && VALID.includes(saved)) return saved;
+    } catch {
+      /* storage tidak tersedia — pakai bawaan */
+    }
+    return "cyan";
+  }
+
+  function setTheme(name: string, persist: boolean = true): void {
+    if (!VALID.includes(name)) return;
+    paint(name);
+    if (persist) {
+      try {
+        localStorage.setItem(KEY, name);
+      } catch {
+        /* abaikan */
+      }
+    }
+  }
+
+  // Inisialisasi saat load + hubungkan tombol. Komunikasi antar-komponen
+  // (mis. perintah "theme" di terminal interaktif) lewat CustomEvent
+  // "cyb:set-theme" agar tidak mengotori window global.
+  setTheme(current(), false);
+  dots.forEach((d) =>
+    d.addEventListener("click", () => setTheme(d.getAttribute("data-theme-btn") ?? "cyan"))
+  );
+  document.addEventListener("cyb:set-theme", (e: Event) => {
+    const name = (e as CustomEvent<string>).detail;
+    if (typeof name === "string") setTheme(name);
+  });
+</script>

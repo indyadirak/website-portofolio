@@ -22,14 +22,20 @@ const experiences = await getExperiences();
 const socialLinks = await getSocialLinks();
 const aboutBio = (await getSiteSettingValue("about_bio"))?.trim();
 const aboutContactInfo = (await getSiteSettingValue("about_contact_info"))?.trim();
+// Fallback: hanya timpa default i18n bila admin benar-benar menyimpan key
+// about_specializations (key belum ada -> pakai default; key ada -> hormati
+// isi admin, termasuk array kosong yang disengaja).
 let specializations = t.about.specializations;
-try {
-  const configured = JSON.parse((await getSiteSettingValue("about_specializations")) ?? "[]");
-  if (Array.isArray(configured) && configured.every((item) => typeof item === "string")) {
-    specializations = configured.filter(Boolean);
+const rawSpecializations = await getSiteSettingValue("about_specializations");
+if (rawSpecializations != null) {
+  try {
+    const configured = JSON.parse(rawSpecializations);
+    if (Array.isArray(configured) && configured.every((item) => typeof item === "string")) {
+      specializations = configured.filter(Boolean);
+    }
+  } catch {
+    specializations = t.about.specializations;
   }
-} catch {
-  specializations = t.about.specializations;
 }
 
 /** Format periode terminal: "2024-03" -> "2024/03". */
@@ -54,9 +60,9 @@ const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
         <h2 class="font-mono text-sm font-bold uppercase tracking-wider text-cyber-accent">
           {t.about.specializationsTitle}
         </h2>
-        <ul class="mt-4 space-y-2 font-mono text-sm text-slate-300">
+        <ul class="mt-4 flex flex-wrap gap-2 font-mono text-sm text-slate-300">
           {specializations.map((item) => (
-            <li class="inline-block rounded border border-cyber-border px-2 py-1 text-xs text-cyber-primary">
+            <li class="rounded border border-cyber-border px-2 py-1 text-xs text-cyber-primary">
               {item}
             </li>
           ))}

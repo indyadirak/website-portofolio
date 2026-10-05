@@ -14,6 +14,47 @@ export const en: Dictionary = {
     downloadCv: "Download CV",
     menu: "menu",
   },
+  theme: {
+    label: "Color theme",
+    cyan: "Cyan (default)",
+    green: "Phosphor green",
+    amber: "Amber",
+  },
+  terminal: {
+    eyebrow: "$ ./terminal --interactive",
+    title: "Interactive Terminal",
+    description:
+      "A real terminal you can type into — not a prop. Type help for the command list.",
+    header: "visitor@cybersec: ~",
+    placeholder: "type 'help' then Enter…",
+    hint: "Try: whoami · ls projects · theme amber · Tab autocomplete · ↑↓ history · PgUp/PgDn scroll",
+    welcome: "cybersec interactive shell — type help to begin.",
+    helpTitle: "available commands:",
+    help: [
+      { cmd: "whoami", desc: "who am I" },
+      { cmd: "ls", desc: "list directories" },
+      { cmd: "ls projects", desc: "list projects" },
+      { cmd: "cat skills", desc: "list skills by category" },
+      { cmd: "open <target>", desc: "jump to a section (projects, skills, writeups, contact)" },
+      { cmd: "theme <name>", desc: "switch color theme (cyan, green, amber)" },
+      { cmd: "date", desc: "current date and time" },
+      { cmd: "clear", desc: "clear the terminal screen" },
+      { cmd: "sudo hire-me", desc: "???" },
+    ],
+    whoami:
+      "Network & Cyber Security Technician — penetration testing, security research, blue team defense.",
+    projectsHeader: "project list:",
+    projectsEmpty: "no projects yet.",
+    skillsHeader: "skill list:",
+    opened: "opening {target}…",
+    openUnknown: "unknown target — try: projects, skills, writeups, contact",
+    themeChanged: "theme switched to {name}",
+    themeUnknown: "unknown theme — choose: cyan, green, amber",
+    sudoOk: "[sudo] access granted. Good call — head to ./contact, I'll be waiting for your message.",
+    sudoUnknown: "sudo: unknown command. Did you mean sudo hire-me?",
+    notFound: "command not found: {cmd} — type help",
+    promptUser: "visitor@cybersec",
+  },
   hero: {
     eyebrow: "$ whoami",
     title: "Network & Cyber Security Technician",
@@ -97,6 +138,7 @@ export const en: Dictionary = {
     verificationUrl: "Verification URL",
     verifyCredential: "Verify Credential",
     credentialLink: "View {title} credential on issuer page",
+    viewCredential: "View Credential",
     featured: "Featured",
     validUntil: "Valid until {date}",
     expired: "Expired {date}",
@@ -151,6 +193,9 @@ export const en: Dictionary = {
     activityModuleWriteup: "WRITEUP",
     activityNewWriteup: "New case study published — {title}",
     expiryTitle: "Expiry_alerts",
+    expiringInDays: "{days} days left",
+    expiredWarning:
+      "$ warning: {count} certificates have expired — re-verify or update expiry_date.",
     projectsTitle: "Projects",
     certificatesTitle: "Certificates",
     contactTitle: "Contact Messages",
@@ -663,6 +708,7 @@ export const en: Dictionary = {
   ui: {
     totalZero: "total 0",
     skipToContent: "Skip to main content",
+    backToTop: "Back to top",
   },
   errors: {
     mfa_required: "session is not MFA-verified (AAL2) — log out and log back in with your TOTP code",
@@ -747,6 +793,8 @@ export const en: Dictionary = {
     driveUrlHint:
       "Accepted formats: drive.google.com/file/d/<ID>/view or uc?id=<ID>. The file MUST be shared as 'Anyone with the link'. Stored as a direct download link.",
     dateHelper: "Date format: YYYY-MM-DD (e.g. 2024-01-15) — sane years 1900-2100",
+    confirmDelete: 'Delete "{title}"? This action cannot be undone.',
+    deleteFailed: "Failed to delete: {error}",
   },
   adminLayout: {
     workspace: "Command Center",

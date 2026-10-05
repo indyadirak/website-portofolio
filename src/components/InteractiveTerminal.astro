@@ -1,0 +1,343 @@
+---
+/**
+ * InteractiveTerminal — terminal beneran yang bisa diketik pengunjung.
+ * Pola data: semua string i18n + data dinamis disuntik via data-attributes
+ * (CSP: tanpa inline script; <script> Astro di-bundle ke file eksternal).
+ * ID ber-prefix "term-" agar unik (aturan: tanpa ID duplikat per halaman).
+ */
+import { getDictionary, localeFromPathname } from "../lib/i18n";
+import SectionHeading from "./SectionHeading.astro";
+
+interface Props {
+  projects: { title: string; slug: string }[];
+  skills: { name: string; category: string }[];
+  writeupsUrl: string;
+  contactUrl: string;
+}
+
+const { projects, skills, writeupsUrl, contactUrl } = Astro.props;
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
+
+/** Hindari "</script>" lolos ke atribut (pola yang sama dengan JSON-LD). */
+const safeJson = (v: unknown) => JSON.stringify(v).replace(/</g, "\\u003c");
+
+const i18n = {
+  welcome: t.terminal.welcome,
+  helpTitle: t.terminal.helpTitle,
+  help: t.terminal.help,
+  whoami: t.terminal.whoami,
+  projectsHeader: t.terminal.projectsHeader,
+  projectsEmpty: t.terminal.projectsEmpty,
+  skillsHeader: t.terminal.skillsHeader,
+  opened: t.terminal.opened,
+  openUnknown: t.terminal.openUnknown,
+  themeChanged: t.terminal.themeChanged,
+  themeUnknown: t.terminal.themeUnknown,
+  sudoOk: t.terminal.sudoOk,
+  sudoUnknown: t.terminal.sudoUnknown,
+  notFound: t.terminal.notFound,
+  promptUser: t.terminal.promptUser,
+  locale,
+};
+---
+
+<section id="terminal" class="reveal mx-auto max-w-6xl px-4 py-16 md:px-6">
+  <SectionHeading
+    eyebrow={t.terminal.eyebrow}
+    title={t.terminal.title}
+    description={t.terminal.description}
+  />
+
+  <div
+    id="term-shell"
+    class="overflow-hidden rounded-lg border border-cyber-border bg-cyber-panel shadow-[0_0_40px_rgba(102,252,241,0.05)]"
+    data-i18n={safeJson(i18n)}
+    data-projects={safeJson(projects)}
+    data-skills={safeJson(skills)}
+    data-urls={safeJson({ writeups: writeupsUrl, contact: contactUrl })}
+  >
+    <div class="flex items-center gap-2 border-b border-cyber-border/60 px-4 py-2.5">
+      <span class="h-3 w-3 rounded-full bg-cyber-danger/80" aria-hidden="true"></span>
+      <span class="h-3 w-3 rounded-full bg-cyber-accent/60" aria-hidden="true"></span>
+      <span class="h-3 w-3 rounded-full bg-cyber-primary/50" aria-hidden="true"></span>
+      <p class="ml-3 truncate font-mono text-xs text-cyber-muted">{t.terminal.header}</p>
+    </div>
+
+    <div
+      id="term-out"
+      class="term-scroll h-80 overflow-y-auto px-4 py-4 font-mono text-xs leading-relaxed md:text-sm"
+      aria-live="polite"
+    ></div>
+
+    <div class="flex items-center gap-2 border-t border-cyber-border/60 px-4 py-3">
+      <span class="whitespace-nowrap font-mono text-xs text-cyber-primary md:text-sm"
+        >{t.terminal.promptUser}:~$</span
+      >
+      <input
+        id="term-in"
+        type="text"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck={false}
+        aria-label={t.terminal.placeholder}
+        placeholder={t.terminal.placeholder}
+        class="w-full bg-transparent font-mono text-xs text-slate-200 caret-cyber-primary outline-none md:text-sm"
+      />
+    </div>
+  </div>
+  <p class="mt-3 font-mono text-xs text-cyber-muted/70">{t.terminal.hint}</p>
+</section>
+
+<script>
+  interface TermProject {
+    title: string;
+    slug: string;
+  }
+  interface TermSkill {
+    name: string;
+    category: string;
+  }
+  interface TermHelp {
+    cmd: string;
+    desc: string;
+  }
+  interface TermI18n {
+    welcome: string;
+    helpTitle: string;
+    help: TermHelp[];
+    whoami: string;
+    projectsHeader: string;
+    projectsEmpty: string;
+    skillsHeader: string;
+    opened: string;
+    openUnknown: string;
+    themeChanged: string;
+    themeUnknown: string;
+    sudoOk: string;
+    sudoUnknown: string;
+    notFound: string;
+    promptUser: string;
+    locale: string;
+  }
+  type CmdFn = (arg: string) => string | null;
+
+  const shell = document.getElementById("term-shell");
+  if (shell) {
+    const out = document.getElementById("term-out");
+    const input = document.getElementById("term-in") as HTMLInputElement | null;
+    if (out && input) {
+      // Alias non-null: narrowing tidak bertahan di dalam closure.
+      const termOut: HTMLElement = out;
+      const termInput: HTMLInputElement = input;
+      const T = JSON.parse(shell.dataset.i18n || "{}") as TermI18n;
+      const projects = JSON.parse(shell.dataset.projects || "[]") as TermProject[];
+      const skills = JSON.parse(shell.dataset.skills || "[]") as TermSkill[];
+      const urls = JSON.parse(shell.dataset.urls || "{}") as {
+        writeups?: string;
+        contact?: string;
+      };
+
+      const esc = (s: string): string =>
+        s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const fill = (tpl: string, vars: Record<string, string>): string =>
+        Object.entries(vars).reduce((acc, [k, v]) => acc.replace(`{${k}}`, v), tpl);
+
+      function print(html: string, cls?: string): void {
+        const div = document.createElement("div");
+        if (cls) div.className = cls;
+        div.innerHTML = html;
+        termOut.appendChild(div);
+        termOut.scrollTop = termOut.scrollHeight;
+      }
+
+      const echo = (cmd: string): void => {
+        print(`<span class="text-cyber-primary">${esc(T.promptUser)}:~$</span> ${esc(cmd)}`);
+      };
+
+      function listProjects(): string {
+        if (!projects.length) return esc(T.projectsEmpty);
+        return (
+          esc(T.projectsHeader) +
+          "<br>" +
+          projects
+            .map(
+              (p) =>
+                `&nbsp;&nbsp;<b>${esc(p.slug)}.md</b> <span class="text-cyber-muted">— ${esc(p.title)}</span>`
+            )
+            .join("<br>")
+        );
+      }
+
+      function listSkills(): string {
+        if (!skills.length) return esc(T.projectsEmpty);
+        const groups: Record<string, string[]> = {};
+        skills.forEach((s) => {
+          if (!groups[s.category]) groups[s.category] = [];
+          groups[s.category].push(s.name);
+        });
+        return (
+          esc(T.skillsHeader) +
+          "<br>" +
+          Object.entries(groups)
+            .map(
+              ([cat, names]) =>
+                `<b>${esc(cat)}</b><br>&nbsp;&nbsp;${names.map((n) => esc(n)).join(", ")}`
+            )
+            .join("<br>")
+        );
+      }
+
+      const commands: Record<string, CmdFn> = {
+        help: () =>
+          esc(T.helpTitle) +
+          "<br>" +
+          T.help.map((r) => `&nbsp;&nbsp;<b>${esc(r.cmd)}</b> — ${esc(r.desc)}`).join("<br>"),
+        whoami: () => esc(T.whoami),
+        ls: (arg: string) => {
+          if (arg === "projects") return listProjects();
+          return "projects/ &nbsp; skills/ &nbsp; writeups/ &nbsp; contact/";
+        },
+        cat: (arg: string) => {
+          if (arg === "skills") return listSkills();
+          return esc(fill(T.notFound, { cmd: arg ? `cat ${arg}` : "cat" }));
+        },
+        open: (arg: string) => {
+          if (arg === "projects" || arg === "skills") {
+            const el = document.querySelector(arg === "projects" ? "#projects" : "#skills");
+            if (el) el.scrollIntoView({ behavior: "smooth" });
+            return esc(fill(T.opened, { target: arg }));
+          }
+          if (arg === "writeups" && urls.writeups) {
+            location.href = urls.writeups;
+            return esc(fill(T.opened, { target: arg }));
+          }
+          if (arg === "contact" && urls.contact) {
+            location.href = urls.contact;
+            return esc(fill(T.opened, { target: arg }));
+          }
+          return esc(T.openUnknown);
+        },
+        theme: (arg: string) => {
+          const valid = ["cyan", "green", "amber"];
+          if (!valid.includes(arg)) return esc(T.themeUnknown);
+          document.dispatchEvent(new CustomEvent<string>("cyb:set-theme", { detail: arg }));
+          return esc(fill(T.themeChanged, { name: arg }));
+        },
+        date: () => esc(new Date().toLocaleString(T.locale === "en" ? "en-US" : "id-ID")),
+        clear: () => {
+          termOut.innerHTML = "";
+          return null;
+        },
+        sudo: (arg: string) =>
+          arg === "hire-me"
+            ? `<span class="text-cyber-accent">${esc(T.sudoOk)}</span>`
+            : esc(T.sudoUnknown),
+      };
+
+      print(`<span class="text-cyber-accent">${esc(T.welcome)}</span>`);
+
+      // Riwayat perintah ala shell (ArrowUp/ArrowDown).
+      const history: string[] = [];
+      let histIdx = -1;
+
+      // Kandidat argumen per perintah untuk Tab completion.
+      const argCompletes: Record<string, string[]> = {
+        open: ["projects", "skills", "writeups", "contact"],
+        cat: ["skills"],
+        theme: ["cyan", "green", "amber"],
+        ls: ["projects"],
+        sudo: ["hire-me"],
+      };
+
+      function showCandidates(matches: string[]): void {
+        print(matches.map((m) => `<b>${esc(m)}</b>`).join(" &nbsp; "));
+      }
+
+      function completeInput(): void {
+        const parts = termInput.value.split(/\s+/);
+        if (parts.length <= 1) {
+          // Lengkapi nama perintah.
+          const frag = (parts[0] ?? "").toLowerCase();
+          const matches = Object.keys(commands).filter((c) => c.startsWith(frag));
+          if (matches.length === 1) termInput.value = matches[0] + " ";
+          else if (matches.length > 1) showCandidates(matches);
+          return;
+        }
+        // Lengkapi argumen perintah yang dikenal.
+        const cmd = (parts[0] ?? "").toLowerCase();
+        const frag = (parts[parts.length - 1] ?? "").toLowerCase();
+        const matches = (argCompletes[cmd] ?? []).filter((c) => c.startsWith(frag));
+        if (matches.length === 1) {
+          parts[parts.length - 1] = matches[0];
+          termInput.value = parts.join(" ") + " ";
+        } else if (matches.length > 1) {
+          showCandidates(matches);
+        }
+      }
+
+      termInput.addEventListener("keydown", (e: KeyboardEvent) => {
+        // --- Ala terminal beneran: Tab completion, riwayat (ArrowUp/Down),
+        // PageUp/PageDown scroll output, Ctrl+L clear.
+        if (e.key === "Tab") {
+          e.preventDefault();
+          completeInput();
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (history.length > 0 && histIdx < history.length - 1) {
+            histIdx += 1;
+            termInput.value = history[history.length - 1 - histIdx];
+          }
+          return;
+        }
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (histIdx > 0) {
+            histIdx -= 1;
+            termInput.value = history[history.length - 1 - histIdx];
+          } else {
+            histIdx = -1;
+            termInput.value = "";
+          }
+          return;
+        }
+        if (e.key === "PageUp" || e.key === "PageDown") {
+          e.preventDefault();
+          const dir = e.key === "PageUp" ? -1 : 1;
+          termOut.scrollTop += dir * termOut.clientHeight * 0.9;
+          return;
+        }
+        if (e.key === "l" && e.ctrlKey) {
+          e.preventDefault();
+          termOut.innerHTML = "";
+          return;
+        }
+        if (e.key !== "Enter") return;
+        const raw = termInput.value.trim();
+        termInput.value = "";
+        histIdx = -1;
+        if (!raw) return;
+        history.push(raw);
+        if (history.length > 50) history.splice(0, history.length - 50);
+        echo(raw);
+        const parts = raw.toLowerCase().split(/\s+/);
+        const cmd = parts[0] ?? "";
+        const arg = parts.slice(1).join(" ");
+        const fn = commands[cmd];
+        if (fn) {
+          const result = fn(arg);
+          if (result) print(result);
+        } else {
+          print(esc(fill(T.notFound, { cmd })), "text-cyber-danger");
+        }
+        termOut.scrollTop = termOut.scrollHeight;
+      });
+
+      // Klik area output memfokuskan input (nyaman di mobile).
+      termOut.addEventListener("click", () => termInput.focus());
+    }
+  }
+</script>
