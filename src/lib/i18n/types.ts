@@ -16,6 +16,35 @@ export interface Dictionary {
     downloadCv: string;
     menu: string;
   };
+  theme: {
+    label: string;
+    cyan: string;
+    green: string;
+    amber: string;
+  };
+  terminal: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    header: string;
+    placeholder: string;
+    hint: string;
+    welcome: string;
+    helpTitle: string;
+    help: { cmd: string; desc: string }[];
+    whoami: string;
+    projectsHeader: string;
+    projectsEmpty: string;
+    skillsHeader: string;
+    opened: string;
+    openUnknown: string;
+    themeChanged: string;
+    themeUnknown: string;
+    sudoOk: string;
+    sudoUnknown: string;
+    notFound: string;
+    promptUser: string;
+  };
   hero: {
     eyebrow: string;
     title: string;
@@ -103,6 +132,8 @@ export interface Dictionary {
     verifyCredential: string;
     /** aria-label tautan credential halaman issuer — placeholder {title}. */
     credentialLink: string;
+    /** Label tombol sekunder: lihat kredensial bila tidak ada URL verifikasi issuer. */
+    viewCredential: string;
     featured: string;
     /** Template badge masa berlaku — placeholder {date} diganti format locale. */
     validUntil: string;
@@ -165,6 +196,10 @@ export interface Dictionary {
     /** Aksi entry feed — placeholder {title} isi judul write-up. */
     activityNewWriteup: string;
     expiryTitle: string;
+    /** Label "{days} hari lagi" — placeholder {days}. */
+    expiringInDays: string;
+    /** Peringatan sertifikat kedaluwarsa — placeholder {count}. */
+    expiredWarning: string;
     projectsTitle: string;
     certificatesTitle: string;
     contactTitle: string;
@@ -527,6 +562,8 @@ export interface Dictionary {
     totalZero: string;
     /** Skip-link keyboard di MainLayout & AdminLayout (WCAG 2.4.1). */
     skipToContent: string;
+    /** Label tombol back-to-top di MainLayout. */
+    backToTop: string;
   };
   /**
    * Pemetaan kode error API (snake_case) -> pesan manusiawi untuk admin.
@@ -617,6 +654,10 @@ export interface Dictionary {
     driveUrlLabel: string;
     driveUrlHint: string;
     dateHelper: string;
+    /** Konfirmasi hapus sertifikat — placeholder {title}. */
+    confirmDelete: string;
+    /** Pesan gagal hapus — placeholder {error}. */
+    deleteFailed: string;
   };
   notFound: {
     title: string;

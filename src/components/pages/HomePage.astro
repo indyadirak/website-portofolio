@@ -5,6 +5,7 @@ import SectionHeading from "../SectionHeading.astro";
 import ProjectGrid from "../ProjectGrid.astro";
 import SkillGrid from "../SkillGrid.astro";
 import CtaSection from "../CtaSection.astro";
+import InteractiveTerminal from "../InteractiveTerminal.astro";
 import { getProjects } from "../../lib/data/projects";
 import { getSkills } from "../../lib/data/skills";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
@@ -16,12 +17,16 @@ const t = getDictionary(locale);
 
 const featuredProjects = await getProjects({ featuredOnly: true });
 const skills = await getSkills();
+
+/** Data ringkas untuk terminal interaktif (disuntik via data-attributes). */
+const termProjects = featuredProjects.map((p) => ({ title: p.title, slug: p.slug }));
+const termSkills = skills.map((s) => ({ name: s.name, category: s.category }));
 ---
 
 <MainLayout title={siteConfig.name} description={t.meta.home}>
   <Hero />
 
-  <section id="projects" class="mx-auto max-w-6xl px-6 py-16">
+  <section id="projects" class="reveal mx-auto max-w-6xl px-6 py-16">
     <SectionHeading
       eyebrow={t.home.featuredEyebrow}
       title={t.home.featuredTitle}
@@ -35,7 +40,7 @@ const skills = await getSkills();
     </div>
   </section>
 
-  <section id="skills" class="mx-auto max-w-6xl px-6 py-16">
+  <section id="skills" class="reveal mx-auto max-w-6xl px-6 py-16">
     <SectionHeading
       eyebrow={t.home.skillsEyebrow}
       title={t.home.skillsTitle}
@@ -43,6 +48,13 @@ const skills = await getSkills();
     />
     <SkillGrid skills={skills} />
   </section>
+
+  <InteractiveTerminal
+    projects={termProjects}
+    skills={termSkills}
+    writeupsUrl={getRelativeLocaleUrl(locale, "writeups")}
+    contactUrl={getRelativeLocaleUrl(locale, "contact")}
+  />
 
   <CtaSection />
 </MainLayout>

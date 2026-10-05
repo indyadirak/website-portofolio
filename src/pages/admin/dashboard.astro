@@ -325,14 +325,17 @@ const statusItems = [
                   </p>
                 </div>
                 <span class="rounded border border-amber-400/40 px-2 py-1 font-mono text-xs text-amber-300">
-                  {Math.ceil((expiry.getTime() - todayUtc.getTime()) / 86_400_000)} hari lagi
+                  {t.dashboard.expiringInDays.replace(
+                    "{days}",
+                    String(Math.ceil((expiry.getTime() - todayUtc.getTime()) / 86_400_000)),
+                  )}
                 </span>
               </div>
             ))}
             {
               expiredCount > 0 && (
                 <p class="rounded border border-cyber-danger/50 bg-cyber-card p-4 font-mono text-xs text-cyber-danger">
-                  $ warning: {expiredCount} sertifikat sudah lewat masa berlaku — verifikasi ulang atau perbarui expiry_date.
+                  {t.dashboard.expiredWarning.replace("{count}", String(expiredCount))}
                 </p>
               )
             }

@@ -1,5 +1,6 @@
 ---
 import type { CertificatesRow } from "../../lib/types";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 
 interface Props {
   certificates: CertificatesRow[];
@@ -10,9 +11,15 @@ interface Props {
 }
 
 const { certificates, canWrite, isAdmin } = Astro.props;
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
 ---
 
-<div class="space-y-3">
+<div
+  class="space-y-3"
+  data-i18n-confirm-delete={t.adminCertificates.confirmDelete}
+  data-i18n-delete-failed={t.adminCertificates.deleteFailed}
+>
   {
     certificates.length > 0 ? (
       certificates.map((cert) => (
@@ -98,6 +105,12 @@ const { certificates, canWrite, isAdmin } = Astro.props;
 </div>
 
 <script>
+  const listRoot = document.querySelector("[data-i18n-confirm-delete]") as HTMLElement | null;
+  const confirmDeleteTpl =
+    listRoot?.dataset.i18nConfirmDelete ?? 'Hapus "{title}"? Aksi ini tidak dapat dibatalkan.';
+  const deleteFailedTpl =
+    listRoot?.dataset.i18nDeleteFailed ?? "Gagal menghapus: {error}";
+
   document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
     const card = btn.closest<HTMLElement>("[data-cert-json]");
     if (!card) return;
@@ -146,7 +159,7 @@ const { certificates, canWrite, isAdmin } = Astro.props;
 
     if (btn.dataset.action === "delete") {
       btn.addEventListener("click", async () => {
-        if (!window.confirm(`Hapus "${cert.title}"? Aksi ini tidak dapat dibatalkan.`)) return;
+        if (!window.confirm(confirmDeleteTpl.replace("{title}", cert.title))) return;
 
         btn.disabled = true;
         const res = await fetch(`/api/certificates?id=${encodeURIComponent(cert.id)}`, {
@@ -155,7 +168,7 @@ const { certificates, canWrite, isAdmin } = Astro.props;
         const data = await res.json();
 
         if (!res.ok || !data.ok) {
-          window.alert(`Gagal menghapus: ${data.error ?? "unknown"}`);
+          window.alert(deleteFailedTpl.replace("{error}", String(data.error ?? "unknown")));
           btn.disabled = false;
           return;
         }

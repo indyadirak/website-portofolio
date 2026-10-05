@@ -21,6 +21,17 @@ const severityStyle: Record<Writeup["severity"], string> = {
 function detailHref(slug: string): string {
   return locale === "en" ? `/en/writeups/${slug}` : `/writeups/${slug}`;
 }
+
+/** Format tanggal locale-aware: "15 Januari 2026" / "January 15, 2026". */
+function formatDate(value: string): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value.slice(0, 10);
+  return d.toLocaleDateString(locale === "en" ? "en-US" : "id-ID", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
 ---
 
 <MainLayout title={t.writeups.title} description={t.writeups.subtitle}>
@@ -59,7 +70,7 @@ function detailHref(slug: string): string {
                     {w.methodology}
                   </span>
                 </div>
-                <p class="mt-auto pt-4 font-mono text-xs text-cyber-muted">{w.createdAt.slice(0, 10)}</p>
+                <p class="mt-auto pt-4 font-mono text-xs text-cyber-muted">{formatDate(w.createdAt)}</p>
               </a>
             ))
           }
