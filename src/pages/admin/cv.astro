@@ -1,9 +1,13 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { canManageCv } from "../../lib/auth";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 import type { CvFilesRow } from "../../lib/types";
 
 export const prerender = false;
+
+const pageLocale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(pageLocale);
 
 // Middleware sudah memvalidasi sesi; guard ulang defensif (pola dashboard).
 const { user, profile, supabase } = Astro.locals;
@@ -91,7 +95,20 @@ for (const row of cvRows ?? []) {
                   </p>
                 )}
 
-                <form data-cv-form data-locale={locale} class="mt-4">
+                <form
+                  data-cv-form
+                  data-locale={locale}
+                  class="mt-4"
+                  data-i18n-confirm-delete={t.adminCv.confirmDelete}
+                  data-i18n-no-file={t.adminCv.noFile}
+                  data-i18n-uploading={t.adminCv.uploading}
+                  data-i18n-upload-failed={t.adminCv.uploadFailed}
+                  data-i18n-saved-reloading={t.adminCv.savedReloading}
+                  data-i18n-deleting={t.adminCv.deleting}
+                  data-i18n-delete-failed={t.adminCv.deleteFailed}
+                  data-i18n-network-error={t.adminCv.networkError}
+                  data-i18n-deleted-reloading={t.adminCv.deletedReloading}
+                >
                   <label
                     for={`cv-file-${locale}`}
                     class="font-mono text-xs text-slate-300"
@@ -138,12 +155,18 @@ for (const row of cvRows ?? []) {
     const el = document.querySelector<HTMLElement>(`[data-cv-form][data-locale="${locale}"] [data-cv-status]`);
     if (el) {
       el.textContent = message;
-      el.style.color = isError ? "#f87171" : "#67e8f9";
+      el.classList.toggle("text-cyber-danger", isError);
+      el.classList.toggle("text-cyber-accent", !isError);
     }
   }
 
   document.querySelectorAll<HTMLFormElement>("[data-cv-form]").forEach((form) => {
     const locale = form.dataset.locale ?? "";
+    const i18nNoFile = form.dataset.i18nNoFile ?? "";
+    const i18nUploading = form.dataset.i18nUploading ?? "";
+    const i18nUploadFailed = form.dataset.i18nUploadFailed ?? "";
+    const i18nSavedReloading = form.dataset.i18nSavedReloading ?? "";
+    const i18nNetworkError = form.dataset.i18nNetworkError ?? "";
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -151,13 +174,13 @@ for (const row of cvRows ?? []) {
       const file = fileInput?.files?.[0];
 
       if (!file) {
-        setStatus(locale, "pilih file PDF dulu", true);
+        setStatus(locale, i18nNoFile, true);
         return;
       }
 
       const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
       if (submitBtn) submitBtn.disabled = true;
-      setStatus(locale, "uploading...");
+      setStatus(locale, i18nUploading);
 
       const formData = new FormData();
       formData.append("locale", locale);
@@ -167,14 +190,14 @@ for (const row of cvRows ?? []) {
         const res = await fetch("/api/admin/cv", { method: "POST", body: formData });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          setStatus(locale, `gagal: ${data.error ?? "unknown"}`, true);
+          setStatus(locale, i18nUploadFailed.replace("{error}", String(data.error ?? "unknown")), true);
           if (submitBtn) submitBtn.disabled = false;
           return;
         }
-        setStatus(locale, "saved — reloading...");
+        setStatus(locale, i18nSavedReloading);
         window.location.reload();
       } catch {
-        setStatus(locale, "gagal: network error", true);
+        setStatus(locale, i18nNetworkError, true);
         if (submitBtn) submitBtn.disabled = false;
       }
     });
@@ -183,23 +206,29 @@ for (const row of cvRows ?? []) {
   document.querySelectorAll<HTMLButtonElement>("[data-cv-delete]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const locale = btn.dataset.locale ?? "";
-      if (!window.confirm(`Hapus file CV (${locale})? Kembali ke fallback statis.`)) return;
+      const formEl = btn.closest<HTMLElement>("[data-cv-form]");
+      const i18nConfirmDelete = formEl?.dataset.i18nConfirmDelete ?? "";
+      const i18nDeleting = formEl?.dataset.i18nDeleting ?? "";
+      const i18nDeleteFailed = formEl?.dataset.i18nDeleteFailed ?? "";
+      const i18nNetworkError = formEl?.dataset.i18nNetworkError ?? "";
+      const i18nDeletedReloading = formEl?.dataset.i18nDeletedReloading ?? "";
+      if (!window.confirm(i18nConfirmDelete.replace("{locale}", locale))) return;
 
       btn.disabled = true;
-      setStatus(locale, "menghapus...");
+      setStatus(locale, i18nDeleting);
 
       try {
         const res = await fetch(`/api/admin/cv?locale=${encodeURIComponent(locale)}`, { method: "DELETE" });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          setStatus(locale, `gagal: ${data.error ?? "unknown"}`, true);
+          setStatus(locale, i18nDeleteFailed.replace("{error}", String(data.error ?? "unknown")), true);
           btn.disabled = false;
           return;
         }
-        setStatus(locale, "deleted — reloading...");
+        setStatus(locale, i18nDeletedReloading);
         window.location.reload();
       } catch {
-        setStatus(locale, "gagal: network error", true);
+        setStatus(locale, i18nNetworkError, true);
         btn.disabled = false;
       }
     });

@@ -4,9 +4,13 @@ import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
 import TerminalInput from "../../components/admin/ui/TerminalInput.astro";
 import CategoryList from "../../components/admin/CategoryList.astro";
 import { canDeleteProjects, canManageProjects } from "../../lib/auth";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 import type { ProjectCategoryRow } from "../../lib/types";
 
 export const prerender = false;
+
+const pageLocale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(pageLocale);
 
 const { user, profile, supabase } = Astro.locals;
 
@@ -41,7 +45,13 @@ const canDelete = canDeleteProjects(profile);
       </h1>
     </div>
 
-    <form id="category-form" class="mt-8 space-y-5 rounded border border-cyber-border bg-cyber-panel p-6">
+    <form
+      id="category-form"
+      class="mt-8 space-y-5 rounded border border-cyber-border bg-cyber-panel p-6"
+      data-i18n-save-network-error={t.adminCategories.saveNetworkError}
+      data-i18n-save-failed={t.adminCategories.saveFailed}
+      data-i18n-saved-reloading={t.adminCategories.savedReloading}
+    >
       <p id="category-form-mode" class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
         [ new_category ]
       </p>
@@ -89,8 +99,8 @@ const canDelete = canDeleteProjects(profile);
 
     <section class="mt-10">
       <div class="mb-6 flex items-center justify-between">
-        <h2 class="font-mono text-lg font-bold text-white">All Categories</h2>
-        <span class="font-mono text-xs text-cyber-muted">total: {categories.length}</span>
+        <h2 class="font-mono text-lg font-bold text-white">{t.adminCategories.listTitle}</h2>
+        <span class="font-mono text-xs text-cyber-muted">{t.adminCategories.totalLabel}: {categories.length}</span>
       </div>
       <CategoryList categories={categories} canDelete={canDelete} />
     </section>
@@ -103,6 +113,9 @@ const canDelete = canDeleteProjects(profile);
   const submitBtn = document.getElementById("c-submit") as HTMLButtonElement;
   const cancelBtn = document.getElementById("c-cancel") as HTMLButtonElement;
   const statusEl = document.getElementById("c-status") as HTMLParagraphElement;
+  const saveNetworkError = form.dataset.i18nSaveNetworkError ?? "";
+  const saveFailedTpl = form.dataset.i18nSaveFailed ?? "";
+  const savedReloading = form.dataset.i18nSavedReloading ?? "";
 
   const nameInput = document.getElementById("c-name") as HTMLInputElement;
   const slugInput = document.getElementById("c-slug") as HTMLInputElement;
@@ -174,7 +187,7 @@ const canDelete = canDeleteProjects(profile);
     ).catch(() => null);
 
     if (!res) {
-      statusEl.textContent = "$ error: jaringan gagal";
+      statusEl.textContent = saveNetworkError;
       submitBtn.disabled = false;
       return;
     }
@@ -184,11 +197,11 @@ const canDelete = canDeleteProjects(profile);
     submitBtn.disabled = false;
 
     if (!res.ok || !data.ok) {
-      statusEl.textContent = `$ error: ${data.error ?? "gagal menyimpan"}`;
+      statusEl.textContent = saveFailedTpl.replace("{error}", String(data.error ?? "unknown"));
       return;
     }
 
-    statusEl.textContent = "$ saved — reloading...";
+    statusEl.textContent = savedReloading;
     window.location.reload();
   });
 </script>

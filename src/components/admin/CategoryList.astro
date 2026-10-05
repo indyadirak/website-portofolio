@@ -1,5 +1,6 @@
 ---
 import type { ProjectCategoryRow } from "../../lib/types";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 
 interface Props {
   categories: ProjectCategoryRow[];
@@ -8,6 +9,8 @@ interface Props {
 }
 
 const { categories, canDelete } = Astro.props;
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
 ---
 
 {
@@ -15,20 +18,23 @@ const { categories, canDelete } = Astro.props;
     <div class="rounded border border-cyber-border bg-cyber-card p-6 font-mono text-xs text-cyber-muted">
       <p>$ ls /categories --all</p>
       <p>total 0</p>
-      <p>(belum ada kategori. Isi form di atas untuk membuat yang pertama.)</p>
+      <p>{t.adminCategories.emptyList}</p>
     </div>
   ) : (
-    <div class="overflow-x-auto rounded border border-cyber-border bg-cyber-card">
+    <div
+      class="overflow-x-auto rounded border border-cyber-border bg-cyber-card"
+      data-i18n-confirm-delete={t.adminCategories.confirmDelete}
+    >
       <table class="w-full min-w-[640px] text-left font-mono text-sm">
         <thead class="border-b border-cyber-border/60 text-[11px] uppercase tracking-wider text-cyber-muted">
-          <tr>
-            <th class="px-4 py-3">#</th>
-            <th class="px-4 py-3">Name</th>
-            <th class="px-4 py-3">Slug</th>
-            <th class="px-4 py-3">Sort</th>
-            <th class="px-4 py-3">Status</th>
-            <th class="px-4 py-3 text-right">Actions</th>
-          </tr>
+            <tr>
+              <th class="px-4 py-3">#</th>
+              <th class="px-4 py-3">{t.adminCategories.thName}</th>
+              <th class="px-4 py-3">{t.adminCategories.thSlug}</th>
+              <th class="px-4 py-3">{t.adminCategories.thSort}</th>
+              <th class="px-4 py-3">{t.adminCategories.thStatus}</th>
+              <th class="px-4 py-3 text-right">{t.adminCategories.thActions}</th>
+            </tr>
         </thead>
         <tbody>
           {categories.map((c, i) => (
@@ -42,9 +48,9 @@ const { categories, canDelete } = Astro.props;
               <td class="px-4 py-3 text-cyber-muted">{c.sort_order}</td>
               <td class="px-4 py-3">
                 {c.is_active ? (
-                  <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-primary">active</span>
+                  <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-primary">{t.adminCategories.statusActive}</span>
                 ) : (
-                  <span class="rounded border border-cyber-border px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-muted">inactive</span>
+                  <span class="rounded border border-cyber-border px-2 py-0.5 text-[11px] uppercase tracking-wider text-cyber-muted">{t.adminCategories.statusInactive}</span>
                 )}
               </td>
               <td class="px-4 py-3">
@@ -54,7 +60,7 @@ const { categories, canDelete } = Astro.props;
                     data-cat-edit={c.id}
                     class="rounded border border-cyber-border px-2 py-1 text-slate-300 transition-colors hover:border-cyber-accent hover:text-cyber-accent"
                   >
-                    [ edit ]
+                    {t.adminCategories.editAction}
                   </button>
                   {canDelete && (
                     <button
@@ -63,7 +69,7 @@ const { categories, canDelete } = Astro.props;
                       data-cat-name={c.name}
                       class="rounded border border-cyber-border px-2 py-1 text-cyber-muted transition-colors hover:border-cyber-danger hover:text-cyber-danger"
                     >
-                      [ delete ]
+                      {t.adminCategories.deleteAction}
                     </button>
                   )}
                 </div>
@@ -77,6 +83,10 @@ const { categories, canDelete } = Astro.props;
 }
 
 <script>
+  const listRoot = document.querySelector("[data-i18n-confirm-delete]") as HTMLElement | null;
+  const confirmDeleteTpl =
+    listRoot?.dataset.i18nConfirmDelete ??
+    'Hapus kategori "{name}"? Proyek yang memakai kategori ini akan kehilangan category_id (fallback ke teks).';
   // Kirim event edit ke form kategori (diproses di halaman admin/categories).
   document.querySelectorAll<HTMLButtonElement>("[data-cat-edit]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -99,7 +109,7 @@ const { categories, canDelete } = Astro.props;
     btn.addEventListener("click", async () => {
       const id = btn.dataset.catDelete as string;
       const name = btn.dataset.catName ?? "";
-      if (!window.confirm(`Hapus kategori "${name}"? Proyek yang memakai kategori ini akan kehilangan category_id (fallback ke teks).`)) return;
+      if (!window.confirm(confirmDeleteTpl.replace("{name}", name))) return;
       btn.disabled = true;
       const res = await fetch(`/api/admin/categories?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
       if (res && res.ok) window.location.reload();

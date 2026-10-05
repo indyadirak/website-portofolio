@@ -6,6 +6,7 @@
  * categoryId (FK) + auto-fill category text (fallback legacy).
  */
 import { PROJECT_STATUSES, type ProjectCategoryRow } from "../../lib/types";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 
 interface Props {
   /** Kategori aktif dari DB (project_categories) untuk dropdown. */
@@ -13,9 +14,17 @@ interface Props {
 }
 
 const { categories = [] } = Astro.props;
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
 ---
 
-<form id="project-form" class="space-y-5">
+<form
+  id="project-form"
+  class="space-y-5"
+  data-i18n-save-network-error={t.adminProjectsForm.saveNetworkError}
+  data-i18n-save-failed={t.adminProjectsForm.saveFailed}
+  data-i18n-saved-reloading={t.adminProjectsForm.savedReloading}
+>
   <p id="project-form-mode" class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
     [ add_project ]
   </p>
@@ -158,6 +167,9 @@ const { categories = [] } = Astro.props;
   const submitBtn = document.getElementById("p-submit") as HTMLButtonElement;
   const cancelBtn = document.getElementById("p-cancel") as HTMLButtonElement;
   const statusEl = document.getElementById("p-status-msg") as HTMLParagraphElement;
+  const saveNetworkError = form.dataset.i18nSaveNetworkError ?? "";
+  const saveFailedTpl = form.dataset.i18nSaveFailed ?? "";
+  const savedReloading = form.dataset.i18nSavedReloading ?? "";
 
   const title = document.getElementById("p-title") as HTMLInputElement;
   const slug = document.getElementById("p-slug") as HTMLInputElement;
@@ -319,7 +331,7 @@ const { categories = [] } = Astro.props;
       data = await res.json().catch(() => ({ ok: false, error: "server_response_invalid" }));
     } catch {
       submitBtn.disabled = false;
-      statusEl.textContent = "$ error: network_error";
+      statusEl.textContent = saveNetworkError;
       statusEl.classList.add("text-cyber-danger");
       return;
     }
@@ -327,12 +339,12 @@ const { categories = [] } = Astro.props;
     submitBtn.disabled = false;
 
     if (!res.ok || !data.ok) {
-      statusEl.textContent = `$ error: ${data.error ?? "gagal menyimpan"}`;
+      statusEl.textContent = saveFailedTpl.replace("{error}", String(data.error ?? "unknown"));
       statusEl.classList.add("text-cyber-danger");
       return;
     }
 
-    statusEl.textContent = "$ saved — reloading...";
+    statusEl.textContent = savedReloading;
     statusEl.classList.remove("text-cyber-danger");
     statusEl.classList.add("text-cyber-primary");
     window.location.reload();
