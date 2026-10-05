@@ -310,7 +310,8 @@ const statusItems = [
               {t.dashboard.expiryTitle}
             </h2>
             <span class="font-mono text-xs text-cyber-muted">
-              {expiringSoon.length} expiring{expiredCount > 0 && ` / ${expiredCount} expired`}
+              {expiringSoon.length} {t.dashboard.expiringLabel}
+              {expiredCount > 0 && ` / ${expiredCount} ${t.dashboard.expiredLabel}`}
             </span>
           </div>
           <div class="space-y-4">
@@ -372,7 +373,7 @@ const statusItems = [
           </div>
         ) : (
           <p class="rounded border border-cyber-border bg-cyber-card p-6 font-mono text-xs text-cyber-muted">
-            $ echo "belum ada pesan masuk — form kontak di halaman /contact & /en/contact menyimpan ke tabel contact_messages."
+            {t.dashboard.contactEmpty}
           </p>
         )
       }

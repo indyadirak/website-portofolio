@@ -1,5 +1,6 @@
 ---
 import type { ProjectsRow } from "../../lib/types";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 
 interface Props {
   projects: ProjectsRow[];
@@ -10,9 +11,15 @@ interface Props {
 }
 
 const { projects, canWrite, isAdmin } = Astro.props;
+const locale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(locale);
 ---
 
-<div class="space-y-3">
+<div
+  class="space-y-3"
+  data-i18n-confirm-delete={t.adminProjects.confirmDelete}
+  data-i18n-delete-failed={t.adminProjects.deleteFailed}
+>
   {
     projects.length > 0 ? (
       projects.map((project) => (
@@ -25,7 +32,7 @@ const { projects, canWrite, isAdmin } = Astro.props;
               <h3 class="font-mono text-base font-bold text-white">{project.title}</h3>
               {project.featured && (
                 <span class="rounded border border-cyber-primary/50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-cyber-primary">
-                  featured
+                  {t.adminProjects.featuredBadge}
                 </span>
               )}
             </div>
@@ -49,7 +56,7 @@ const { projects, canWrite, isAdmin } = Astro.props;
                   data-action="edit"
                   class="rounded border border-cyber-border px-4 py-2 text-cyber-accent transition-colors hover:border-cyber-accent"
                 >
-                  [ edit ]
+                  {t.adminProjects.editAction}
                 </button>
               )
             }
@@ -60,7 +67,7 @@ const { projects, canWrite, isAdmin } = Astro.props;
                   data-action="delete"
                   class="rounded border border-cyber-danger/50 px-4 py-2 text-cyber-danger transition-colors hover:bg-cyber-danger/10"
                 >
-                  [ delete ]
+                  {t.adminProjects.deleteAction}
                 </button>
               )
             }
@@ -69,13 +76,19 @@ const { projects, canWrite, isAdmin } = Astro.props;
       ))
     ) : (
       <p class="rounded border border-cyber-border bg-cyber-card p-8 font-mono text-sm text-cyber-muted">
-        $ echo "Belum ada project di tabel projects."
+        {t.adminProjects.emptyList}
       </p>
     )
   }
 </div>
 
 <script>
+  const listRoot = document.querySelector("[data-i18n-confirm-delete]") as HTMLElement | null;
+  const confirmDeleteTpl =
+    listRoot?.dataset.i18nConfirmDelete ?? 'Hapus "{title}"? Aksi ini tidak dapat dibatalkan.';
+  const deleteFailedTpl =
+    listRoot?.dataset.i18nDeleteFailed ?? "Gagal menghapus: {error}";
+
   document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
     const card = btn.closest<HTMLElement>("[data-project-json]");
     if (!card) return;
@@ -126,7 +139,7 @@ const { projects, canWrite, isAdmin } = Astro.props;
 
     if (btn.dataset.action === "delete") {
       btn.addEventListener("click", async () => {
-        if (!window.confirm(`Hapus "${project.title}"? Aksi ini tidak dapat dibatalkan.`)) return;
+        if (!window.confirm(confirmDeleteTpl.replace("{title}", project.title))) return;
 
         btn.disabled = true;
         const res = await fetch(`/api/projects?id=${encodeURIComponent(project.id)}`, {
@@ -135,7 +148,7 @@ const { projects, canWrite, isAdmin } = Astro.props;
         const data = await res.json();
 
         if (!res.ok || !data.ok) {
-          window.alert(`Gagal menghapus: ${data.error ?? "unknown"}`);
+          window.alert(deleteFailedTpl.replace("{error}", String(data.error ?? "unknown")));
           btn.disabled = false;
           return;
         }

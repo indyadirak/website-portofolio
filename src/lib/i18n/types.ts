@@ -200,6 +200,12 @@ export interface Dictionary {
     expiringInDays: string;
     /** Peringatan sertifikat kedaluwarsa — placeholder {count}. */
     expiredWarning: string;
+    /** Kata "segera kedaluwarsa" pada ringkasan expiry dashboard. */
+    expiringLabel: string;
+    /** Kata "kedaluwarsa" pada ringkasan expiry dashboard. */
+    expiredLabel: string;
+    /** Empty state widget pesan terbaru. */
+    contactEmpty: string;
     projectsTitle: string;
     certificatesTitle: string;
     contactTitle: string;
@@ -451,6 +457,27 @@ export interface Dictionary {
     remediationHelper: string;
     remediationPlaceholder: string;
     sectionGuideTitle: string;
+    /** Konfirmasi hapus write-up — placeholder {title}. */
+    confirmDelete: string;
+    /** Label tombol edit/delete list. */
+    editAction: string;
+    deleteAction: string;
+    /** Empty state list write-up. */
+    emptyList: string;
+    /** Judul seksi daftar + label total. */
+    listTitle: string;
+    totalLabel: string;
+    /** Header kolom tabel list. */
+    thTitle: string;
+    thTarget: string;
+    thSeverity: string;
+    thStatus: string;
+    thCreated: string;
+    thActions: string;
+    /** Status simpan form — gagal network / gagal dengan pesan / tersimpan. */
+    saveNetworkError: string;
+    saveFailed: string;
+    savedRedirecting: string;
   };
   /** SPRINT 1: UI umum form admin (shell, alert, helper). */
   adminForm: {
@@ -479,6 +506,10 @@ export interface Dictionary {
     impactHelper: string;
     impactPlaceholder: string;
     descriptionHelper: string;
+    /** Status simpan form — gagal network / gagal dengan pesan / tersimpan. */
+    saveNetworkError: string;
+    saveFailed: string;
+    savedReloading: string;
   };
   /** FASE 2: Admin — edit identitas situs (site_settings). */
   adminSettings: {
@@ -502,6 +533,8 @@ export interface Dictionary {
     back: string;
     keyColumn: string;
     valueColumn: string;
+    /** Ekor label key pada pesan error simpan. */
+    keySuffix: string;
   };
   /** FASE 2: Admin — kelola Career Timeline (experiences). */
   adminExperiences: {
@@ -530,6 +563,8 @@ export interface Dictionary {
     back: string;
     saved: string;
     errorPrefix: string;
+    /** Ekor pesan network error setelah prefix. */
+    networkError: string;
   };
   /** FASE 2: Admin — kelola tautan sosial (social_links). */
   adminSocialLinks: {
@@ -555,6 +590,8 @@ export interface Dictionary {
     back: string;
     saved: string;
     errorPrefix: string;
+    /** Ekor pesan network error setelah prefix. */
+    networkError: string;
   };
   /** Shared: teks utilitas komponen UI reusable. */
   ui: {
@@ -638,6 +675,17 @@ export interface Dictionary {
     formTitleNew: string;
     formTitleEdit: string;
     backToList: string;
+    /** Konfirmasi hapus project — placeholder {title}. */
+    confirmDelete: string;
+    /** Pesan gagal hapus — placeholder {error}. */
+    deleteFailed: string;
+    /** Badge featured pada kartu list. */
+    featuredBadge: string;
+    /** Label tombol edit/delete list. */
+    editAction: string;
+    deleteAction: string;
+    /** Empty state list project. */
+    emptyList: string;
   };
   /** Halaman list certificate (admin/certificates) — FASE 2. */
   adminCertificates: {
@@ -658,6 +706,115 @@ export interface Dictionary {
     confirmDelete: string;
     /** Pesan gagal hapus — placeholder {error}. */
     deleteFailed: string;
+    /** Badge featured pada kartu list. */
+    featuredBadge: string;
+    /** Label tombol edit/delete list. */
+    editAction: string;
+    deleteAction: string;
+    /** Empty state list sertifikat. */
+    emptyList: string;
+    /** Hint tanggal kedaluwarsa opsional. */
+    expiryHint: string;
+    /** Status kompresi gambar — placeholder {text} opsional. */
+    compressingHint: string;
+    /** Ringkasan hasil kompresi — placeholder {a}, {b}, {p}. */
+    correctedSize: string;
+    /** Label file saat ini — placeholder {url} / {name}. */
+    currentFileDrive: string;
+    currentFileLocal: string;
+    /** Status tersimpan — placeholder none. */
+    savedReloading: string;
+  };
+  /** Daftar kategori proyek (admin/categories + CategoryList). */
+  adminCategories: {
+    /** Konfirmasi hapus kategori — placeholder {name}. */
+    confirmDelete: string;
+    /** Label tombol edit/delete list. */
+    editAction: string;
+    deleteAction: string;
+    /** Empty state list kategori. */
+    emptyList: string;
+    /** Judul seksi daftar + label total. */
+    listTitle: string;
+    totalLabel: string;
+    /** Header kolom tabel list. */
+    thName: string;
+    thSlug: string;
+    thSort: string;
+    thStatus: string;
+    thActions: string;
+    /** Badge status aktif/nonaktif. */
+    statusActive: string;
+    statusInactive: string;
+    /** Status simpan form — gagal network / gagal dengan pesan / tersimpan. */
+    saveNetworkError: string;
+    saveFailed: string;
+    savedReloading: string;
+  };
+  /** Kelola file CV (admin/cv). */
+  adminCv: {
+    /** Konfirmasi hapus file CV — placeholder {locale}. */
+    confirmDelete: string;
+    /** Status: belum pilih file. */
+    noFile: string;
+    /** Status: sedang mengunggah. */
+    uploading: string;
+    /** Status gagal — placeholder {error}. */
+    uploadFailed: string;
+    /** Status: tersimpan, akan reload. */
+    savedReloading: string;
+    /** Status: sedang menghapus. */
+    deleting: string;
+    /** Status gagal hapus — placeholder {error}. */
+    deleteFailed: string;
+    /** Status: network error saat hapus. */
+    networkError: string;
+    /** Status: terhapus, akan reload. */
+    deletedReloading: string;
+  };
+  /** Konfigurasi backup Drive (admin/backup). */
+  adminBackup: {
+    /** Konfirmasi putus koneksi Drive. */
+    confirmUnlink: string;
+    /** Validasi: minimal satu field diisi. */
+    validationHint: string;
+    /** Status: konfigurasi tersimpan. */
+    savedOk: string;
+    /** Status gagal simpan — placeholder {error}. */
+    saveFailed: string;
+    /** Status: koneksi diputus. */
+    unlinkedOk: string;
+    /** Status: gagal memutus koneksi. */
+    unlinkFailed: string;
+  };
+  /** Panel enrollment MFA (login admin/editor). */
+  adminMfa: {
+    /** Judul + deskripsi panel. */
+    title: string;
+    description: string;
+    /** Label tombol retry/verify. */
+    retryAction: string;
+    verifyAction: string;
+    /** Teks loading QR. */
+    loadingText: string;
+    /** Label secret manual + input kode. */
+    secretLabel: string;
+    codeLabel: string;
+    /** Alt QR code. */
+    qrAlt: string;
+    /** Prefix pesan error terminal. */
+    errorPrefix: string;
+    /** Pesan-pesan error enrollment. */
+    errUnauthorized: string;
+    errEnrollFailed: string;
+    errTimeout: string;
+    errInvalidResponse: string;
+    errSessionFailed: string;
+    errNetwork: string;
+    errTooMany: string;
+    errGeneric: string;
+    errCodeMustBe6: string;
+    errInvalidCode: string;
   };
   notFound: {
     title: string;

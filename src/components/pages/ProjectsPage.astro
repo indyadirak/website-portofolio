@@ -19,7 +19,7 @@ const secondaryProjects = projects.filter((p) => !p.featured);
 ---
 
 <MainLayout title={t.projects.title} description={t.meta.projects}>
-  <div class="mx-auto max-w-6xl px-6 py-16">
+  <div class="reveal mx-auto max-w-6xl px-6 py-16">
     <SectionHeading
       eyebrow={t.projects.eyebrow}
       title={t.projects.title}
@@ -44,6 +44,7 @@ const secondaryProjects = projects.filter((p) => !p.featured);
             <button
               type="button"
               data-filter-all
+              aria-pressed="true"
               class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-3 py-1 font-mono text-xs text-cyber-primary transition hover:bg-cyber-primary/20"
             >
               {t.projects.allCategories}
@@ -53,6 +54,7 @@ const secondaryProjects = projects.filter((p) => !p.featured);
                 <button
                   type="button"
                   data-filter={c.name}
+                  aria-pressed="false"
                   class="rounded border border-cyber-border px-3 py-1 font-mono text-xs text-cyber-muted transition hover:border-cyber-primary/60 hover:text-cyber-primary"
                 >
                   {c.name}
@@ -132,6 +134,7 @@ const secondaryProjects = projects.filter((p) => !p.featured);
   const INACTIVE_CLASSES = ["border-cyber-border", "text-cyber-muted"];
 
   function setActive(chip: HTMLButtonElement, on: boolean): void {
+    chip.setAttribute("aria-pressed", String(on));
     for (const cls of ACTIVE_CLASSES) chip.classList.toggle(cls, on);
     for (const cls of INACTIVE_CLASSES) chip.classList.toggle(cls, !on);
   }

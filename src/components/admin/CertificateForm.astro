@@ -10,7 +10,16 @@ const t = getDictionary(locale);
 const errorMap = JSON.stringify(t.errors);
 ---
 
-<form id="cert-form" class="space-y-5" data-i18n-errors={errorMap}>
+<form
+  id="cert-form"
+  class="space-y-5"
+  data-i18n-errors={errorMap}
+  data-i18n-compressing-hint={t.adminCertificates.compressingHint}
+  data-i18n-corrected-size={t.adminCertificates.correctedSize}
+  data-i18n-current-file-drive={t.adminCertificates.currentFileDrive}
+  data-i18n-current-file-local={t.adminCertificates.currentFileLocal}
+  data-i18n-saved-reloading={t.adminCertificates.savedReloading}
+>
   <p id="cert-form-mode" class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
     [ add_certificate ]
   </p>
@@ -46,7 +55,7 @@ const errorMap = JSON.stringify(t.errors);
     </label>
     <label class="block">
       <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">
-        Expiry Date <span class="text-cyber-muted">(opsional — kosongkan jika tidak ada masa berlaku)</span>
+        Expiry Date <span class="text-cyber-muted">({t.adminCertificates.expiryHint})</span>
       </span>
       <input id="f-expiry-date" type="date"
         class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary" />
@@ -171,6 +180,11 @@ const errorMap = JSON.stringify(t.errors);
   const submitBtn = document.getElementById("f-submit") as HTMLButtonElement;
   const cancelBtn = document.getElementById("f-cancel") as HTMLButtonElement;
   const statusEl = document.getElementById("f-status") as HTMLParagraphElement;
+  const compressingHint = form.dataset.i18nCompressingHint ?? "";
+  const correctedSizeTpl = form.dataset.i18nCorrectedSize ?? "";
+  const currentFileDriveTpl = form.dataset.i18nCurrentFileDrive ?? "";
+  const currentFileLocalTpl = form.dataset.i18nCurrentFileLocal ?? "";
+  const savedReloading = form.dataset.i18nSavedReloading ?? "";
 
   const title = document.getElementById("f-title") as HTMLInputElement;
   const issuer = document.getElementById("f-issuer") as HTMLInputElement;
@@ -338,12 +352,12 @@ const errorMap = JSON.stringify(t.errors);
     if (external) {
       driveUrl.value = detail.fileUrl ?? "";
       setFileSource("drive");
-      fileCurrent.textContent = `$ file saat ini (Drive): ${detail.fileUrl}`;
+      fileCurrent.textContent = currentFileDriveTpl.replace("{url}", String(detail.fileUrl ?? ""));
     } else {
       driveUrl.value = "";
       setFileSource("upload");
       fileCurrent.textContent = detail.fileUrl
-        ? `$ file saat ini: ${detail.fileUrl.split("/").pop() ?? detail.fileUrl}`
+        ? currentFileLocalTpl.replace("{name}", detail.fileUrl.split("/").pop() ?? detail.fileUrl)
         : "";
     }
     setMode(true);
@@ -396,12 +410,15 @@ const errorMap = JSON.stringify(t.errors);
       // ===== Optimasi penyimpanan: PNG/JPG otomatis dikompres ke WebP =====
       // (re-encode canvas juga membuang metadata EXIF/GPS dari foto asli)
       if (uploadFile.type === "image/png" || uploadFile.type === "image/jpeg") {
-        statusEl.textContent = "$ compressing image...";
+        statusEl.textContent = compressingHint;
         const compressed = await compressToWebp(uploadFile);
         if (compressed) {
           const reduced = Math.round((1 - compressed.size / uploadFile.size) * 100);
           sizeEl.classList.remove("hidden");
-          sizeEl.textContent = `${formatBytes(uploadFile.size)} ➔ ${formatBytes(compressed.size)} (Terkoreksi ${reduced}%)`;
+          sizeEl.textContent = correctedSizeTpl
+            .replace("{a}", formatBytes(uploadFile.size))
+            .replace("{b}", formatBytes(compressed.size))
+            .replace("{p}", String(reduced));
           uploadFile = compressed;
         }
       }
@@ -456,7 +473,7 @@ const errorMap = JSON.stringify(t.errors);
       return;
     }
 
-    statusEl.textContent = "$ saved — reloading...";
+    statusEl.textContent = savedReloading;
     statusEl.classList.remove("text-cyber-danger");
     statusEl.classList.add("text-cyber-primary");
     window.location.reload();
