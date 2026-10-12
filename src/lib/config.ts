@@ -10,13 +10,13 @@ export type AvailabilityStatus = "open-to-work" | "not-available";
 
 export const siteConfig = {
   /** Nama situs / brand. */
-  name: "CyberSec",
+  name: "Indy Adira Khalfani",
   /** Domain produksi (ganti saat deploy; dipakai untuk canonical & og:url). */
   url: "https://portofolio.indyadirak.com",
 
   author: {
     name: "Indy Adira Khalfani",
-    role: "Cyber Security Specialist",
+    role: "IT Infrastructure & Security Specialist",
     /** Institusi pendidikan (JSON-LD alumniOf). Kosongkan ("") untuk skip. */
     alumniOf: "",
   },

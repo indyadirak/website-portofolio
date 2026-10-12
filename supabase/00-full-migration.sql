@@ -883,7 +883,7 @@ alter table public.projects add column if not exists detection text;
 
 -- ------------------------------------------------------------------
 -- 2) SKILLS: perluas daftar kategori untuk profil
---    Network & Cyber Security Technician (bukan kategori generic dev).
+--    IT Infrastructure & Security Specialist (bukan kategori generic dev).
 --    Tambah: Network, Forensics. Tetap idempotent.
 -- ------------------------------------------------------------------
 alter table public.skills drop constraint if exists skills_category_check;
@@ -1419,9 +1419,9 @@ alter table public.site_settings
   add constraint site_settings_key_key unique (key);
 
 insert into public.site_settings (key, value) values
-  ('hero_title',          'Network & Cyber Security Technician'),
-  ('hero_tagline',        'Network & Cyber Security Portfolio'),
-  ('short_bio',           'Penetration testing, security research, dan blue team defense — membangun sistem yang aman sejak awal.'),
+  ('hero_title',          'IT Infrastructure & Security Specialist'),
+  ('hero_tagline',        'Cloud · Network · Security Portfolio'),
+  ('short_bio',           'Cloud computing, network infrastructure, keamanan siber, dan IT support — membangun sistem yang andal dan aman sejak awal.'),
   ('availability_status', 'open-to-work'),
   ('about_bio',            ''),
   ('about_specializations', '[]'),

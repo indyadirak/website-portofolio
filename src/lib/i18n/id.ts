@@ -25,10 +25,10 @@ export const id: Dictionary = {
     title: "Terminal Interaktif",
     description:
       "Terminal beneran yang bisa diketik — bukan pajangan. Ketik help untuk daftar perintah.",
-    header: "visitor@cybersec: ~",
+    header: "visitor@indyadirak: ~",
     placeholder: "ketik 'help' lalu Enter…",
     hint: "Coba: whoami · ls projects · theme amber · Tab autocomplete · ↑↓ riwayat · PgUp/PgDn scroll",
-    welcome: "cybersec interactive shell — ketik help untuk mulai.",
+    welcome: "indyadirak interactive shell — ketik help untuk mulai.",
     helpTitle: "perintah tersedia:",
     help: [
       { cmd: "whoami", desc: "siapa saya" },
@@ -42,7 +42,7 @@ export const id: Dictionary = {
       { cmd: "sudo hire-me", desc: "???" },
     ],
     whoami:
-      "Network & Cyber Security Technician — penetration testing, security research, blue team defense.",
+      "IT Infrastructure & Security Specialist — cloud, network, security, dan IT support.",
     projectsHeader: "daftar project:",
     projectsEmpty: "belum ada project.",
     skillsHeader: "daftar skill:",
@@ -53,16 +53,16 @@ export const id: Dictionary = {
     sudoOk: "[sudo] akses diterima. Keputusan bagus — silakan ke ./contact, saya tunggu pesannya.",
     sudoUnknown: "sudo: perintah tidak dikenal. Mungkin maksudmu sudo hire-me?",
     notFound: "command not found: {cmd} — ketik help",
-    promptUser: "visitor@cybersec",
+    promptUser: "visitor@indyadirak",
   },
   hero: {
     eyebrow: "$ whoami",
-    title: "Network & Cyber Security Technician",
+    title: "IT Infrastructure & Security Specialist",
     badge: "ONLINE: OPEN TO WORK",
-    role: "Network & Cyber Security Technician",
-    tagline: "Network & Cyber Security Portfolio",
+    role: "IT Infrastructure & Security Specialist",
+    tagline: "Cloud · Network · Security Portfolio",
     description:
-      "Penetration testing, security research, dan blue team defense — membangun sistem yang aman sejak awal.",
+      "Cloud computing, network infrastructure, keamanan siber, dan IT support — membangun sistem yang andal dan aman sejak awal.",
     viewProjects: "Lihat Proyek",
     contactMe: "Hubungi Saya",
     downloadCv: "Unduh CV",
@@ -246,7 +246,7 @@ export const id: Dictionary = {
       eyebrow: "$ cv --security --print",
       title: "Security CV",
       description:
-        "Ringkasan profesional Network & Cyber Security dalam format siap cetak — sertifikasi terverifikasi, home lab, dan keterampilan per domain.",
+        "Ringkasan profesional IT Infrastructure & Security dalam format siap cetak — sertifikasi terverifikasi, home lab, dan keterampilan per domain.",
       intro:
         "Versi ringkas dari portofolio ini — dicetak atau disimpan sebagai PDF langsung dari browser (Ctrl/Cmd + P).",
       printLabel: "[ cetak / simpan_pdf ]",
@@ -854,11 +854,11 @@ export const id: Dictionary = {
     },
   },
   meta: {
-    home: "Portfolio Network & Cyber Security — network defense, penetration testing, security research, dan blue team defense.",
-    projects: "Portofolio project Network & Cyber Security — network defense, penetration testing, dan security research.",
-    certificates: "Sertifikat Kompetensi & Pelatihan — bukti kompetensi dan pelatihan teknis di bidang network & cyber security.",
-    about: "Tentang saya — network & cyber security specialist dengan fokus security by design.",
-    contact: "Hubungi saya — permintaan security assessment, konsultasi, atau kolaborasi.",
-    projectDetail: "Detail project Network & Cyber Security.",
+    home: "Portfolio IT Infrastructure — cloud computing, network, keamanan siber, dan IT support.",
+    projects: "Portofolio project IT — cloud, network, keamanan siber, dan infrastruktur.",
+    certificates: "Sertifikat Kompetensi & Pelatihan — bukti kompetensi dan pelatihan teknis di bidang IT infrastructure & security.",
+    about: "Tentang saya — IT infrastructure & security specialist.",
+    contact: "Hubungi saya — konsultasi, kolaborasi, atau penawaran proyek.",
+    projectDetail: "Detail project IT infrastructure & security.",
   },
 };

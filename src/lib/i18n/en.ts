@@ -25,10 +25,10 @@ export const en: Dictionary = {
     title: "Interactive Terminal",
     description:
       "A real terminal you can type into — not a prop. Type help for the command list.",
-    header: "visitor@cybersec: ~",
+    header: "visitor@indyadirak: ~",
     placeholder: "type 'help' then Enter…",
     hint: "Try: whoami · ls projects · theme amber · Tab autocomplete · ↑↓ history · PgUp/PgDn scroll",
-    welcome: "cybersec interactive shell — type help to begin.",
+    welcome: "indyadirak interactive shell — type help to begin.",
     helpTitle: "available commands:",
     help: [
       { cmd: "whoami", desc: "who am I" },
@@ -42,7 +42,7 @@ export const en: Dictionary = {
       { cmd: "sudo hire-me", desc: "???" },
     ],
     whoami:
-      "Network & Cyber Security Technician — penetration testing, security research, blue team defense.",
+      "IT Infrastructure & Security Specialist — cloud, network, security, and IT support.",
     projectsHeader: "project list:",
     projectsEmpty: "no projects yet.",
     skillsHeader: "skill list:",
@@ -53,16 +53,16 @@ export const en: Dictionary = {
     sudoOk: "[sudo] access granted. Good call — head to ./contact, I'll be waiting for your message.",
     sudoUnknown: "sudo: unknown command. Did you mean sudo hire-me?",
     notFound: "command not found: {cmd} — type help",
-    promptUser: "visitor@cybersec",
+    promptUser: "visitor@indyadirak",
   },
   hero: {
     eyebrow: "$ whoami",
-    title: "Network & Cyber Security Technician",
+    title: "IT Infrastructure & Security Specialist",
     badge: "ONLINE: OPEN TO WORK",
-    role: "Network & Cyber Security Technician",
-    tagline: "Network & Cyber Security Portfolio",
+    role: "IT Infrastructure & Security Specialist",
+    tagline: "Cloud · Network · Security Portfolio",
     description:
-      "Penetration testing, security research, and blue team defense — building secure systems from the start.",
+      "Cloud computing, network infrastructure, cybersecurity, and IT support — building reliable and secure systems from the ground up.",
     viewProjects: "View Projects",
     contactMe: "Contact Me",
     downloadCv: "Download CV",
@@ -246,7 +246,7 @@ export const en: Dictionary = {
       eyebrow: "$ cv --security --print",
       title: "Security CV",
       description:
-        "A Network & Cyber Security professional summary in print-ready format — verified certifications, home lab, and domain-grouped skills.",
+        "An IT Infrastructure & Security professional summary in print-ready format — verified certifications, home lab, and domain-grouped skills.",
       intro:
         "A condensed version of this portfolio — print it or save as PDF straight from the browser (Ctrl/Cmd + P).",
       printLabel: "[ print / save_pdf ]",
@@ -854,11 +854,11 @@ export const en: Dictionary = {
     },
   },
   meta: {
-    home: "Network & Cyber Security Portfolio — network defense, penetration testing, security research, and blue team defense.",
-    projects: "Network & Cyber Security project portfolio — network defense, penetration testing, and security research.",
-    certificates: "Competency & Training certificates — proof of competency and technical training in network & cyber security.",
-    about: "About me — network & cyber security specialist focused on secure-by-design systems.",
-    contact: "Get in touch — security assessment requests, consulting, or collaboration.",
-    projectDetail: "Network & Cyber Security project details.",
+    home: "IT Infrastructure Portfolio — cloud computing, network, cybersecurity, and IT support.",
+    projects: "IT project portfolio — cloud, network, cybersecurity, and infrastructure.",
+    certificates: "Competency & Training certificates — proof of competency and technical training in IT infrastructure & security.",
+    about: "About me — IT infrastructure & security specialist.",
+    contact: "Get in touch — consulting, collaboration, or project inquiries.",
+    projectDetail: "IT infrastructure & security project details.",
   },
 };

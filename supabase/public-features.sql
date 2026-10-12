@@ -15,7 +15,7 @@ alter table public.projects add column if not exists impact text;
 
 -- ------------------------------------------------------------------
 -- 2) SKILLS: perluas daftar kategori untuk profil
---    Network & Cyber Security Technician (bukan kategori generic dev).
+--    IT Infrastructure & Security Specialist (bukan kategori generic dev).
 --    Tambah: Network, Forensics. Tetap idempotent.
 -- ------------------------------------------------------------------
 alter table public.skills drop constraint if exists skills_category_check;
