@@ -40,11 +40,24 @@ const typeSteps = heroTitle.length + 8;
     <div class="mt-4 w-fit max-w-full">
       <h1
         class="type-effect font-mono text-3xl font-bold leading-tight text-cyber-primary glow-text lg:text-5xl"
-        style={`--type-steps: ${typeSteps}; --type-duration: 2.4s;`}
+        data-type-steps={typeSteps}
+        data-type-duration="2.4s"
       >
         {heroTitle}
       </h1>
     </div>
+    <script>
+      // Set CSS var animasi typewriter dari data attributes (bukan inline
+      // style) agar lolos CSP style-src 'self'. setProperty via JS external
+      // tidak diblokir CSP.
+      const typeEl = document.querySelector<HTMLElement>(".type-effect");
+      if (typeEl) {
+        const steps = typeEl.getAttribute("data-type-steps");
+        const duration = typeEl.getAttribute("data-type-duration");
+        if (steps) typeEl.style.setProperty("--type-steps", steps);
+        if (duration) typeEl.style.setProperty("--type-duration", duration);
+      }
+    </script>
     <span class="type-caret mt-4 hidden font-mono text-3xl text-cyber-accent md:inline-block lg:text-5xl" aria-hidden="true">
       █
     </span>

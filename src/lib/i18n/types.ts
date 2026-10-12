@@ -493,6 +493,7 @@ export interface Dictionary {
     contactInfo: string;
     specializationsPlaceholder: string;
     contactInfoPlaceholder: string;
+    aboutBioPlaceholder: string;
     availability: string;
     availabilityOpen: string;
     availabilityClosed: string;

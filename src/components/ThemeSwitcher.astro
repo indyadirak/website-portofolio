@@ -10,9 +10,9 @@ const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
 
 const themes = [
-  { id: "cyan", color: "#66fcf1", label: t.theme.cyan },
-  { id: "green", color: "#33ff66", label: t.theme.green },
-  { id: "amber", color: "#ffb000", label: t.theme.amber },
+  { id: "cyan", label: t.theme.cyan },
+  { id: "green", label: t.theme.green },
+  { id: "amber", label: t.theme.amber },
 ];
 ---
 
@@ -25,7 +25,6 @@ const themes = [
         title={th.label}
         aria-label={th.label}
         class="theme-dot"
-        style={`background:${th.color}`}
       />
     ))
   }

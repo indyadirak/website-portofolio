@@ -443,6 +443,17 @@
 .theme-dot[data-active="true"] {
   border-color: var(--color-cyber-muted);
 }
+/* Warna tiap dot di-key dari data-theme-btn (bukan inline style) agar
+   lolos CSP style-src 'self' yang memblokir atribut style. */
+.theme-dot[data-theme-btn="cyan"] {
+  background-color: #66fcf1;
+}
+.theme-dot[data-theme-btn="green"] {
+  background-color: #33ff66;
+}
+.theme-dot[data-theme-btn="amber"] {
+  background-color: #ffb000;
+}
 
 /* ---- Scroll reveal (dipicu IntersectionObserver, script di MainLayout) ---- */
 .reveal {

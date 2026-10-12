@@ -142,7 +142,7 @@ dan estimasi prioritas tercatat di sini dan diperbarui setiap sesi.
 - Estimasi: tidak dikerjakan.
 
 ### 3.d — HSTS preload pada custom domain — **PASCA-LIVE** (by definition)
-- [ ] Setelah domain `portofolio.indyadirak.my.id` aktif + SSL + HSTS terverifikasi,
+- [ ] Setelah domain `portofolio.indyadirak.com` aktif + SSL + HSTS terverifikasi,
       submit ke https://hstspreload.org.
 - Estimasi: **PASCA-LIVE** — menunggu DNS/SSL manual user.
 

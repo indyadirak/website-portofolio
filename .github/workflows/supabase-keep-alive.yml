@@ -30,7 +30,7 @@ jobs:
     steps:
       - name: Ping /api/health (memicu query DB nyata)
         env:
-          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.my.id' }}
+          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
         run: |
           RESPONSE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
             -A "supabase-keep-alive" "${PROD_URL}/api/health")

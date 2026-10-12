@@ -108,7 +108,7 @@ select
   'Cybersecurity Training Provider',
   date '2026-01-15',
   'DEMO-SOC-FUNDAMENTALS-2026',
-  'https://portofolio.indyadirak.my.id/certificates',
+  'https://portofolio.indyadirak.com/certificates',
   array['SOC Operations', 'Incident Response', 'Log Analysis'],
   'Contoh sertifikat untuk validasi tampilan CMS. Ganti dengan kredensial resmi dan URL verifikasi issuer melalui Admin Dashboard.',
   'training',

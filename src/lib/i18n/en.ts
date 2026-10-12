@@ -532,7 +532,7 @@ export const en: Dictionary = {
       "Acknowledge within ≤ 24 hours — initial analysis & remediation plan < 72 hours — fixes prioritized by severity.",
     scopeTitle: "Scope",
     scope: [
-      "This site (all origins under https://portofolio.indyadirak.my.id) including its public APIs",
+      "This site (all origins under https://portofolio.indyadirak.com) including its public APIs",
       "Application-level weaknesses: authentication, authorization, CSP, RLS, session management, file upload",
       "Exploitable infrastructure misconfigurations (edge, worker, storage, database)",
     ],
@@ -551,7 +551,7 @@ export const en: Dictionary = {
     ],
     channelsTitle: "Reporting channels",
     channels: [
-      "security.txt (RFC 9116): https://portofolio.indyadirak.my.id/.well-known/security.txt",
+      "security.txt (RFC 9116): https://portofolio.indyadirak.com/.well-known/security.txt",
       "Report a vulnerability: https://github.com/indyadirak/website-portofolio/security/advisories/new",
       "Security policy (SECURITY.md): https://github.com/indyadirak/website-portofolio/blob/main/SECURITY.md",
       "Audit & compliance mapping documentation is public in the repository (docs/SECURITY_COMPLIANCE_MAPPING.md)",
@@ -636,7 +636,7 @@ export const en: Dictionary = {
     eyebrow: "$ site-settings --edit",
     title: "Site Settings",
     description:
-      "Core website identity — edited here without touching code. Public pages read this in Phase 3.",
+      "Core website identity — edited here without touching code. Changes apply live on the public pages.",
     heroTitle: "Hero Title",
     heroTagline: "Hero Tagline",
     shortBio: "Short Bio",
@@ -645,6 +645,7 @@ export const en: Dictionary = {
     contactInfo: "About Contact Info",
     specializationsPlaceholder: "Network Security\nBlue Team\nSecurity Research",
     contactInfoPlaceholder: "Open to collaboration opportunities...",
+    aboutBioPlaceholder: "Describe your background, core skills, and current focus...",
     availability: "Availability Status",
     availabilityOpen: "open-to-work",
     availabilityClosed: "not-available",
