@@ -42,6 +42,18 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
   agar aplikasi authenticator menampilkan nama brand yang rapi.
 - Verifikasi header pasca-deploy memakai UA browser; 403 dari proteksi
   bot/WAF menjadi warning (deploy Worker tetap dianggap sukses).
+- Perbaikan CSP produksi: dot ThemeSwitcher tampil hitam karena warna
+  inline `style` diblokir `style-src 'self'` — warna pindah ke
+  `global.css` via `data-theme-btn`; variabel typewriter Hero
+  (`--type-steps`/`--type-duration`) pindah ke data attributes +
+  script `setProperty`.
+- Migrasi domain produksi ke `portofolio.indyadirak.com` (canonical,
+  og:url, security.txt, robots/sitemap, issuer TOTP untuk pendaftar
+  MFA baru, default `PROD_URL` workflow, seed data, dokumen hidup).
+- Perbaikan halaman Settings admin: placeholder `about_bio` salah pakai
+  key contact info (key i18n baru `aboutBioPlaceholder`), label hero dan
+  short bio yang tampil nama key mentah kini memakai i18n, copy FASE 3
+  basi diperbarui menjadi tampil langsung di halaman publik.
 
 ### Fase 3 — Evidence-based content dan UX publik
 - Empty state publik diperbaiki agar tidak menampilkan command debug atau
