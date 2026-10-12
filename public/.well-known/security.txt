@@ -1,4 +1,4 @@
-# Security contact for CyberSec
+# Security contact for Indy Adira Khalfani
 # Domain: portofolio.indyadirak.com
 # Pelaporan kerentanan mengikuti RFC 9116 dan kebijakan keamanan situs.
 

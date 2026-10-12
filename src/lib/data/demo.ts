@@ -238,7 +238,7 @@ export const demoCertificates: Certificate[] = [
   },
   {
     id: "c3",
-    title: "Network & Cyber Security Technician",
+    title: "IT Infrastructure & Security Specialist",
     issuer: "Balai Harta Peninggalan Surabaya",
     issueDate: "2025-01-20",
     expiryDate: null,
@@ -305,9 +305,9 @@ export const demoSkills: Skill[] = demoSiteSkills;
  * fallback di src/lib/config.ts / i18n.
  */
 export const demoSiteSettings: SiteSettingRow[] = [
-  { id: "ss-hero-title", key: "hero_title", value: "Network & Cyber Security Technician", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
-  { id: "ss-hero-tagline", key: "hero_tagline", value: "Network & Cyber Security Portfolio", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
-  { id: "ss-short-bio", key: "short_bio", value: "Penetration testing, security research, dan blue team defense — membangun sistem yang aman sejak awal.", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-hero-title", key: "hero_title", value: "IT Infrastructure & Security Specialist", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-hero-tagline", key: "hero_tagline", value: "Cloud · Network · Security Portfolio", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-short-bio", key: "short_bio", value: "Cloud computing, network infrastructure, keamanan siber, dan IT support — membangun sistem yang andal dan aman sejak awal.", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
   { id: "ss-availability", key: "availability_status", value: "open-to-work", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
 ];
 
@@ -329,7 +329,7 @@ export const demoExperiences: Experience[] = [
   },
   {
     id: "e2",
-    role: "Network & Cyber Security Technician",
+    role: "IT Infrastructure & Security Specialist",
     company: "Balai Harta Peninggalan Surabaya",
     startDate: "2023-08",
     endDate: "2024-02",

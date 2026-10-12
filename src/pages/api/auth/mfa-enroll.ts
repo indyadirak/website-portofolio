@@ -60,7 +60,7 @@ export async function POST({ locals }: APIContext) {
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: "totp",
       issuer: "portofolio.indyadirak.com",
-      friendlyName: user.email ?? "CyberSec Admin",
+      friendlyName: user.email ?? "Portfolio Admin",
     });
 
     if (error || !data.totp) {
