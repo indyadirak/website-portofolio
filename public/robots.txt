@@ -13,4 +13,4 @@ Disallow: /_astro/
 Allow: /en/
 
 # Sitemap dinamis (generated saat build dari route + data Supabase)
-Sitemap: https://portofolio.indyadirak.my.id/sitemap.xml
+Sitemap: https://portofolio.indyadirak.com/sitemap.xml

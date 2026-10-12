@@ -141,7 +141,7 @@ jobs:
       # lalu periksa status dengan pola toleran versi HTTP.
       - name: Verify security headers (production)
         env:
-          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.my.id' }}
+          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
         run: |
           for path in "/" "/certificates"; do
             ok=0

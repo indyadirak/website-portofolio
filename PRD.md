@@ -1,6 +1,6 @@
 # PRD — Product Requirements Document
 
-**Produk:** Website Portofolio Cyber Security — `portofolio.indyadirak.my.id`
+**Produk:** Website Portofolio Cyber Security — `portofolio.indyadirak.com`
 **Pemilik:** Indy Adira Khalfani · **Status:** LIVE (produksi)
 **Diperbarui:** Public UX dan Admin Workspace (lihat `CHANGELOG.md`)
 

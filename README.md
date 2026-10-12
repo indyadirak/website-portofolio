@@ -5,7 +5,7 @@ melalui project, security case study, sertifikasi terverifikasi, career
 timeline, dan home lab. Situs ini dibangun sebagai aplikasi web production-grade
 dengan Admin CMS, MFA, RBAC, PostgreSQL RLS, dan deployment edge.
 
-Produksi: **[portofolio.indyadirak.my.id](https://portofolio.indyadirak.my.id)**
+Produksi: **[portofolio.indyadirak.com](https://portofolio.indyadirak.com)**
 
 ## ✨ Fitur Utama
 

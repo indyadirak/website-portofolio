@@ -7,7 +7,7 @@
 ## 1. Ringkasan Proyek
 
 Portofolio profesional Cyber Security milik **Indy Adira Khalfani**
-(produksi: `https://portofolio.indyadirak.my.id`). Situs publik berbasis bukti
+(produksi: `https://portofolio.indyadirak.com`). Situs publik berbasis bukti
 (sertifikat terverifikasi, project dengan struktur Problem/Approach/Impact,
 write-up CTF) + **Admin CMS** dengan MFA TOTP wajib dan RBAC tiga role.
 

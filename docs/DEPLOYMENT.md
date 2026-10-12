@@ -280,7 +280,7 @@ Dua temuan LOW dari scanner eksternal dan statusnya:
       Untuk menghilangkan dari respons publik, buat Transform Rule sekali:
       Cloudflare dashboard → domain → **Rules → Transform Rules →
       Modify Response Header** → Create rule → jika hostname =
-      `portofolio.indyadirak.my.id` → operasi **Remove** header `server`.
+      `portofolio.indyadirak.com` → operasi **Remove** header `server`.
       Dampak keamanan murni ini kecil (pemakaian Cloudflare sudah terlihat
       dari DNS/`cf-ray`), jadi boleh juga diterima sebagai accepted risk.
 - [x] **Request tracking (CWE-778)**: Worker menyet header `X-Request-ID`
