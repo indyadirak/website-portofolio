@@ -7,7 +7,10 @@ export const prerender = false;
 
 /**
  * Manajemen pesan kontak (FASE 2, TUGAS 2.1):
- *   PUT    /api/admin/messages?id=<uuid> — tandai dibaca (is_read = true, idempotent)
+ *   PUT    /api/admin/messages?id=<uuid>[&read=false] — tandai dibaca
+ *          (is_read = true, idempotent); read=false/0/no -> tandai BELUM
+ *          dibaca (untuk toggle drawer pesan, pemanggil lama tanpa param
+ *          tetap berarti dibaca).
  *   DELETE /api/admin/messages?id=<uuid> — hapus pesan (hard delete)
  *
  * Keamanan (selaras RLS contact_messages — supabase/contact-messages-crud.sql):
@@ -57,7 +60,7 @@ function messageId(request: Request): string | null {
   return id && UUID_RE.test(id) ? id : null;
 }
 
-/** Tandai pesan sebagai dibaca. Idempotent: pesan yang sudah dibaca tetap ok. */
+/** Tandai pesan dibaca (default) / belum dibaca (?read=false). Idempotent. */
 export async function PUT({ request, locals }: APIContext) {
   const g = await guard(getSupabaseFromLocals(locals), locals);
   if (g.error) return g.error;
@@ -65,9 +68,15 @@ export async function PUT({ request, locals }: APIContext) {
   const id = messageId(request);
   if (!id) return json({ ok: false, error: "id_invalid" }, 400);
 
+  // ?read=false/0/no -> tandai BELUM dibaca (toggle drawer). Tanpa param =
+  // tandai dibaca (kompatibel pemanggil lama: tombol list + flow existing).
+  const readParam = new URL(request.url).searchParams.get("read");
+  const markRead =
+    readParam === null || !["0", "false", "no"].includes(readParam.toLowerCase());
+
   const { data, error } = await g.supabase
     .from("contact_messages")
-    .update({ is_read: true })
+    .update({ is_read: markRead })
     .eq("id", id)
     .select("id")
     .maybeSingle();

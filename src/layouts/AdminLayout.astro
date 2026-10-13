@@ -61,6 +61,9 @@ const initialsLabel = `${t.adminLayout.profile}: ${displayName}`;
           <button id="admin-menu-toggle" type="button" aria-expanded="false" aria-controls="admin-sidebar" aria-label={t.adminLayout.openMenu} class="admin-menu-toggle flex h-10 w-10 items-center justify-center rounded border border-cyber-border text-cyber-primary hover:border-cyber-primary lg:hidden">
             <span aria-hidden="true" class="text-lg">☰</span>
           </button>
+          <button id="admin-collapse-toggle" type="button" aria-expanded="true" aria-controls="admin-sidebar" aria-label={t.adminLayout.collapseSidebar} data-i18n-collapse={t.adminLayout.collapseSidebar} data-i18n-expand={t.adminLayout.expandSidebar} class="hidden h-10 w-10 items-center justify-center rounded border border-cyber-border text-cyber-primary hover:border-cyber-primary lg:flex">
+            <span aria-hidden="true" class="text-lg" id="admin-collapse-glyph">«</span>
+          </button>
           <a href="/admin/dashboard" class="font-mono text-base font-bold tracking-tight text-cyber-primary glow-text md:text-lg">IndyAdira<span class="text-cyber-accent">_admin</span></a>
           <span class="hidden border-l border-cyber-border pl-3 font-mono text-xs text-cyber-muted sm:inline">{t.adminLayout.workspace}</span>
         </div>
@@ -99,7 +102,7 @@ const initialsLabel = `${t.adminLayout.profile}: ${displayName}`;
           <AdminSidebarGroup label={t.adminLayout.contentGroup} items={contentItems} active={active} />
           <AdminSidebarGroup label={t.adminLayout.systemGroup} items={systemItems} active={active} />
           {canSeeAdminItems && <AdminSidebarGroup label={t.adminLayout.accountGroup} items={adminItems} active={active} />}
-          <div class="border-t border-cyber-border/50 pt-5 px-3">
+          <div class="sidebar-foot border-t border-cyber-border/50 pt-5 px-3">
             <p class="font-mono text-[10px] leading-relaxed text-cyber-muted/70">admin://portofolio<br />{siteConfig.url.replace("https://", "")}</p>
           </div>
         </nav>
@@ -153,6 +156,37 @@ const initialsLabel = `${t.adminLayout.profile}: ${displayName}`;
           closeProfile();
           profileToggle?.focus();
         }
+      });
+      // Icon rail (desktop): ciutkan sidebar jadi rel ikon + tooltip.
+      // State persisten di localStorage; CSS di global.css (media lg+).
+      const COLLAPSE_KEY = "admin-sidebar-collapsed";
+      const shell = document.getElementById("admin-shell");
+      const collapseToggle = document.getElementById("admin-collapse-toggle") as HTMLButtonElement | null;
+      const collapseGlyph = document.getElementById("admin-collapse-glyph");
+      const syncCollapse = (collapsed: boolean) => {
+        shell?.classList.toggle("sidebar-collapsed", collapsed);
+        collapseToggle?.setAttribute("aria-expanded", String(!collapsed));
+        const label = collapsed
+          ? collapseToggle?.dataset.i18nExpand
+          : collapseToggle?.dataset.i18nCollapse;
+        if (collapseToggle && label) collapseToggle.setAttribute("aria-label", label);
+        if (collapseGlyph) collapseGlyph.textContent = collapsed ? "»" : "«";
+      };
+      let sidebarCollapsed = false;
+      try {
+        sidebarCollapsed = localStorage.getItem(COLLAPSE_KEY) === "1";
+      } catch {
+        sidebarCollapsed = false;
+      }
+      syncCollapse(sidebarCollapsed);
+      collapseToggle?.addEventListener("click", () => {
+        sidebarCollapsed = !(shell?.classList.contains("sidebar-collapsed") ?? false);
+        try {
+          localStorage.setItem(COLLAPSE_KEY, sidebarCollapsed ? "1" : "0");
+        } catch {
+          // Penyimpanan diblokir (mode privat) — rail tetap jalan sesi ini.
+        }
+        syncCollapse(sidebarCollapsed);
       });
       logoutBtn?.addEventListener("click", async () => {
         logoutBtn.disabled = true;
