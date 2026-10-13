@@ -27,6 +27,9 @@ export interface ProjectInput {
    *  Bila diberikan, API memvalidasi keberadaan kategori & mengisi `category` text
    *  dari nama kategori tersebut (COALESCE di sisi baca tetap memprioritaskan FK). */
   categoryId?: string | null;
+  /** Multi-kategori (batch-4 B1): daftar FK; [0] = primer (disalin ke
+   *  categoryId + kolom legacy `category`). Disinkron ke junction table. */
+  categoryIds?: string[];
   tags?: string[];
   imageUrl?: string | null;
   repoUrl?: string | null;
@@ -107,6 +110,26 @@ function toRow(input: ProjectInput) {
   };
 }
 
+/** Validasi semua id multi-kategori & kembalikan peta id->nama (urutan input
+ *  tidak diubah). null = ada id tak dikenal / query gagal. Array kosong = valid. */
+async function resolveCategories(
+  supabase: NonNullable<ReturnType<typeof getSupabaseFromLocals>>,
+  ids: string[]
+): Promise<Map<string, string> | null> {
+  const unique = [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
+  if (unique.length === 0) return new Map<string, string>();
+  const { data, error } = await supabase
+    .from("project_categories")
+    .select("id, name")
+    .in("id", unique);
+  if (error || !data) return null;
+  const found = new Map(
+    (data as Array<{ id: string; name: string }>).map((r) => [r.id, r.name])
+  );
+  if (found.size !== unique.length) return null;
+  return found;
+}
+
 /** Cek kategori FK valid (jika categoryId diberikan) & ambil nama kategori utk
  *  mengisi kolom legacy `category` (fallback). return: { name } | null. */
 async function resolveCategory(
@@ -161,6 +184,16 @@ function validate(input: ProjectInput, resolved: { name: string } | null): strin
   if (input.categoryId && !resolved) {
     return "category_id_tidak_valid";
   }
+  if (
+    input.categoryIds !== undefined &&
+    (!Array.isArray(input.categoryIds) ||
+      input.categoryIds.length > 10 ||
+      input.categoryIds.some(
+        (id) => typeof id !== "string" || id.trim() === "" || id.length > 80
+      ))
+  ) {
+    return "category_ids_tidak_valid";
+  }
   return null;
 }
 
@@ -186,16 +219,72 @@ async function prepareInput(
 
   const resolved = input.categoryId ? await resolveCategory(supabase, input) : null;
 
-  const invalid = validate(input, resolved);
-  if (invalid) return { error: invalid };
+  // Multi-kategori: validasi semua id (null = ada id tak dikenal).
+  // categoryIds: [] = valid (map dikosongkan, primer dipertahankan).
+  let multi: Map<string, string> | null | undefined;
+  if (input.categoryIds !== undefined) {
+    multi = await resolveCategories(supabase, input.categoryIds);
+  }
+  if (multi === null) return { error: "category_id_tidak_valid" };
 
-  if (resolved) {
-    // Auto-fill kolom legacy: simpan nama kategori resmi (fallback bila FK
-    // dihapus / insert manual di masa depan).
-    input.category = resolved.name;
+  // Primer = id pertama categoryIds (bila ada): menimpa categoryId tunggal
+  // + kolom legacy; junction disinkron terpisah (syncCategoryMap).
+  let effectiveResolved = resolved;
+  if (multi && multi.size > 0 && input.categoryIds && input.categoryIds.length > 0) {
+    const firstId =
+      input.categoryIds.map((id) => id.trim()).filter(Boolean)[0] ?? "";
+    const firstName = multi.get(firstId);
+    if (firstId && firstName) {
+      input.categoryId = firstId;
+      input.category = firstName;
+      effectiveResolved = { name: firstName };
+    }
   }
 
-  return { input, resolved };
+  const invalid = validate(input, effectiveResolved);
+  if (invalid) return { error: invalid };
+
+  if (effectiveResolved && !multi) {
+    // Auto-fill kolom legacy: simpan nama kategori resmi (fallback bila FK
+    // dihapus / insert manual di masa depan).
+    input.category = effectiveResolved.name;
+  }
+
+  return { input, resolved: effectiveResolved };
+}
+
+/** Sinkron junction project_category_map: hapus mapping lama, tulis yang baru.
+ *  Hanya bila klien mengirim categoryIds eksplisit (form multi-checkbox).
+ *  Gagal (mis. tabel belum ada — migrasi B1 belum dijalankan di DB lama) =
+ *  degradasi grasi ke single-kategori (FK primer tetap tersimpan), JANGAN
+ *  gagalkan mutasi — tanpanya semua save project 500 sampai migrasi jalan. */
+async function syncCategoryMap(
+  supabase: NonNullable<ReturnType<typeof getSupabaseFromLocals>>,
+  projectId: string,
+  input: ProjectInput
+): Promise<void> {
+  if (!input.categoryIds) return;
+  try {
+    const ids = [
+      ...new Set(input.categoryIds.map((id) => id.trim()).filter(Boolean)),
+    ];
+    const { error: delError } = await supabase
+      .from("project_category_map")
+      .delete()
+      .eq("project_id", projectId);
+    if (delError) throw new Error(delError.message);
+    if (ids.length > 0) {
+      const { error: insError } = await supabase
+        .from("project_category_map")
+        .insert(ids.map((category_id) => ({ project_id: projectId, category_id })));
+      if (insError) throw new Error(insError.message);
+    }
+  } catch (err) {
+    console.error(
+      "[projects] sync project_category_map gagal (fallback single-kategori):",
+      err instanceof Error ? err.message : err
+    );
+  }
 }
 
 async function readInput(request: Request): Promise<ProjectInput | null> {
@@ -255,6 +344,7 @@ export async function POST({ request, locals }: APIContext) {
   }
 
   // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await syncCategoryMap(supabase, data.id, prep.input);
   await notifyContentPublished("projects");
 
   return json({ ok: true, id: data.id }, 201);
@@ -311,6 +401,7 @@ export async function PUT({ request, locals }: APIContext) {
   }
 
   // Konten publik di-prerender — minta rebuild (cooldown, best-effort).
+  await syncCategoryMap(supabase, id, prep.input);
   await notifyContentPublished("projects");
 
   return json({ ok: true });

@@ -1680,6 +1680,69 @@ grant select on public.social_links to anon, authenticated;
 grant insert, update, delete on public.social_links to authenticated;
 
 -- ============================================================
+-- PROJECT_CATEGORY_MAP (batch-4 B1 — mirror file
+-- project-category-map.sql; idempotent, hanya untuk setup baru)
+-- ============================================================
+create table if not exists public.project_category_map (
+  project_id  uuid not null references public.projects(id) on delete cascade,
+  category_id uuid not null references public.project_categories(id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (project_id, category_id)
+);
+
+drop index if exists project_category_map_category_id_idx;
+create index project_category_map_category_id_idx on public.project_category_map (category_id);
+
+insert into public.project_category_map (project_id, category_id)
+select id, category_id from public.projects where category_id is not null
+on conflict (project_id, category_id) do nothing;
+
+alter table public.project_category_map enable row level security;
+
+drop policy if exists "project_category_map_public_read" on public.project_category_map;
+create policy "project_category_map_public_read" on public.project_category_map
+  for select using (true);
+
+drop policy if exists "project_category_map_insert_mfa_admin_editor" on public.project_category_map;
+create policy "project_category_map_insert_mfa_admin_editor" on public.project_category_map
+  for insert to authenticated
+  with check (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "project_category_map_update_mfa_admin_editor" on public.project_category_map;
+create policy "project_category_map_update_mfa_admin_editor" on public.project_category_map
+  for update to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
+
+drop policy if exists "project_category_map_delete_mfa_admin" on public.project_category_map;
+create policy "project_category_map_delete_mfa_admin" on public.project_category_map
+  for delete to authenticated
+  using (
+    (select auth.jwt() ->> 'aal') = 'aal2'
+    and exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role = 'admin'
+    )
+  );
+
+grant select on public.project_category_map to anon, authenticated;
+grant insert, update, delete on public.project_category_map to authenticated;
+
+-- ============================================================
 -- SELESAI -- SEMUA MIGRASI DITERAPKAN DALAM SATU TRANSAKSI.
 -- ============================================================
 commit;

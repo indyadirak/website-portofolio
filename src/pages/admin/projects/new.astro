@@ -50,6 +50,8 @@ try {
 
 // Mode edit: baca baris untuk prefill form (anti-500: fallback null).
 let editing: ProjectsRow | null = null;
+// Mapping multi-kategori untuk prefill checkbox (fallback []).
+let editingCategoryIds: string[] = [];
 if (editId && supabase) {
   try {
     const { data, error } = await supabase
@@ -61,6 +63,22 @@ if (editId && supabase) {
       console.error("[admin/projects/new] Gagal membaca project:", error.message);
     } else {
       editing = (data ?? null) as ProjectsRow | null;
+    }
+    if (editing) {
+      const { data: mapRows, error: mapError } = await supabase
+        .from("project_category_map")
+        .select("category_id")
+        .eq("project_id", editing.id);
+      if (mapError) {
+        console.error(
+          "[admin/projects/new] Gagal membaca category map:",
+          mapError.message
+        );
+      } else {
+        editingCategoryIds = ((mapRows ?? []) as Array<{ category_id: string }>).map(
+          (m) => m.category_id
+        );
+      }
     }
   } catch (err) {
     console.error("[admin/projects/new] Gagal membaca project:", err);
@@ -83,6 +101,7 @@ const initialDetail = editing
       description: editing.description,
       category: editing.category,
       categoryId: editing.category_id,
+      categoryIds: editingCategoryIds,
       tags: editing.tags,
       imageUrl: editing.image_url,
       repoUrl: editing.repo_url,

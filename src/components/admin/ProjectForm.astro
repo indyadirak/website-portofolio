@@ -2,8 +2,8 @@
 /**
  * Form tambah/edit project.
  * Hanya dirender oleh dashboard untuk role admin & editor.
- * B2: kategori dari project_categories (dinamis) — dikirim sebagai
- * categoryId (FK) + auto-fill category text (fallback legacy).
+ * Batch-4 B1: checkbox multi-kategori — dikirim sebagai categoryIds
+ * (junction map) + categoryId primer (FK) + auto-fill category text.
  */
 import { PROJECT_STATUSES, type ProjectCategoryRow } from "../../lib/types";
 
@@ -43,20 +43,25 @@ const { categories = [] } = Astro.props;
   </label>
 
   <div class="grid gap-5 md:grid-cols-2">
-    <label class="block">
-      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Category *</span>
-      <select id="p-category" required
-        class="w-full rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">
+    <div class="block">
+      <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Categories * (bisa lebih dari satu)</span>
+      <div id="p-categories" data-legacy-category=""
+        class="max-h-56 space-y-1 overflow-y-auto rounded border border-cyber-border bg-cyber-panel p-3">
         {
           categories.map((c) => (
-            <option value={c.id} data-cat-name={c.name}>{c.name}</option>
+            <label class="flex cursor-pointer items-center gap-3 rounded px-2 py-1.5 font-mono text-xs text-slate-200 hover:bg-cyber-card">
+              <input type="checkbox" value={c.id} data-cat-name={c.name}
+                class="h-4 w-4 shrink-0 rounded border-cyber-border bg-cyber-panel accent-cyber-primary" />
+              <span>{c.name}</span>
+            </label>
           ))
         }
-      </select>
+      </div>
+      <p id="p-category-legacy" hidden class="mt-1 font-mono text-[11px] text-cyber-muted"></p>
       <span class="mt-1 block text-[10px] text-cyber-muted">
-        Kategori dinamis (project_categories) — tersimpan sebagai FK; nama teks diisi otomatis utk fallback.
+        Multi-kategori (junction map); yang pertama dicentang = primer (FK + teks fallback).
       </span>
-    </label>
+    </div>
     <label class="block">
       <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">Status *</span>
       <select id="p-status" required
@@ -162,7 +167,6 @@ const { categories = [] } = Astro.props;
   const title = document.getElementById("p-title") as HTMLInputElement;
   const slug = document.getElementById("p-slug") as HTMLInputElement;
   const summary = document.getElementById("p-summary") as HTMLInputElement;
-  const category = document.getElementById("p-category") as HTMLSelectElement;
   const status = document.getElementById("p-status") as HTMLSelectElement;
   const tags = document.getElementById("p-tags") as HTMLInputElement;
   const imageUrl = document.getElementById("p-image-url") as HTMLInputElement;
@@ -184,6 +188,8 @@ const { categories = [] } = Astro.props;
     description: string;
     category: string;
     categoryId?: string | null;
+    /** Mapping junction (diisi halaman form saat mode edit). */
+    categoryIds?: string[];
     tags: string[];
     imageUrl?: string | null;
     repoUrl?: string | null;
@@ -195,23 +201,46 @@ const { categories = [] } = Astro.props;
     impact?: string | null;
   }
 
-  /** Pilih opsi kategori: prioritas cocok categoryId, fallback cocok nama. */
-  function selectCategory(detail: ProjectEditDetail): void {
-    const options = Array.from(category.options);
-    const byId = options.find((o) => o.value === detail.categoryId);
-    const byName = options.find((o) => (o as HTMLOptionElement).dataset.catName === detail.category);
-    const target = byId ?? byName;
-    if (target) {
-      category.value = target.value;
-    } else {
-      // Kategori legacy belum ada di dropdown (mis. kategori non-aktif/dihapus
-      // dari project_categories) — tampilkan opsinya dengan nilai teks legacy.
-      const legacy = document.createElement("option");
-      legacy.value = detail.category;
-      legacy.textContent = `${detail.category} [ legacy ]`;
-      legacy.dataset.legacy = "1";
-      category.appendChild(legacy);
-      category.value = legacy.value;
+  /** Centang checkbox kategori: prioritas categoryIds (map), lalu categoryId,
+   *  lalu cocok nama. Legacy (tak ada di daftar) -> catatan + fallback submit. */
+  function selectedBoxes(): HTMLInputElement[] {
+    return Array.from(
+      document.querySelectorAll<HTMLInputElement>('#p-categories input[type="checkbox"]')
+    );
+  }
+
+  function selectCategories(detail: ProjectEditDetail): void {
+    const boxes = selectedBoxes();
+    for (const box of boxes) box.checked = false;
+    const container = document.getElementById("p-categories");
+    const legacyNote = document.getElementById("p-category-legacy");
+    if (container) container.dataset.legacyCategory = "";
+    if (legacyNote) legacyNote.hidden = true;
+
+    const byIds = detail.categoryIds?.length
+      ? detail.categoryIds
+      : detail.categoryId
+        ? [detail.categoryId]
+        : [];
+    let matched = 0;
+    for (const id of byIds) {
+      const box = boxes.find((b) => b.value === id);
+      if (box) {
+        box.checked = true;
+        matched += 1;
+      }
+    }
+    if (matched === 0 && detail.category) {
+      const byName = boxes.find((b) => b.dataset.catName === detail.category);
+      if (byName) {
+        byName.checked = true;
+      } else if (container && legacyNote) {
+        // Kategori legacy tak ada di daftar (non-aktif/dihapus) — tampilkan
+        // sebagai info; submit tanpa centang memakai teks ini (fallback).
+        container.dataset.legacyCategory = detail.category;
+        legacyNote.textContent = `legacy: ${detail.category} (tidak ada di daftar — tetap tersimpan bila tidak mencentang)`;
+        legacyNote.hidden = false;
+      }
     }
   }
 
@@ -246,7 +275,7 @@ const { categories = [] } = Astro.props;
     title.value = detail.title;
     slug.value = detail.slug;
     summary.value = detail.summary;
-    selectCategory(detail);
+    selectCategories(detail);
     // Fallback defensif: jika nilai status dari DB tidak ada di option
     // (data anomali), pilih "active" agar select tidak kosong dan submit
     // tidak mengirim status string kosong.
@@ -271,6 +300,10 @@ const { categories = [] } = Astro.props;
   cancelBtn.addEventListener("click", () => {
     editingId = null;
     form.reset();
+    const container = document.getElementById("p-categories");
+    const legacyNote = document.getElementById("p-category-legacy");
+    if (container) container.dataset.legacyCategory = "";
+    if (legacyNote) legacyNote.hidden = true;
     setMode(false);
   });
 
@@ -280,17 +313,28 @@ const { categories = [] } = Astro.props;
 
     submitBtn.disabled = true;
 
-    const selected = category.selectedOptions[0] as HTMLOptionElement | undefined;
-    const isLegacy = Boolean(selected?.dataset.legacy);
-    const categoryName = selected?.dataset.catName ?? category.value;
+    const checked = selectedBoxes().filter((box) => box.checked);
+    const checkedIds = checked.map((box) => box.value);
+    const firstName = checked[0]?.dataset.catName ?? "";
+    const legacyFallback =
+      document.getElementById("p-categories")?.dataset.legacyCategory ?? "";
+    const categoryName = firstName || legacyFallback;
+    if (!categoryName) {
+      statusEl.textContent = "$ error: pilih minimal satu kategori";
+      statusEl.classList.add("text-cyber-danger");
+      submitBtn.disabled = false;
+      return;
+    }
 
     const payload = {
       slug: slug.value.trim(),
       title: title.value.trim(),
       summary: summary.value.trim(),
       description: description.value.trim() || null,
-      // B2: kategori FK bila opsi dari project_categories; legacy bila bukan.
-      categoryId: isLegacy ? null : (selected?.value ?? null),
+      // B1 batch-4: multi-kategori; [0] = primer (FK + teks). Tanpa centang
+      // = legacy fallback (teks lama dipertahankan, map dikosongkan).
+      categoryIds: checkedIds,
+      categoryId: checkedIds[0] ?? null,
       category: categoryName,
       // Value select dijamin anggota PROJECT_STATUSES (option dirender
       // dari konstanta yang sama dengan validasi API).

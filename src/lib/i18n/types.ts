@@ -99,6 +99,16 @@ export interface Dictionary {
     statusAudit: string;
     statusNote: string;
   };
+  /** Batch-4: section 5 pilar tema di homepage. */
+  pillars: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    items: Array<{
+      name: string;
+      desc: string;
+    }>;
+  };
   skills: {
     all: string;
     empty: string;
@@ -233,9 +243,13 @@ export interface Dictionary {
     collapseSecondary: string;
     secondaryEmpty: string;
     featuredLabel: string;
-    /** B2: filter kategori dinamis + empty state per kategori. */
-    filterLabel: string;
-    allCategories: string;
+    /** B1 batch-4: filter command-prompt + empty state per kategori. */
+    filterPrompt: string;
+    filterPlaceholder: string;
+    filterClear: string;
+    /** aria-label hapus chip — placeholder {tag}. */
+    filterRemove: string;
+    filterNoMatch: string;
     categoryEmpty: string;
   };
   imageZoom: {

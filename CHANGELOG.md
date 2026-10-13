@@ -55,6 +55,24 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
   short bio yang tampil nama key mentah kini memakai i18n, copy FASE 3
   basi diperbarui menjadi tampil langsung di halaman publik.
 
+### Batch 1–4 — Rebrand netral, admin UX, konten bilingual, pilar dan filter (Okt 2026)
+- Batch 1: character counter live di Site Settings + validasi maxlength
+  per-key di server; section write-ups menjadi "Riset"/"Research" (slug
+  `/writeups` tetap); brand menjadi `IndyAdiraK` (`author.name` tetap).
+- Batch 2: sidebar admin collapsible menjadi icon rail persisten; pesan
+  kontak dibaca via slide-over drawer (balas/tandai/hapus/prev-next);
+  API messages mendukung `?read=false`.
+- Batch 3: Site Settings bilingual ID/EN (key `{key}_en`, EN kosong fallback
+  ke ID, satu switch section di form); seed 5 kategori pilar tema.
+- Batch 4: section "Bidang Keahlian" (5 kartu pilar, bilingual); project
+  multi-kategori via `project_category_map` (backfill + RLS + degradasi
+  grasi); filter command-prompt `$ filter --tag` (autocomplete keyboard,
+  chip multi-tag OR, bottom sheet mobile); efek hero hemat (scanline,
+  glitch sekali jalan, fade staggered, hormat reduced-motion).
+- Fitur deploy: banner "perubahan belum di-publish" (dirty flag KV
+  `deploy:dirty` + generasi anti-race, endpoint `deploy-complete`, step
+  clear terakhir di `deploy.yml`).
+
 ### Fase 3 — Evidence-based content dan UX publik
 - Empty state publik diperbaiki agar tidak menampilkan command debug atau
   `total 0`; pesan Projects, Certificates, dan Skills sekarang profesional
