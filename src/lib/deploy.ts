@@ -23,6 +23,110 @@ export const DEPLOY_TRIGGER_COOLDOWN_MS = 10 * 60 * 1000;
 
 const DEPLOY_LAST_KEY = "deploy:last-trigger";
 
+/**
+ * =====================================================================
+ * DIRTY FLAG — penanda "ada perubahan CMS yang belum di-publish".
+ *
+ * Halaman publik di-prerender; trigger deploy otomatis bisa gagal
+ * diam-diam (mute failure). Flag ini disimpan di KV yang sama
+ * (RATE_LIMIT_KV) sebagai JSON {gen, count, updatedAt}:
+ *   - gen: nomor generasi — naik setiap mutasi; dikirim sebagai input
+ *     workflow agar callback pasca-deploy hanya menghapus generasi
+ *     yang ikut ter-deploy (anti race dengan mutasi baru).
+ *   - count: jumlah mutasi sejak clear terakhir (tampil di banner).
+ *   - updatedAt: epoch ms mutasi terakhir.
+ *
+ * Semua fungsi di bawah TIDAK PERNAH melempar (try/catch di dalam):
+ * KV bermasalah = banner disembunyikan, mutasi CMS tetap sukses.
+ * =====================================================================
+ */
+const DEPLOY_DIRTY_KEY = "deploy:dirty";
+
+export interface DeployDirtyState {
+  dirty: boolean;
+  count: number;
+  updatedAt: number;
+}
+
+interface DeployDirtyRecord {
+  gen: number;
+  count: number;
+  updatedAt: number;
+}
+
+async function readDirtyRecord(): Promise<DeployDirtyRecord | null> {
+  try {
+    const kv = env.RATE_LIMIT_KV;
+    if (!kv) return null;
+    const raw = await kv.get(DEPLOY_DIRTY_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<DeployDirtyRecord>;
+    if (!Number.isFinite(parsed.gen) || !Number.isFinite(parsed.count)) return null;
+    return {
+      gen: parsed.gen as number,
+      count: parsed.count as number,
+      updatedAt: Number(parsed.updatedAt) || 0,
+    };
+  } catch (err) {
+    console.error("[deploy-dirty] baca dirty state gagal:", err);
+    return null;
+  }
+}
+
+/**
+ * Tandai situs kotor: gen+1, count+1, updatedAt=now.
+ * Dipanggil di dalam notifyContentPublished SEBELUM requestSiteDeploy.
+ */
+export async function markSiteDirty(): Promise<void> {
+  try {
+    const kv = env.RATE_LIMIT_KV;
+    if (!kv) return;
+    const prev = await readDirtyRecord();
+    const next: DeployDirtyRecord = {
+      gen: (prev?.gen ?? 0) + 1,
+      count: (prev?.count ?? 0) + 1,
+      updatedAt: Date.now(),
+    };
+    await kv.put(DEPLOY_DIRTY_KEY, JSON.stringify(next));
+  } catch (err) {
+    console.error("[deploy-dirty] markSiteDirty gagal (mutasi tetap sukses):", err);
+  }
+}
+
+/** Baca status dirty untuk banner admin. Tidak pernah throw. */
+export async function getDirtyState(): Promise<DeployDirtyState> {
+  const rec = await readDirtyRecord();
+  if (!rec) return { dirty: false, count: 0, updatedAt: 0 };
+  return { dirty: rec.count > 0, count: rec.count, updatedAt: rec.updatedAt };
+}
+
+/** Generasi saat ini untuk input workflow ("0" bila tidak ada state). */
+async function readDirtyGen(): Promise<string> {
+  const rec = await readDirtyRecord();
+  return rec ? String(rec.gen) : "0";
+}
+
+/**
+ * Hapus dirty flag pasca-deploy sukses (dipakai endpoint deploy-complete).
+ * gen yang diberikan harus cocok dengan gen tersimpan — bila ada mutasi
+ * baru saat deploy berjalan (gen berbeda), flag DIPERTAHANKAN.
+ * gen kosong/undefined = clear unconditional (kasus trigger push).
+ */
+export async function clearDeployDirty(gen?: string): Promise<boolean> {
+  try {
+    const kv = env.RATE_LIMIT_KV;
+    if (!kv) return false;
+    const rec = await readDirtyRecord();
+    if (!rec) return false;
+    if (gen !== undefined && gen !== "" && rec.gen !== Number(gen)) return false;
+    await kv.delete(DEPLOY_DIRTY_KEY);
+    return true;
+  } catch (err) {
+    console.error("[deploy-dirty] clear gagal:", err);
+    return false;
+  }
+}
+
 export type DeployTriggerStatus = "triggered" | "cooldown" | "unavailable";
 
 export interface DeployTriggerResult {
@@ -75,6 +179,9 @@ export async function requestSiteDeploy(source: string): Promise<DeployTriggerRe
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15_000);
+    // Dirty generation dibaca SEBELUM dispatch agar callback pasca-deploy
+    // tahu generasi mana yang ikut ter-deploy ("0" = tanpa state).
+    const dispatchGen = await readDirtyGen();
     let res: Response;
     try {
       res = await fetch(
@@ -88,7 +195,7 @@ export async function requestSiteDeploy(source: string): Promise<DeployTriggerRe
             "Content-Type": "application/json",
             "User-Agent": "website-portofolio-deploy-trigger",
           },
-          body: JSON.stringify({ ref: "main" }),
+          body: JSON.stringify({ ref: "main", inputs: { gen: dispatchGen } }),
         }
       );
     } finally {
@@ -127,6 +234,9 @@ export async function requestSiteDeploy(source: string): Promise<DeployTriggerRe
  */
 export async function notifyContentPublished(source: string): Promise<void> {
   try {
+    // Single choke point: tandai dirty DULU agar mutasi tercatat walau
+    // dispatch deploy-nya gagal/cooldown — banner mengingatkan Publish.
+    await markSiteDirty();
     await requestSiteDeploy(source);
   } catch (err) {
     console.error(`[deploy-trigger] (${source}) hook gagal:`, err);
