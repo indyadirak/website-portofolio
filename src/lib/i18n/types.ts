@@ -619,6 +619,14 @@ export interface Dictionary {
     deleteConfirm: string;
     done: string;
     errorPrefix: string;
+    markUnread: string;
+    drawerReply: string;
+    drawerPrev: string;
+    drawerNext: string;
+    drawerClose: string;
+    drawerBack: string;
+    /** "Pesan {current} dari {total}" — placeholder {current}, {total}. */
+    drawerPosition: string;
   };
   /** Layout admin: navigasi, role, logout (AdminLayout). */
   adminLayout: {
@@ -628,6 +636,9 @@ export interface Dictionary {
     accountGroup: string;
     openMenu: string;
     closeMenu: string;
+    /** Label tombol ciutkan/bentangkan sidebar (icon rail, desktop). */
+    collapseSidebar: string;
+    expandSidebar: string;
     viewSite: string;
     profile: string;
     signedInAs: string;

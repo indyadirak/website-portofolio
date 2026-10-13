@@ -42,6 +42,16 @@ try {
 const dateLocale = locale === "en" ? "en-US" : "id-ID";
 const fmt = (m: ContactMessagesRow) => new Date(m.created_at).toLocaleString(dateLocale);
 const unreadCount = messages.filter((message) => !message.is_read).length;
+/** Payload drawer pesan (di-serialize ke data-messages; teks diisi via textContent di JS). */
+const drawerData = messages.map((m, i) => ({
+  index: i,
+  id: m.id,
+  name: m.name,
+  email: m.email,
+  date: fmt(m),
+  message: m.message,
+  unread: !m.is_read,
+}));
 const badgeReadClasses = ["border-cyber-border", "text-cyber-muted"];
 const badgeUnreadClasses = ["border-cyber-primary/60", "text-cyber-primary"];
 // Seed peta error API -> pesan manusiawi (CSP: data melewati atribut,
@@ -60,6 +70,7 @@ const errorMap = JSON.stringify(t.errors);
      data-i18n-unread-total={t.adminMessages.unreadTotal}
      data-i18n-empty-unread={t.adminMessages.emptyUnread}
     data-i18n-errors={errorMap}
+    data-messages={JSON.stringify(drawerData)}
   >
     <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
       <div>
@@ -117,8 +128,9 @@ const errorMap = JSON.stringify(t.errors);
                   <tr
                     data-msg-row={String(i)}
                     data-msg-unread={String(!m.is_read)}
+                    tabindex={0}
                     class:list={[
-                      "border-b border-cyber-border/40 transition-colors hover:bg-cyber-panel",
+                      "cursor-pointer border-b border-cyber-border/40 transition-colors hover:bg-cyber-panel",
                       !m.is_read && "bg-cyber-primary/5",
                     ]}
                   >
@@ -181,8 +193,9 @@ const errorMap = JSON.stringify(t.errors);
                 <article
                   data-msg-row={String(i)}
                   data-msg-unread={String(!m.is_read)}
+                  tabindex={0}
                   class:list={[
-                    "rounded border border-cyber-border bg-cyber-card p-4",
+                    "cursor-pointer rounded border border-cyber-border bg-cyber-card p-4",
                     !m.is_read && "bg-cyber-primary/5",
                   ]}
                 >
@@ -249,6 +262,96 @@ const errorMap = JSON.stringify(t.errors);
         )
       }
     </section>
+
+    {/* === Slide-over drawer baca pesan (desktop kanan, mobile full-screen) === */}
+    <div id="msg-drawer-backdrop" hidden class="fixed inset-0 z-40 bg-black/60"></div>
+    <aside
+      id="msg-drawer"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="msg-drawer-name"
+      data-i18n-mark-read={t.adminMessages.markRead}
+      data-i18n-mark-unread={t.adminMessages.markUnread}
+      data-i18n-unread={t.adminMessages.unread}
+      data-i18n-position={t.adminMessages.drawerPosition}
+      class="fixed inset-0 z-50 flex flex-col bg-cyber-panel md:inset-y-0 md:left-auto md:right-0 md:w-full md:max-w-xl md:border-l md:border-cyber-border/60"
+    >
+      <div class="flex items-center justify-between gap-2 border-b border-cyber-border/60 px-4 py-3">
+        <button
+          id="msg-drawer-back"
+          type="button"
+          class="rounded border border-cyber-border px-3 py-2 font-mono text-xs text-cyber-muted hover:border-cyber-primary hover:text-cyber-primary md:hidden"
+        >
+          ← {t.adminMessages.drawerBack}
+        </button>
+        <p id="msg-drawer-position" class="font-mono text-[11px] text-cyber-muted"></p>
+        <button
+          id="msg-drawer-close"
+          type="button"
+          aria-label={t.adminMessages.drawerClose}
+          class="flex h-10 w-10 items-center justify-center rounded border border-cyber-border text-cyber-primary hover:border-cyber-primary"
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+      <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-6">
+        <h2 id="msg-drawer-name" class="font-mono text-lg font-bold text-white"></h2>
+        <a
+          id="msg-drawer-email"
+          href="#"
+          class="mt-1 block truncate font-mono text-xs text-cyber-muted underline decoration-cyber-border underline-offset-4 hover:text-cyber-primary"
+        ></a>
+        <div class="mt-2 flex items-center gap-2">
+          <p id="msg-drawer-date" class="font-mono text-[11px] text-cyber-muted"></p>
+          <span
+            id="msg-drawer-badge"
+            class="rounded border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider"
+          ></span>
+        </div>
+        <p id="msg-drawer-body" class="mt-4 whitespace-pre-line font-mono text-sm leading-relaxed text-slate-200"></p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 border-t border-cyber-border/60 px-4 py-3">
+        <a
+          id="msg-drawer-reply"
+          href="#"
+          class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-3 py-2 font-mono text-xs text-cyber-primary hover:bg-cyber-primary hover:text-cyber-bg"
+        >
+          {t.adminMessages.drawerReply}
+        </a>
+        {canManage && (
+          <>
+            <button
+              id="msg-drawer-toggle"
+              type="button"
+              class="rounded border border-cyber-border px-3 py-2 font-mono text-xs text-cyber-muted hover:border-cyber-primary hover:text-cyber-primary"
+            ></button>
+            <button
+              id="msg-drawer-delete"
+              type="button"
+              class="rounded border border-cyber-danger/40 px-3 py-2 font-mono text-xs text-cyber-danger hover:bg-cyber-danger/10"
+            >
+              {t.adminMessages.delete}
+            </button>
+          </>
+        )}
+        <span class="flex-1" aria-hidden="true"></span>
+        <button
+          id="msg-drawer-prev"
+          type="button"
+          class="rounded border border-cyber-border px-3 py-2 font-mono text-xs text-cyber-muted hover:border-cyber-primary hover:text-cyber-primary disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {t.adminMessages.drawerPrev}
+        </button>
+        <button
+          id="msg-drawer-next"
+          type="button"
+          class="rounded border border-cyber-border px-3 py-2 font-mono text-xs text-cyber-muted hover:border-cyber-primary hover:text-cyber-primary disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {t.adminMessages.drawerNext}
+        </button>
+      </div>
+    </aside>
 
     <p id="msg-page-status" role="status" aria-live="polite" class="mt-4 font-mono text-xs text-cyber-danger"></p>
   </div>
@@ -362,6 +465,12 @@ const errorMap = JSON.stringify(t.errors);
       refreshCount();
       applyFilter();
       document.querySelectorAll<HTMLButtonElement>(`[data-msg-read="${id}"]`).forEach((b) => b.remove());
+      // Sinkron drawer bila pesan yang sedang dibuka ikut ditandai dari list.
+      const openEntry = drawerIndex >= 0 ? drawerData[drawerIndex] : undefined;
+      if (openEntry && openEntry.id === id) {
+        openEntry.unread = false;
+        renderDrawer();
+      }
       document.querySelectorAll<HTMLButtonElement>(`[data-msg-delete="${id}"]`).forEach((b) => {
         b.dataset.msgUnread = "false";
       });
@@ -390,9 +499,210 @@ const errorMap = JSON.stringify(t.errors);
       remaining -= 1;
       const wasUnread = btn.dataset.msgUnread === "true";
       if (wasUnread) unreadRemaining -= 1;
+      // Sinkron drawer bila pesan yang sedang dibuka ikut dihapus dari list.
+      const deletedPos = drawerData.findIndex((entry) => entry.id === id);
+      const deletedEntry = deletedPos >= 0 ? drawerData[deletedPos] : undefined;
+      if (deletedEntry) {
+        deletedEntry.removed = true;
+        if (drawerIndex === deletedPos) moveOrClose(1);
+      }
       refreshCount();
       applyFilter();
       statusEl.textContent = doneMsg;
     });
+  });
+
+  /* ===== Message drawer (slide-over kanan; data via data-messages) ===== */
+  interface DrawerEntry {
+    index: number;
+    id: string;
+    name: string;
+    email: string;
+    date: string;
+    message: string;
+    unread: boolean;
+    removed?: boolean;
+  }
+  const drawerData = JSON.parse(root.dataset.messages ?? "[]") as DrawerEntry[];
+  const drawer = document.getElementById("msg-drawer");
+  const drawerBackdrop = document.getElementById("msg-drawer-backdrop");
+  const drawerName = document.getElementById("msg-drawer-name");
+  const drawerEmail = document.getElementById("msg-drawer-email") as HTMLAnchorElement | null;
+  const drawerDate = document.getElementById("msg-drawer-date");
+  const drawerBadge = document.getElementById("msg-drawer-badge");
+  const drawerBody = document.getElementById("msg-drawer-body");
+  const drawerReply = document.getElementById("msg-drawer-reply") as HTMLAnchorElement | null;
+  const drawerToggle = document.getElementById("msg-drawer-toggle") as HTMLButtonElement | null;
+  const drawerDelete = document.getElementById("msg-drawer-delete") as HTMLButtonElement | null;
+  const drawerPrev = document.getElementById("msg-drawer-prev") as HTMLButtonElement | null;
+  const drawerNext = document.getElementById("msg-drawer-next") as HTMLButtonElement | null;
+  const drawerPosition = document.getElementById("msg-drawer-position");
+  const markReadText = drawer?.dataset.i18nMarkRead ?? "mark read";
+  const markUnreadText = drawer?.dataset.i18nMarkUnread ?? "mark unread";
+  const unreadText = drawer?.dataset.i18nUnread ?? "unread";
+  const positionTpl = drawer?.dataset.i18nPosition ?? "{current} / {total}";
+  const badgeReadCls = ["border-cyber-border", "text-cyber-muted"];
+  const badgeUnreadCls = ["border-cyber-primary/60", "text-cyber-primary"];
+  let drawerIndex = -1;
+  let lastFocused: HTMLElement | null = null;
+
+  function neighborIndex(from: number, dir: 1 | -1): number {
+    let i = from + dir;
+    while (i >= 0 && i < drawerData.length) {
+      const candidate = drawerData[i];
+      if (candidate && !candidate.removed) return i;
+      i += dir;
+    }
+    return -1;
+  }
+
+  function renderDrawer(): void {
+    const entry = drawerIndex >= 0 ? drawerData[drawerIndex] : undefined;
+    if (!entry || entry.removed) return;
+    if (drawerName) drawerName.textContent = entry.name;
+    if (drawerEmail) {
+      drawerEmail.textContent = entry.email;
+      drawerEmail.href = `mailto:${entry.email}`;
+    }
+    if (drawerDate) drawerDate.textContent = entry.date;
+    if (drawerBody) drawerBody.textContent = entry.message;
+    if (drawerBadge) {
+      drawerBadge.textContent = entry.unread ? unreadText : readLabel;
+      drawerBadge.classList.remove(...(entry.unread ? badgeReadCls : badgeUnreadCls));
+      drawerBadge.classList.add(...(entry.unread ? badgeUnreadCls : badgeReadCls));
+    }
+    if (drawerReply) drawerReply.href = `mailto:${entry.email}`;
+    if (drawerToggle) drawerToggle.textContent = entry.unread ? markReadText : markUnreadText;
+    const live = drawerData.filter((item) => !item.removed);
+    if (drawerPosition) {
+      drawerPosition.textContent = positionTpl
+        .replace("{current}", String(live.indexOf(entry) + 1))
+        .replace("{total}", String(live.length));
+    }
+    if (drawerPrev) drawerPrev.disabled = neighborIndex(drawerIndex, -1) < 0;
+    if (drawerNext) drawerNext.disabled = neighborIndex(drawerIndex, 1) < 0;
+  }
+
+  function openDrawer(index: number, opener: HTMLElement | null): void {
+    const entry = drawerData[index];
+    if (!entry || entry.removed || !drawer || !drawerBackdrop) return;
+    drawerIndex = index;
+    lastFocused = opener;
+    renderDrawer();
+    drawerBackdrop.hidden = false;
+    drawer.hidden = false;
+    document.body.classList.add("no-scroll");
+    (document.getElementById("msg-drawer-close") as HTMLButtonElement | null)?.focus();
+  }
+
+  function closeDrawer(): void {
+    if (!drawer || !drawerBackdrop) return;
+    drawer.hidden = true;
+    drawerBackdrop.hidden = true;
+    document.body.classList.remove("no-scroll");
+    drawerIndex = -1;
+    lastFocused?.focus();
+    lastFocused = null;
+  }
+
+  function moveOrClose(dir: 1 | -1): void {
+    const next = neighborIndex(drawerIndex, dir);
+    if (next >= 0) {
+      drawerIndex = next;
+      renderDrawer();
+      return;
+    }
+    const other = neighborIndex(drawerIndex, dir === 1 ? -1 : 1);
+    if (other >= 0) {
+      drawerIndex = other;
+      renderDrawer();
+      return;
+    }
+    closeDrawer();
+  }
+
+  function setRowReadVisual(index: number, unread: boolean): void {
+    for (const container of containersFor(String(index))) {
+      container.classList.toggle("bg-cyber-primary/5", unread);
+      container.dataset.msgUnread = String(unread);
+      const badge = container.querySelector<HTMLElement>("[data-msg-badge]");
+      if (badge) {
+        badge.textContent = unread ? unreadText : readLabel;
+        badge.classList.remove(...(unread ? badgeReadCls : badgeUnreadCls));
+        badge.classList.add(...(unread ? badgeUnreadCls : badgeReadCls));
+      }
+    }
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-msg-row]").forEach((row) => {
+    const rowIndex = Number(row.dataset.msgRow ?? "");
+    if (!Number.isInteger(rowIndex)) return;
+    row.addEventListener("click", (event) => {
+      if ((event.target as HTMLElement | null)?.closest("button, a, summary")) return;
+      openDrawer(rowIndex, row);
+    });
+    row.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      if ((event.target as HTMLElement | null)?.closest("button, a, summary")) return;
+      event.preventDefault();
+      openDrawer(rowIndex, row);
+    });
+  });
+
+  document.getElementById("msg-drawer-close")?.addEventListener("click", closeDrawer);
+  document.getElementById("msg-drawer-back")?.addEventListener("click", closeDrawer);
+  drawerBackdrop?.addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && drawerIndex >= 0) closeDrawer();
+  });
+  drawerPrev?.addEventListener("click", () => moveOrClose(-1));
+  drawerNext?.addEventListener("click", () => moveOrClose(1));
+
+  drawerToggle?.addEventListener("click", async () => {
+    const entry = drawerIndex >= 0 ? drawerData[drawerIndex] : undefined;
+    if (!entry || entry.removed || !drawerToggle) return;
+    drawerToggle.disabled = true;
+    const targetUnread = !entry.unread;
+    const url = `/api/admin/messages?id=${encodeURIComponent(entry.id)}${targetUnread ? "&read=false" : ""}`;
+    const res = await fetch(url, { method: "PUT" }).catch(() => null);
+    const data = res ? await res.json().catch(() => null) : null;
+    if (!res || !data?.ok) {
+      reportError(errText(data?.error ?? "unknown"));
+      drawerToggle.disabled = false;
+      return;
+    }
+    entry.unread = targetUnread;
+    setRowReadVisual(entry.index, targetUnread);
+    unreadRemaining += targetUnread ? 1 : -1;
+    refreshCount();
+    applyFilter();
+    renderDrawer();
+    statusEl.textContent = doneMsg;
+    drawerToggle.disabled = false;
+  });
+
+  drawerDelete?.addEventListener("click", async () => {
+    const entry = drawerIndex >= 0 ? drawerData[drawerIndex] : undefined;
+    if (!entry || entry.removed || !drawerDelete) return;
+    if (!window.confirm(tDeleteConfirm.replace("{name}", entry.name))) return;
+    drawerDelete.disabled = true;
+    const res = await fetch(`/api/admin/messages?id=${encodeURIComponent(entry.id)}`, {
+      method: "DELETE",
+    }).catch(() => null);
+    const data = res ? await res.json().catch(() => null) : null;
+    if (!res || !data?.ok) {
+      reportError(errText(data?.error ?? "unknown"));
+      drawerDelete.disabled = false;
+      return;
+    }
+    containersFor(String(entry.index)).forEach((el) => el.remove());
+    remaining -= 1;
+    if (entry.unread) unreadRemaining -= 1;
+    entry.removed = true;
+    refreshCount();
+    applyFilter();
+    statusEl.textContent = doneMsg;
+    drawerDelete.disabled = false;
+    moveOrClose(1);
   });
 </script>
