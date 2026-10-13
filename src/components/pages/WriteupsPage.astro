@@ -35,7 +35,7 @@ function formatDate(value: string): string {
 ---
 
 <MainLayout title={t.writeups.title} description={t.writeups.subtitle}>
-  <div class="mx-auto max-w-4xl px-6 py-16">
+  <div class="reveal mx-auto max-w-4xl px-6 py-16">
     <SectionHeading
       eyebrow={t.writeups.eyebrow}
       title={t.writeups.title}
@@ -58,7 +58,7 @@ function formatDate(value: string): string {
                 href={detailHref(w.slug)}
                 class="flex flex-col rounded border border-cyber-border bg-cyber-card p-6 transition-colors hover:border-cyber-accent"
               >
-                <p class="font-mono text-sm font-semibold text-slate-200">{w.title}</p>
+                <p class="break-words font-mono text-sm font-semibold text-slate-200">{w.title}</p>
                 <div class="mt-3 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-wider">
                   <span class="rounded border border-cyber-primary/50 px-2 py-0.5 text-cyber-primary">
                     {w.targetEnv}

@@ -32,7 +32,7 @@ const t = getDictionary(locale);
               {cert.title}
               {cert.is_featured && (
                 <span class="ml-2 rounded border border-cyber-primary/50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-cyber-primary">
-                  featured
+                  {t.adminCertificates.featuredBadge}
                 </span>
               )}
             </h3>
@@ -78,7 +78,7 @@ const t = getDictionary(locale);
                   data-action="edit"
                   class="rounded border border-cyber-border px-4 py-2 text-cyber-accent transition-colors hover:border-cyber-accent"
                 >
-                  [ edit ]
+                  {t.adminCertificates.editAction}
                 </button>
               )
             }
@@ -89,7 +89,7 @@ const t = getDictionary(locale);
                   data-action="delete"
                   class="rounded border border-cyber-danger/50 px-4 py-2 text-cyber-danger transition-colors hover:bg-cyber-danger/10"
                 >
-                  [ delete ]
+                  {t.adminCertificates.deleteAction}
                 </button>
               )
             }
@@ -98,7 +98,7 @@ const t = getDictionary(locale);
       ))
     ) : (
       <p class="rounded border border-cyber-border bg-cyber-card p-8 font-mono text-sm text-cyber-muted">
-        $ echo "Belum ada sertifikat di tabel certificates."
+        {t.adminCertificates.emptyList}
       </p>
     )
   }

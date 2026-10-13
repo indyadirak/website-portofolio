@@ -1,8 +1,12 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { canDeleteCertificates } from "../../lib/auth";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 
 export const prerender = false;
+
+const pageLocale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(pageLocale);
 
 // Middleware sudah memvalidasi sesi; guard ulang defensif (pola dashboard).
 const { user, profile, supabase } = Astro.locals;
@@ -124,7 +128,16 @@ if (isAdmin) {
               (AES-256-GCM) sebelum masuk database dan tidak pernah ditampilkan kembali.
             </p>
 
-            <form id="backup-config-form" class="mt-6 space-y-5">
+            <form
+              id="backup-config-form"
+              class="mt-6 space-y-5"
+              data-i18n-confirm-unlink={t.adminBackup.confirmUnlink}
+              data-i18n-validation-hint={t.adminBackup.validationHint}
+              data-i18n-saved-ok={t.adminBackup.savedOk}
+              data-i18n-save-failed={t.adminBackup.saveFailed}
+              data-i18n-unlinked-ok={t.adminBackup.unlinkedOk}
+              data-i18n-unlink-failed={t.adminBackup.unlinkFailed}
+            >
               <div>
                 <label for="sa-key" class="font-mono text-xs text-slate-300">
                   JSON Service Account key
@@ -193,6 +206,13 @@ if (isAdmin) {
   const submitBtn = form.querySelector("button[type='submit']") as HTMLButtonElement;
   const unlinkBtn = document.getElementById("unlink-btn") as HTMLButtonElement | null;
 
+  const i18nConfirmUnlink = form.dataset.i18nConfirmUnlink ?? "";
+  const i18nValidationHint = form.dataset.i18nValidationHint ?? "";
+  const i18nSavedOk = form.dataset.i18nSavedOk ?? "";
+  const i18nSaveFailed = form.dataset.i18nSaveFailed ?? "";
+  const i18nUnlinkedOk = form.dataset.i18nUnlinkedOk ?? "";
+  const i18nUnlinkFailed = form.dataset.i18nUnlinkFailed ?? "";
+
   function setStatus(text: string, ok: boolean) {
     statusEl.textContent = `$ ${text}`;
     statusEl.classList.toggle("hidden", false);
@@ -214,7 +234,7 @@ if (isAdmin) {
     const key = saKey.value.trim();
     const folder = folderId.value.trim();
     if (!key && !folder) {
-      setStatus("isi minimal salah satu field (JSON key atau folder ID).", false);
+      setStatus(i18nValidationHint, false);
       return;
     }
     submitBtn.disabled = true;
@@ -224,26 +244,26 @@ if (isAdmin) {
     });
     submitBtn.disabled = false;
     if (res.ok && (data as { ok?: boolean }).ok) {
-      setStatus("konfigurasi tersimpan — backup mingguan berikutnya akan mengunggah ke Drive.", true);
+      setStatus(i18nSavedOk, true);
       setTimeout(() => window.location.reload(), 900);
     } else {
-      const msg = (data as { error?: string }).error ?? "gagal menyimpan";
-      setStatus(`gagal: ${msg}`, false);
+      const msg = (data as { error?: string }).error ?? "unknown";
+      setStatus(i18nSaveFailed.replace("{error}", msg), false);
     }
   });
 
   unlinkBtn?.addEventListener("click", async () => {
-    if (!window.confirm("Putuskan koneksi Google Drive? Backup mingguan hanya akan tersimpan sebagai artifact GitHub.")) {
+    if (!window.confirm(i18nConfirmUnlink)) {
       return;
     }
     unlinkBtn.disabled = true;
     const { res, data } = await call("DELETE");
     unlinkBtn.disabled = false;
     if (res.ok && (data as { ok?: boolean }).ok) {
-      setStatus("koneksi diputus — konfigurasi dihapus.", true);
+      setStatus(i18nUnlinkedOk, true);
       setTimeout(() => window.location.reload(), 900);
     } else {
-      setStatus("gagal memutuskan koneksi.", false);
+      setStatus(i18nUnlinkFailed, false);
     }
   });
 </script>

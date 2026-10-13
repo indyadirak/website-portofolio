@@ -45,6 +45,7 @@ const canDelete = canDeleteSiteContent(profile);
       id="link-form"
       data-i18n-delete-confirm={t.adminSocialLinks.deleteConfirm}
       data-i18n-error-prefix={t.adminSocialLinks.errorPrefix}
+      data-i18n-network-error={t.adminSocialLinks.networkError}
       data-i18n-errors={JSON.stringify(t.errors)}
       data-i18n-saved={t.adminSocialLinks.saved}
       data-i18n-new-mode={t.adminSocialLinks.newMode}
@@ -168,6 +169,7 @@ const canDelete = canDeleteSiteContent(profile);
   const form = document.getElementById("link-form") as HTMLFormElement;
   const tDeleteConfirm = form.dataset.i18nDeleteConfirm ?? "";
   const errorPrefix = form.dataset.i18nErrorPrefix ?? "";
+  const networkError = form.dataset.i18nNetworkError ?? "";
   let errorTexts: Record<string, string> = {};
   try {
     errorTexts = JSON.parse(form.dataset.i18nErrors ?? "{}") as Record<string, string>;
@@ -241,7 +243,7 @@ const canDelete = canDeleteSiteContent(profile);
     ).catch(() => null);
 
     if (!res) {
-      statusEl.textContent = `${errorPrefix} jaringan gagal`;
+      statusEl.textContent = `${errorPrefix} ${networkError}`;
       submitBtn.disabled = false;
       return;
     }
