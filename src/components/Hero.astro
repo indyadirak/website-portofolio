@@ -29,9 +29,13 @@ const certCount = (await getCertificates()).length;
 // --type-steps: langkah animasi typing ≈ jumlah karakter + easing.
 // (lebar animasi = 100% dari wrapper .w-fit, lihat .type-effect di global.css)
 const typeSteps = heroTitle.length + 8;
+// Kata terakhir judul = target glitch RGB-split sesaat (batch-4 B2).
+const titleWords = heroTitle.split(" ");
+const titleLast = titleWords.pop() ?? heroTitle;
+const titleRest = titleWords.join(" ");
 ---
 
-<section class="relative overflow-hidden">
+<section class="hero-scanlines relative overflow-hidden">
   <div aria-hidden="true" class="pointer-events-none absolute inset-0 cyber-grid opacity-[0.06]" />
 
   <div class="relative mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24 lg:py-32">
@@ -43,7 +47,7 @@ const typeSteps = heroTitle.length + 8;
         data-type-steps={typeSteps}
         data-type-duration="2.4s"
       >
-        {heroTitle}
+        {titleRest} <span class="hero-glitch">{titleLast}</span>
       </h1>
     </div>
     <script>
@@ -62,8 +66,8 @@ const typeSteps = heroTitle.length + 8;
       █
     </span>
 
-    <p class="mt-5 max-w-2xl font-mono text-sm text-cyber-muted md:text-lg">{heroTagline}</p>
-    <p class="mt-4 max-w-2xl text-sm leading-relaxed text-cyber-muted md:text-base">
+    <p class="hero-fade-1 mt-5 max-w-2xl font-mono text-sm text-cyber-muted md:text-lg">{heroTagline}</p>
+    <p class="hero-fade-2 mt-4 max-w-2xl text-sm leading-relaxed text-cyber-muted md:text-base">
       {shortBio}
     </p>
 

@@ -14,7 +14,7 @@ Produksi: **[portofolio.indyadirak.com](https://portofolio.indyadirak.com)**
 - Landing page berorientasi recruiter dengan positioning, project unggulan,
   skills, dan CTA kontak/CV yang ringkas.
 - **Evidence-based Projects** dengan struktur Problem, Approach, dan Impact.
-- **Security Write-ups** untuk case study THM, HTB, CTF, dan riset keamanan.
+- **Riset** untuk case study THM, HTB, CTF, dan riset keamanan.
 - Sistem **Draft dan Published** untuk menyiapkan write-up sebelum dipublikasikan.
 - Dukungan blok kode terminal dan ASCII Art untuk topologi Home Lab.
 - Sertifikat dengan kategori Competency/Training, URL verifikasi issuer, dan
@@ -33,6 +33,10 @@ Produksi: **[portofolio.indyadirak.com](https://portofolio.indyadirak.com)**
 - Rebuild otomatis: mutasi konten CMS (project, sertifikat, write-up, dsb.)
   memicu workflow Deploy via GitHub API (cooldown 10 menit); tombol Publish
   manual tersedia di dashboard untuk admin.
+- Section "Bidang Keahlian" dengan 5 pilar tema (cyber security, network
+  engineering, system administration, cloud computing, IT support).
+- Filter project model command-prompt (`$ filter --tag`) dengan autocomplete
+  keyboard, multi-kategori (logika OR), dan bottom sheet di mobile.
 
 ### Admin CMS
 
@@ -41,9 +45,15 @@ Produksi: **[portofolio.indyadirak.com](https://portofolio.indyadirak.com)**
 - CRUD Projects, dynamic project categories, Certificates, Write-ups, Contact
   Messages, Site Settings, Experiences, Social Links, CV, dan backup config.
 - Halaman terpisah untuk list dan form Projects/Certificates.
-- Contact Messages: tandai dibaca dan hard delete dengan audit-friendly RLS.
+- Contact Messages: slide-over drawer (balas via mailto, tandai
+  dibaca/belum dibaca, hapus, navigasi prev/next) dengan audit-friendly RLS.
 - Admin workspace dengan sidebar desktop/drawer mobile, pengelompokan menu, dan
   profile menu account yang menampilkan role, status MFA, shortcut website, serta logout.
+- Sidebar collapsible menjadi icon rail (persisten localStorage) dengan tooltip;
+  Site Settings bilingual ID/EN (EN kosong fallback ke ID); banner "perubahan
+  belum di-publish" (dirty flag deploy) dengan tombol Publish.
+- Project multi-kategori via junction `project_category_map` (backfill otomatis)
+  dengan checkbox di form admin.
 - Upload sertifikat melalui validasi MIME dan magic bytes.
 - Keep-alive Supabase melalui endpoint SSR `/api/health` dan GitHub Actions.
 

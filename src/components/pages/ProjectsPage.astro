@@ -13,12 +13,16 @@ const projects = await getProjects();
 // Kategori aktif utk filter charter (B2: dinamis dari project_categories).
 const categories = await getProjectCategories();
 
-// B safety-net: hitung project per nama kategori tampilan (sudah di-coalesce
-// FK -> legacy di getProjects()), lalu sembunyikan chip yang count-nya 0 agar
-// kategori baru yang belum dipakai tidak memenuhi filter bar.
+// B1 batch-4: hitung project per nama kategori tampilan (multi-kategori:
+// satu project terhitung di tiap kategorinya), lalu sembunyikan opsi yang
+// count-nya 0 agar kategori baru yang belum dipakai tidak memenuhi filter.
 const countByCategory = new Map<string, number>();
 for (const p of projects) {
-  countByCategory.set(p.category, (countByCategory.get(p.category) ?? 0) + 1);
+  const names = p.categories.length > 0 ? p.categories : [p.category];
+  for (const name of names) {
+    if (!name) continue;
+    countByCategory.set(name, (countByCategory.get(name) ?? 0) + 1);
+  }
 }
 const visibleCategories = categories
   .map((c) => ({ ...c, count: countByCategory.get(c.name) ?? 0 }))
@@ -47,30 +51,63 @@ const secondaryProjects = projects.filter((p) => !p.featured);
         />
       ) : (
         <>
-          <!-- B2: filter kategori dinamis (client-side, tanpa reload) -->
-          <div class="mt-8 flex flex-wrap items-center gap-2">
-            <span class="font-mono text-xs uppercase tracking-wider text-cyber-muted">
-              {t.projects.filterLabel}
-            </span>
-            <button
-              type="button"
-              data-filter-all
-              class="rounded border border-cyber-primary/60 bg-cyber-primary/10 px-3 py-1 font-mono text-xs text-cyber-primary transition hover:bg-cyber-primary/20"
-            >
-              {t.projects.allCategories}
-            </button>
-            {
-              visibleCategories.map((c) => (
-                <button
-                  type="button"
-                  data-filter={c.name}
-                  class="rounded border border-cyber-border px-3 py-1 font-mono text-xs text-cyber-muted transition hover:border-cyber-primary/60 hover:text-cyber-primary"
+          <!-- B1 batch-4: filter command-prompt + multi-kategori (client-side, tanpa reload) -->
+          <div class="mt-8" id="tag-filter">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-mono text-xs uppercase tracking-wider text-cyber-muted">
+                {t.projects.filterPrompt}
+              </span>
+              <div class="relative min-w-52 flex-1">
+                <input
+                  id="filter-input"
+                  type="text"
+                  role="combobox"
+                  aria-expanded="false"
+                  aria-controls="filter-listbox"
+                  aria-autocomplete="list"
+                  autocomplete="off"
+                  placeholder={t.projects.filterPlaceholder}
+                  class="w-full rounded border border-cyber-border bg-cyber-panel px-3 py-2 font-mono text-xs text-slate-200 outline-none focus:border-cyber-primary"
+                />
+                <div
+                  id="filter-listbox"
+                  role="listbox"
+                  hidden
+                  class="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto rounded border border-cyber-border bg-cyber-panel shadow-2xl max-md:fixed max-md:inset-x-4 max-md:bottom-4 max-md:top-auto max-md:max-h-[50vh]"
                 >
-                  {c.name}{" "}
-                  <span class="text-cyber-muted/70">({c.count})</span>
-                </button>
-              ))
-            }
+                  {visibleCategories.map((c, i) => (
+                    <button
+                      type="button"
+                      id={`filter-opt-${i}`}
+                      role="option"
+                      data-filter-option={c.name}
+                      class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left font-mono text-xs text-slate-200 hover:bg-cyber-card hover:text-cyber-primary"
+                    >
+                      <span>{c.name}</span>
+                      <span class="text-cyber-muted/70">({c.count})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div
+              id="filter-tags"
+              hidden
+              data-i18n-remove={t.projects.filterRemove}
+              class="mt-3 flex flex-wrap items-center gap-2"
+            >
+              <div id="filter-chips" class="flex flex-wrap items-center gap-2"></div>
+              <button
+                id="filter-clear"
+                type="button"
+                class="rounded border border-cyber-border px-3 py-1 font-mono text-xs text-cyber-muted hover:border-cyber-primary hover:text-cyber-primary"
+              >
+                {t.projects.filterClear}
+              </button>
+            </div>
+            <p id="filter-nomatch" hidden class="mt-2 font-mono text-xs text-cyber-muted">
+              {t.projects.filterNoMatch}
+            </p>
           </div>
 
           <TerminalEmptyState
@@ -135,24 +172,89 @@ const secondaryProjects = projects.filter((p) => !p.featured);
     });
   }
 
-  // B2: filter kategori — sembunyikan kartu yang bukan kategori terpilih.
+  // B1 batch-4: filter command-prompt — ketik -> autocomplete (nama + count,
+  // navigable via keyboard), pilih -> chip, filter client-side logika OR.
   const cards = Array.from(document.querySelectorAll("article[data-category]")) as HTMLElement[];
   const empty = document.getElementById("filter-empty") as HTMLElement | null;
-  const chips = Array.from(document.querySelectorAll("[data-filter], [data-filter-all]")) as HTMLButtonElement[];
+  const filterInput = document.getElementById("filter-input") as HTMLInputElement | null;
+  const filterListbox = document.getElementById("filter-listbox") as HTMLElement | null;
+  const filterTags = document.getElementById("filter-tags") as HTMLElement | null;
+  const filterChips = document.getElementById("filter-chips") as HTMLElement | null;
+  const filterClear = document.getElementById("filter-clear") as HTMLButtonElement | null;
+  const filterNoMatch = document.getElementById("filter-nomatch") as HTMLElement | null;
+  const removeTpl = filterTags?.dataset.i18nRemove ?? 'Remove "{tag}"';
 
-  const ACTIVE_CLASSES = ["border-cyber-primary/60", "bg-cyber-primary/10", "text-cyber-primary"];
-  const INACTIVE_CLASSES = ["border-cyber-border", "text-cyber-muted"];
+  const filterOptions = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("[data-filter-option]")
+  );
+  const selectedTags = new Set<string>();
+  let activeOption = -1;
 
-  function setActive(chip: HTMLButtonElement, on: boolean): void {
-    for (const cls of ACTIVE_CLASSES) chip.classList.toggle(cls, on);
-    for (const cls of INACTIVE_CLASSES) chip.classList.toggle(cls, !on);
+  function visibleOptions(): HTMLButtonElement[] {
+    return filterOptions.filter((o) => !o.hidden);
   }
 
-  function applyFilter(category: string | null): void {
+  function paintActive(): void {
+    const vis = visibleOptions();
+    vis.forEach((o, i) => {
+      const on = i === activeOption;
+      o.classList.toggle("bg-cyber-card", on);
+      o.classList.toggle("text-cyber-primary", on);
+      if (on && o.id) filterInput?.setAttribute("aria-activedescendant", o.id);
+    });
+    if (activeOption < 0) filterInput?.removeAttribute("aria-activedescendant");
+  }
+
+  function renderDropdown(): void {
+    if (!filterInput || !filterListbox) return;
+    const q = filterInput.value.trim().toLowerCase();
+    let any = false;
+    for (const o of filterOptions) {
+      const name = o.dataset.filterOption ?? "";
+      const match = name.toLowerCase().includes(q) && !selectedTags.has(name);
+      o.hidden = !match;
+      if (match) any = true;
+    }
+    activeOption = -1;
+    paintActive();
+    filterListbox.hidden = !any;
+    filterInput.setAttribute("aria-expanded", String(any));
+    if (filterNoMatch) filterNoMatch.hidden = any || q === "";
+  }
+
+  function renderChips(): void {
+    if (!filterChips || !filterTags) return;
+    filterChips.textContent = "";
+    for (const tag of selectedTags) {
+      const chip = document.createElement("span");
+      chip.className =
+        "inline-flex items-center gap-1 rounded border border-cyber-primary/60 bg-cyber-primary/10 px-2 py-1 font-mono text-xs text-cyber-primary";
+      const nameEl = document.createElement("span");
+      nameEl.textContent = tag;
+      const x = document.createElement("button");
+      x.type = "button";
+      x.textContent = "×";
+      x.setAttribute("aria-label", removeTpl.replace("{tag}", tag));
+      x.className = "rounded px-1 hover:bg-cyber-primary hover:text-cyber-bg";
+      x.addEventListener("click", () => {
+        selectedTags.delete(tag);
+        renderChips();
+        renderDropdown();
+        applyFilter();
+      });
+      chip.append(nameEl, x);
+      filterChips.appendChild(chip);
+    }
+    filterTags.hidden = selectedTags.size === 0;
+  }
+
+  function applyFilter(): void {
     let visible = 0;
     let secondaryVisible = 0;
     for (const card of cards) {
-      const shown = category === null || (card.dataset.category ?? "") === category;
+      const cats = (card.dataset.categories ?? "").split("|");
+      const shown =
+        selectedTags.size === 0 || [...selectedTags].some((tag) => cats.includes(tag));
       card.hidden = !shown;
       if (shown) {
         visible += 1;
@@ -163,18 +265,71 @@ const secondaryProjects = projects.filter((p) => !p.featured);
     // Kalau hasil filter adanya di dalam section "secondary" yang terlipat,
     // buka otomatis — kalau tidak, pengguna melihat grid kosong tanpa penjelasan
     // (empty state tidak muncul karena visible > 0).
-    if (details && category !== null && secondaryVisible > 0) details.open = true;
+    if (details && selectedTags.size > 0 && secondaryVisible > 0) details.open = true;
   }
 
-  for (const chip of chips) {
-    chip.addEventListener("click", () => {
-      const isAll = chip.dataset.filterAll !== undefined;
-      const selected = isAll ? null : (chip.dataset.filter ?? null);
-      for (const other of chips) {
-        setActive(other, other === chip && !isAll);
-      }
-      if (isAll) setActive(chip, true);
-      applyFilter(selected);
-    });
+  function pickTag(name: string): void {
+    if (!name || selectedTags.has(name)) return;
+    selectedTags.add(name);
+    if (filterInput) filterInput.value = "";
+    renderChips();
+    renderDropdown();
+    applyFilter();
+    filterInput?.focus();
   }
+
+  filterInput?.addEventListener("input", renderDropdown);
+  filterInput?.addEventListener("focus", renderDropdown);
+  filterInput?.addEventListener("keydown", (event) => {
+    const vis = visibleOptions();
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      if (vis.length === 0) return;
+      event.preventDefault();
+      activeOption =
+        event.key === "ArrowDown"
+          ? (activeOption + 1) % vis.length
+          : (activeOption - 1 + vis.length) % vis.length;
+      paintActive();
+      vis[activeOption]?.scrollIntoView({ block: "nearest" });
+    } else if (event.key === "Enter") {
+      const target = vis[activeOption] ?? vis[0];
+      const name = target?.dataset.filterOption ?? "";
+      if (name) {
+        event.preventDefault();
+        pickTag(name);
+      }
+    } else if (event.key === "Escape") {
+      if (filterListbox && !filterListbox.hidden && filterInput) {
+        event.preventDefault();
+        filterListbox.hidden = true;
+        filterInput.setAttribute("aria-expanded", "false");
+      }
+    }
+  });
+
+  for (const o of filterOptions) {
+    o.addEventListener("click", () => pickTag(o.dataset.filterOption ?? ""));
+  }
+
+  filterClear?.addEventListener("click", () => {
+    selectedTags.clear();
+    renderChips();
+    renderDropdown();
+    applyFilter();
+    filterInput?.focus();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (
+      filterListbox &&
+      !filterListbox.hidden &&
+      filterInput &&
+      event.target instanceof Node &&
+      !filterListbox.contains(event.target) &&
+      event.target !== filterInput
+    ) {
+      filterListbox.hidden = true;
+      filterInput.setAttribute("aria-expanded", "false");
+    }
+  });
 </script>

@@ -26,6 +26,25 @@ const termSkills = skills.map((s) => ({ name: s.name, category: s.category }));
 <MainLayout title={siteConfig.name} description={t.meta.home}>
   <Hero />
 
+  <section id="expertise" class="reveal mx-auto max-w-6xl px-6 py-16">
+    <SectionHeading
+      eyebrow={t.pillars.eyebrow}
+      title={t.pillars.title}
+      description={t.pillars.description}
+    />
+    <div class="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {t.pillars.items.map((item, i) => (
+        <article class="rounded border border-cyber-border bg-cyber-card p-6 transition-all hover:border-cyber-primary/60 hover:glow-border">
+          <p class="font-mono text-4xl font-bold text-cyber-accent" aria-hidden="true">
+            {String(i + 1).padStart(2, "0")}
+          </p>
+          <h3 class="mt-3 font-mono text-base font-bold text-white">{item.name}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-cyber-muted">{item.desc}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
   <section id="projects" class="reveal mx-auto max-w-6xl px-6 py-16">
     <SectionHeading
       eyebrow={t.home.featuredEyebrow}

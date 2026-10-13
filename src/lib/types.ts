@@ -23,10 +23,14 @@ export interface Project {
   title: string;
   summary: string;
   description: string;
-  /** Nama kategori tampilan (COALESCE pc.name, p.category). */
+  /** Nama kategori tampilan (primer: map[0] / FK / legacy). */
   category: string;
   /** FK ke project_categories (B2) — null = legacy text fallback. */
   categoryId: string | null;
+  /** Semua nama kategori (junction map + fallback) — filter OR publik. */
+  categories: string[];
+  /** Semua FK kategori (urutan simpan; [0] = primer). */
+  categoryIds: string[];
   tags: string[];
   imageUrl: string | null;
   repoUrl: string | null;
@@ -199,6 +203,13 @@ export type ProjectCategoryRow = {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+};
+
+/** Baris tabel junction public.project_category_map — batch-4 B1. */
+export type ProjectCategoryMapRow = {
+  project_id: string;
+  category_id: string;
+  created_at: string;
 };
 
 /** Nilai yang diizinkan untuk key site_settings.availability_status. */
@@ -424,6 +435,20 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      project_category_map: {
+        Row: ProjectCategoryMapRow;
+        Insert: {
+          project_id: string;
+          category_id: string;
+          created_at?: string;
+        };
+        Update: {
+          project_id?: string;
+          category_id?: string;
+          created_at?: string;
         };
         Relationships: [];
       };
