@@ -8,7 +8,7 @@ import { getRelativeLocaleUrl } from "astro:i18n";
 import { siteConfig } from "../../lib/config";
 import { getExperiences } from "../../lib/data/experiences";
 import { getSocialLinks } from "../../lib/data/social-links";
-import { getSiteSettingValue } from "../../lib/data/site-settings";
+import { getSiteSettingValue, getLocalizedSettingValue } from "../../lib/data/site-settings";
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
@@ -20,7 +20,7 @@ const available = availabilityStatus !== "not-available";
 
 const experiences = await getExperiences();
 const socialLinks = await getSocialLinks();
-const aboutBio = (await getSiteSettingValue("about_bio"))?.trim();
+const aboutBio = await getLocalizedSettingValue("about_bio", locale);
 const aboutContactInfo = (await getSiteSettingValue("about_contact_info"))?.trim();
 // Fallback: hanya timpa default i18n bila admin benar-benar menyimpan key
 // about_specializations (key belum ada -> pakai default; key ada -> hormati

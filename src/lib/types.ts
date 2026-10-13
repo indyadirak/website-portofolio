@@ -207,10 +207,14 @@ export type AvailabilityStatus = "open-to-work" | "not-available";
 /** Kunci identitas dinamis (tabel public.site_settings) — FASE 2. */
 export const SITE_SETTING_KEYS = [
   "hero_title",
+  "hero_title_en",
   "hero_tagline",
+  "hero_tagline_en",
   "short_bio",
+  "short_bio_en",
   "availability_status",
   "about_bio",
+  "about_bio_en",
   "about_specializations",
   "about_contact_info",
 ] as const;

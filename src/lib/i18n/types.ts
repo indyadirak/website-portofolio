@@ -494,6 +494,12 @@ export interface Dictionary {
     specializationsPlaceholder: string;
     contactInfoPlaceholder: string;
     aboutBioPlaceholder: string;
+    /** Grup tab bahasa ID|EN di form settings. */
+    languageGroup: string;
+    languageTabId: string;
+    languageTabEn: string;
+    /** Hint fallback: EN kosong -> tampil teks ID. */
+    languageHint: string;
     availability: string;
     availabilityOpen: string;
     availabilityClosed: string;

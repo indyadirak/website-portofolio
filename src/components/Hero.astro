@@ -5,7 +5,7 @@ import { siteConfig } from "../lib/config";
 import CvDownloadButton from "./CvDownloadButton.astro";
 import { getCertificates } from "../lib/data/certificates";
 import { getProjects } from "../lib/data/projects";
-import { getSiteSettings } from "../lib/data/site-settings";
+import { getSiteSettings, localizedSetting } from "../lib/data/site-settings";
 
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
@@ -15,9 +15,9 @@ const t = getDictionary(locale);
 const settings = await getSiteSettings();
 const settingMap = new Map(settings.map((s) => [s.key, s.value]));
 
-const heroTitle = settingMap.get("hero_title")?.trim() || t.hero.title;
-const heroTagline = settingMap.get("hero_tagline")?.trim() || t.hero.tagline;
-const shortBio = settingMap.get("short_bio")?.trim() || t.hero.description;
+const heroTitle = localizedSetting(settingMap, "hero_title", locale) || t.hero.title;
+const heroTagline = localizedSetting(settingMap, "hero_tagline", locale) || t.hero.tagline;
+const shortBio = localizedSetting(settingMap, "short_bio", locale) || t.hero.description;
 const availabilityStatus =
   settingMap.get("availability_status") ?? siteConfig.contact.availabilityStatus;
 const available = availabilityStatus !== "not-available";
