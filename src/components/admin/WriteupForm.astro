@@ -15,7 +15,15 @@ const editing = Boolean(writeup);
 const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Manual / Exploratory"];
 ---
 
-<form id="writeup-form" class="space-y-5" data-editing={String(editing)} data-id={writeup?.id ?? ""}>
+<form
+  id="writeup-form"
+  class="space-y-5"
+  data-editing={String(editing)}
+  data-id={writeup?.id ?? ""}
+  data-i18n-save-network-error={t.adminWriteups.saveNetworkError}
+  data-i18n-save-failed={t.adminWriteups.saveFailed}
+  data-i18n-saved-redirecting={t.adminWriteups.savedRedirecting}
+>
   <p id="w-form-mode" class="font-mono text-xs uppercase tracking-wider text-cyber-accent">
     {editing ? "[ edit_writeup ]" : "[ new_writeup ]"}
   </p>
@@ -119,6 +127,9 @@ const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Man
   const form = document.getElementById("writeup-form") as HTMLFormElement;
   const submitBtn = document.getElementById("w-submit") as HTMLButtonElement;
   const statusEl = document.getElementById("w-form-status") as HTMLParagraphElement;
+  const saveNetworkError = form.dataset.i18nSaveNetworkError ?? "";
+  const saveFailedTpl = form.dataset.i18nSaveFailed ?? "";
+  const savedRedirecting = form.dataset.i18nSavedRedirecting ?? "";
 
   const title = document.getElementById("w-title") as HTMLInputElement;
   const targetEnv = document.getElementById("w-target-env") as HTMLInputElement;
@@ -161,7 +172,7 @@ const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Man
 
     if (!res) {
       submitBtn.disabled = false;
-      statusEl.textContent = "$ error: jaringan tidak tersedia.";
+      statusEl.textContent = saveNetworkError;
       return;
     }
 
@@ -169,11 +180,11 @@ const methods = ["OWASP Top 10", "MITRE ATT&CK", "NIST SP 800-115", "PTES", "Man
     submitBtn.disabled = false;
 
     if (!res.ok || !data.ok) {
-      statusEl.textContent = `$ error: ${data.error ?? "gagal menyimpan"}`;
+      statusEl.textContent = saveFailedTpl.replace("{error}", String(data.error ?? "unknown"));
       return;
     }
 
-    statusEl.textContent = "$ saved — redirecting...";
+    statusEl.textContent = savedRedirecting;
     statusEl.classList.add("text-cyber-primary");
     window.location.href = "/admin/writeups";
   });

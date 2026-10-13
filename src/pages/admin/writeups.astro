@@ -3,8 +3,12 @@ import AdminLayout from "../../layouts/AdminLayout.astro";
 import TerminalButton from "../../components/admin/ui/TerminalButton.astro";
 import WriteupList from "../../components/admin/WriteupList.astro";
 import { canDeleteCertificates, canManageCertificates } from "../../lib/auth";
+import { getDictionary, localeFromPathname } from "../../lib/i18n";
 
 export const prerender = false;
+
+const pageLocale = localeFromPathname(Astro.url.pathname) ?? "id";
+const t = getDictionary(pageLocale);
 
 const { user, profile, supabase } = Astro.locals;
 
@@ -60,9 +64,9 @@ const canDelete = canDeleteCertificates(profile);
 
     <section class="mt-10">
       <div class="mb-6 flex items-center justify-between">
-        <h2 class="font-mono text-lg font-bold text-white">All Write-ups</h2>
+        <h2 class="font-mono text-lg font-bold text-white">{t.adminWriteups.listTitle}</h2>
         <span class="font-mono text-xs text-cyber-muted">
-          total: {writeups.length}
+          {t.adminWriteups.totalLabel}: {writeups.length}
         </span>
       </div>
 
