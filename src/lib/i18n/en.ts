@@ -574,7 +574,7 @@ export const en: Dictionary = {
   },
   writeups: {
     eyebrow: "// writeups",
-    title: "CTF & Security Write-ups",
+    title: "Research",
     subtitle: "Technical write-ups from competitions & research - filled progressively.",
     emptyNote: "$ echo: list updated after each competition is completed.",
     emptyTitle: "$ echo: no write-up published yet.",
@@ -834,7 +834,7 @@ export const en: Dictionary = {
     navDashboard: "[ dashboard ]",
     navViewProjects: "[ view_projects ]",
     navAddProjects: "[ add_project ]",
-    navWriteups: "[ write-ups ]",
+    navWriteups: "[ research ]",
     navViewCertificates: "[ view_certificates ]",
     navAddCertificates: "[ add_certificate ]",
     navMessages: "[ messages ]",
