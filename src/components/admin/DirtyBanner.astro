@@ -1,5 +1,9 @@
 ---
-import { getDirtyState } from "../../lib/deploy";
+import {
+  getDirtyState,
+  getDeployStatus,
+  deployActionsUrl,
+} from "../../lib/deploy";
 import { getDictionary, localeFromPathname } from "../../lib/i18n";
 
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
@@ -7,6 +11,13 @@ const t = getDictionary(locale);
 const { user } = Astro.locals;
 // Fail-safe: KV bermasalah/dev tanpa binding -> dirty=false -> tidak render.
 const dirty = await getDirtyState();
+// Status live run deploy (fail-safe: "idle" bila KV bermasalah).
+const runStatus = await getDeployStatus();
+// Bila halaman dibuka saat deploy sedang berjalan/gagal (mis. deploy
+// otomatis dari mutasi CMS), langsung tampilkan statusnya.
+const showStatusOnLoad = ["requested", "running", "failed"].includes(
+  runStatus.state
+);
 ---
 
 {
@@ -19,6 +30,17 @@ const dirty = await getDirtyState();
       data-i18n-unavailable={t.adminDirty.unavailable}
       data-i18n-failed={t.adminDirty.failed}
       data-i18n-network={t.adminDirty.networkError}
+      data-i18n-status-requested={t.adminDirty.statusRequested}
+      data-i18n-status-running={t.adminDirty.statusRunning}
+      data-i18n-status-failed={t.adminDirty.statusFailed}
+      data-i18n-status-success={t.adminDirty.statusSuccess}
+      data-i18n-view-progress={t.adminDirty.viewProgress}
+      data-deploy-state={runStatus.state}
+      data-deploy-run-id={runStatus.runId ?? ""}
+      data-deploy-started-at={String(runStatus.startedAt || "")}
+      data-actions-url={deployActionsUrl(runStatus.runId)}
+      data-actions-runs-url={deployActionsUrl(null)}
+      data-show-status-on-load={showStatusOnLoad ? "1" : ""}
     >
       <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2">
         <p class="font-mono text-xs text-cyber-accent">
@@ -52,6 +74,140 @@ const dirty = await getDirtyState();
     "dirty-publish-status"
   ) as HTMLParagraphElement | null;
 
+  const POLL_MS = 20000;
+  const POLL_MAX_MS = 15 * 60 * 1000;
+  const TERMINAL_STATES = ["success", "failed"];
+
+  function fmtElapsed(ms: number): string {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const m = Math.floor(s / 60);
+    return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
+  }
+
+  // Render status via textContent/createElement (tanpa innerHTML) —
+  // aman dari XSS, mengikuti pola data-attributes repo ini.
+  function setStatus(
+    state: string,
+    runId: string | null,
+    startedAt: number,
+    actionsUrl: string
+  ): void {
+    if (!publishStatus || !banner) return;
+    const ds = banner.dataset;
+    publishStatus.textContent = "";
+    let label: string;
+    if (state === "requested") {
+      label = ds.i18nStatusRequested ?? "requested";
+    } else if (state === "running") {
+      label = (ds.i18nStatusRunning ?? "running {elapsed}").replace(
+        "{elapsed}",
+        fmtElapsed(Date.now() - (startedAt || Date.now()))
+      );
+    } else if (state === "failed") {
+      label = ds.i18nStatusFailed ?? "failed";
+    } else if (state === "success") {
+      label = ds.i18nStatusSuccess ?? "success";
+    } else {
+      return;
+    }
+    publishStatus.append(document.createTextNode(label + " "));
+    if (state === "requested" || state === "running" || state === "failed") {
+      const a = document.createElement("a");
+      a.href = actionsUrl;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = "underline underline-offset-2";
+      a.textContent = ds.i18nViewProgress ?? "view progress";
+      publishStatus.append(a);
+    }
+    void runId;
+  }
+
+  let pollTimer: number | null = null;
+  let pollStart = 0;
+
+  function stopPolling(): void {
+    if (pollTimer !== null) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  async function pollOnce(): Promise<boolean> {
+    try {
+      const res = await fetch("/api/admin/deploy-status");
+      const data = (await res.json().catch(() => null)) as {
+        status?: {
+          state?: unknown;
+          runId?: unknown;
+          startedAt?: unknown;
+          actionsUrl?: unknown;
+        };
+      } | null;
+      const st = data?.status;
+      if (!st || typeof st.state !== "string") return true;
+      const runId = typeof st.runId === "string" ? st.runId : null;
+      const startedAt = typeof st.startedAt === "number" ? st.startedAt : 0;
+      const actionsUrl =
+        typeof st.actionsUrl === "string" ? st.actionsUrl : "#";
+      setStatus(st.state, runId, startedAt, actionsUrl);
+      if (TERMINAL_STATES.includes(st.state)) {
+        stopPolling();
+        if (st.state === "success") {
+          // Dirty flag sudah di-clear di server; reload agar banner hilang.
+          // (Bila ada mutasi baru saat deploy berjalan, flag dipertahankan
+          // dan banner tampil lagi dengan count terbaru — perilaku benar.)
+          setTimeout(() => location.reload(), 1500);
+        } else if (publishBtn) {
+          // failed: tombol aktif lagi agar bisa coba ulang
+          // (perhatikan cooldown 10 menit).
+          publishBtn.disabled = false;
+        }
+        return false;
+      }
+      return true;
+    } catch {
+      // Gangguan jaringan sesaat — coba lagi di interval berikut.
+      return true;
+    }
+  }
+
+  function startPolling(): void {
+    if (pollTimer !== null || !banner) return;
+    pollStart = Date.now();
+    pollTimer = window.setInterval(() => {
+      if (Date.now() - pollStart > POLL_MAX_MS) {
+        stopPolling();
+        if (publishBtn) publishBtn.disabled = false;
+        return;
+      }
+      void pollOnce().then((cont) => {
+        if (!cont) stopPolling();
+      });
+    }, POLL_MS);
+    // Polling pertama langsung, tanpa menunggu 20 detik.
+    void pollOnce().then((cont) => {
+      if (!cont) stopPolling();
+    });
+  }
+
+  // Lanjut/tampilkan status bila halaman dibuka saat deploy sedang
+  // berjalan atau baru saja gagal (mis. deploy otomatis dari mutasi CMS).
+  if (banner && banner.dataset.showStatusOnLoad === "1") {
+    const ds = banner.dataset;
+    const initState = ds.deployState ?? "idle";
+    setStatus(
+      initState,
+      ds.deployRunId || null,
+      Number(ds.deployStartedAt) || 0,
+      ds.actionsUrl ?? "#"
+    );
+    if (initState === "requested" || initState === "running") {
+      startPolling();
+      if (publishBtn) publishBtn.disabled = true;
+    }
+  }
+
   publishBtn?.addEventListener("click", async () => {
     if (!publishBtn || !publishStatus || !banner) return;
     publishBtn.disabled = true;
@@ -64,17 +220,27 @@ const dirty = await getDirtyState();
         error?: string;
       } | null;
       if (data?.deploy === "triggered") {
-        publishStatus.textContent = banner.dataset.i18nWaiting ?? "ok";
+        setStatus(
+          "requested",
+          null,
+          Date.now(),
+          banner.dataset.actionsRunsUrl ?? "#"
+        );
+        startPolling();
       } else if (data?.deploy === "cooldown") {
         publishStatus.textContent = banner.dataset.i18nCooldown ?? "cooldown";
+        publishBtn.disabled = false;
       } else if (data?.error === "deploy_token_missing") {
-        publishStatus.textContent = banner.dataset.i18nUnavailable ?? "unavailable";
+        publishStatus.textContent =
+          banner.dataset.i18nUnavailable ?? "unavailable";
+        publishBtn.disabled = false;
       } else {
         publishStatus.textContent = banner.dataset.i18nFailed ?? "failed";
+        publishBtn.disabled = false;
       }
     } catch {
       publishStatus.textContent = banner.dataset.i18nNetwork ?? "network error";
+      publishBtn.disabled = false;
     }
-    publishBtn.disabled = false;
   });
 </script>

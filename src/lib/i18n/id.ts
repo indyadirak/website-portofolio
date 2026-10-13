@@ -863,6 +863,11 @@ export const id: Dictionary = {
     unavailable: "$ error: token deploy GitHub belum dikonfigurasi — lihat docs/DEPLOYMENT.md §10.",
     failed: "Gagal meminta deploy.",
     networkError: "$ error: koneksi gagal.",
+    statusRequested: "Deploy diminta — menunggu antrean…",
+    statusRunning: "Deploy berjalan… {elapsed}",
+    statusFailed: "Deploy gagal.",
+    statusSuccess: "Deploy sukses — memuat ulang…",
+    viewProgress: "lihat progres",
   },
   notFound: {
     title: "404 — Not Found",

@@ -2,7 +2,7 @@ import type { APIContext } from "astro";
 import { timingSafeEqual } from "node:crypto";
 import { env } from "cloudflare:workers";
 import { json } from "../../../lib/api";
-import { clearDeployDirty } from "../../../lib/deploy";
+import { clearDeployDirty, setDeployStatus } from "../../../lib/deploy";
 
 export const prerender = false;
 
@@ -10,7 +10,7 @@ export const prerender = false;
  * Callback pasca-deploy sukses — dipanggil step TERAKHIR deploy.yml
  * (bukan browser, tanpa session).
  *
- *   POST /api/admin/deploy-complete  {gen?: string}
+ *   POST /api/admin/deploy-complete  {gen?: string, run_id?: string}
  *
  * Auth: header `Authorization: Bearer <CMS_DEPLOY_TOKEN>` dibandingkan
  * timing-safe dengan runtime secret Worker; selain itu 401. Secret yang
@@ -23,6 +23,9 @@ export const prerender = false;
  *     baru saat deploy berjalan)   -> {ok:true, cleared:false}
  *   - selain itu (cocok / gen
  *     kosong dari trigger push)    -> hapus key, {ok:true, cleared:true}
+ *
+ * Selain clear, endpoint juga menandai run status "success" agar banner
+ * berhenti polling (lihat /api/admin/deploy-status).
  *
  * CATATAN race kecil: trigger `push` tidak membawa inputs.gen sehingga
  * clear-nya unconditional — mutasi yang masuk di sela deploy ikut
@@ -48,9 +51,13 @@ export async function POST({ request }: APIContext) {
     return json({ ok: false, error: "unauthorized" }, 401);
   }
 
-  const body = (await request.json().catch(() => null)) as { gen?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { gen?: unknown; run_id?: unknown } | null;
   const gen = typeof body?.gen === "string" ? body.gen : undefined;
+  const runId = typeof body?.run_id === "string" && body.run_id !== "" ? body.run_id : null;
   const cleared = await clearDeployDirty(gen);
+  // Tandai run sukses agar banner berhenti polling. Dirty flag hanya
+  // ikut ter-clear bila gen cocok (lihat clearDeployDirty).
+  await setDeployStatus("success", runId);
   return json({ ok: true, cleared });
 }
 
