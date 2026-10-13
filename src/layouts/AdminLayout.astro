@@ -3,6 +3,7 @@ import "../styles/global.css";
 import { getDictionary, localeFromPathname } from "../lib/i18n";
 import { siteConfig } from "../lib/config";
 import AdminSidebarGroup from "../components/admin/AdminSidebarGroup.astro";
+import DirtyBanner from "../components/admin/DirtyBanner.astro";
 
 export interface Props {
   title: string;
@@ -91,6 +92,8 @@ const initialsLabel = `${t.adminLayout.profile}: ${displayName}`;
         </div>
       </div>
     </header>
+
+    <DirtyBanner />
 
     <div id="admin-shell" class="relative lg:flex">
       <div id="admin-sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-black/60 lg:hidden"></div>

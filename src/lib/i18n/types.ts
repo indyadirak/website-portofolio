@@ -651,6 +651,17 @@ export interface Dictionary {
     logout: string;
     role: string;
   };
+  /** Banner "perubahan belum di-publish" (dirty flag deploy). */
+  adminDirty: {
+    /** "Ada {count} perubahan ..." — placeholder {count} diganti angka. */
+    banner: string;
+    publish: string;
+    waiting: string;
+    cooldown: string;
+    unavailable: string;
+    failed: string;
+    networkError: string;
+  };
   /** Halaman list project (admin/projects) — FASE 2. */
   adminProjects: {
     eyebrow: string;

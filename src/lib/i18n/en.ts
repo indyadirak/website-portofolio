@@ -846,6 +846,15 @@ export const en: Dictionary = {
     logout: "logout",
     role: "role",
   },
+  adminDirty: {
+    banner: "{count} unpublished changes pending.",
+    publish: "Publish now",
+    waiting: "Deploy requested — waiting for completion…",
+    cooldown: "$ cooldown — a rebuild was just requested, try again in a few minutes.",
+    unavailable: "$ error: GitHub deploy token not configured — see docs/DEPLOYMENT.md §10.",
+    failed: "Failed to request deploy.",
+    networkError: "$ error: connection failed.",
+  },
   notFound: {
     title: "404 — Not Found",
     message: "The file you are looking for was not found in this system. Check the path or go back home.",

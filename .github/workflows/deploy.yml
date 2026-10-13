@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      gen:
+        description: "Dirty generation yang di-clear saat deploy sukses ('0' = tanpa state)"
+        required: false
+        default: "0"
 
 # Workflow ini INDEPENDEN dari codeql.yml & dependency-review.yml —
 # GitHub Actions menjalankan ketiganya paralel, tidak ada penggabungan.
@@ -232,3 +237,20 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CMS_DEPLOY_TOKEN: ${{ secrets.CMS_DEPLOY_TOKEN }}
         run: echo "$CMS_DEPLOY_TOKEN" | npx wrangler secret put CMS_DEPLOY_TOKEN
+
+      # ===== Dirty flag: hapus penanda "belum di-publish" setelah deploy sukses =====
+      # Endpoint membandingkan inputs.gen dengan gen tersimpan — mutasi baru
+      # yang masuk saat deploy berjalan (gen beda) TIDAK ikut ter-clear.
+      # RACE KECIL: trigger `push` tidak membawa inputs.gen (kosong) sehingga
+      # clear-nya unconditional. Diterima: push ke main selalu rebuild penuh
+      # dari HEAD terbaru, jadi konten sela itu ikut ter-deploy.
+      - name: Clear dirty flag (deploy sukses)
+        if: success()
+        env:
+          WORKER_URL: https://portofolio.indyadirak.com
+          DEPLOY_CALLBACK_TOKEN: ${{ secrets.CMS_DEPLOY_TOKEN }}
+        run: |
+          curl -sS -X POST "$WORKER_URL/api/admin/deploy-complete" \
+            -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"gen\": \"${{ inputs.gen }}\"}"

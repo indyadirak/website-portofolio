@@ -846,6 +846,15 @@ export const id: Dictionary = {
     logout: "logout",
     role: "role",
   },
+  adminDirty: {
+    banner: "Ada {count} perubahan belum di-publish.",
+    publish: "Publish sekarang",
+    waiting: "Deploy diminta — menunggu selesai…",
+    cooldown: "$ cooldown — rebuild baru saja diminta, coba lagi dalam beberapa menit.",
+    unavailable: "$ error: token deploy GitHub belum dikonfigurasi — lihat docs/DEPLOYMENT.md §10.",
+    failed: "Gagal meminta deploy.",
+    networkError: "$ error: koneksi gagal.",
+  },
   notFound: {
     title: "404 — Not Found",
     message: "File yang Anda cari tidak ditemukan di sistem ini. Periksa kembali path atau kembali ke beranda.",
