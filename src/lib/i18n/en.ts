@@ -966,6 +966,11 @@ export const en: Dictionary = {
     unavailable: "$ error: GitHub deploy token not configured — see docs/DEPLOYMENT.md §10.",
     failed: "Failed to request deploy.",
     networkError: "$ error: connection failed.",
+    statusRequested: "Deploy requested — waiting in queue…",
+    statusRunning: "Deploy running… {elapsed}",
+    statusFailed: "Deploy failed.",
+    statusSuccess: "Deploy succeeded — reloading…",
+    viewProgress: "view progress",
   },
   notFound: {
     title: "404 — Not Found",

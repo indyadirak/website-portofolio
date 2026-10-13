@@ -40,6 +40,19 @@ jobs:
           # kredensial Git tidak perlu dipersist (Snyk: persist credentials).
           persist-credentials: false
 
+      # LAPOR STATUS: tandai deploy "running" di Worker agar banner admin
+      # bisa menampilkan progres live (polling /api/admin/deploy-status).
+      # run_id dikirim agar banner bisa link langsung ke run tersebut.
+      - name: Report deploy started
+        env:
+          WORKER_URL: https://portofolio.indyadirak.com
+          DEPLOY_CALLBACK_TOKEN: ${{ secrets.CMS_DEPLOY_TOKEN }}
+        run: |
+          curl -sS -X POST "$WORKER_URL/api/admin/deploy-status" \
+            -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"state\": \"running\", \"run_id\": \"${{ github.run_id }}\"}"
+
       # GUARD: RATE_LIMIT_KV id wajib ASLI sebelum deploy.
       # Dengan id placeholder (00000000-...), kv.get() selalu null —
       # rate limiter tampak jalan tapi TIDAK PERNAH membatasi (silent
@@ -253,4 +266,17 @@ jobs:
           curl -sS -X POST "$WORKER_URL/api/admin/deploy-complete" \
             -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"gen\": \"${{ inputs.gen }}\"}"
+            -d "{\"gen\": \"${{ inputs.gen }}\", \"run_id\": \"${{ github.run_id }}\"}"
+
+      # LAPOR STATUS: bila ada step yang gagal, tandai "failed" agar banner
+      # menampilkannya — tanpa ini status macet di "running".
+      - name: Report deploy failed
+        if: failure()
+        env:
+          WORKER_URL: https://portofolio.indyadirak.com
+          DEPLOY_CALLBACK_TOKEN: ${{ secrets.CMS_DEPLOY_TOKEN }}
+        run: |
+          curl -sS -X POST "$WORKER_URL/api/admin/deploy-status" \
+            -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"state\": \"failed\", \"run_id\": \"${{ github.run_id }}\"}"

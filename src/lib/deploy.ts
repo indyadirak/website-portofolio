@@ -129,6 +129,108 @@ export async function clearDeployDirty(gen?: string): Promise<boolean> {
 
 export type DeployTriggerStatus = "triggered" | "cooldown" | "unavailable";
 
+/**
+ * =====================================================================
+ * DEPLOY RUN STATUS — status live "diminta → berjalan → sukses/gagal".
+ *
+ * GitHub tidak menyediakan persen progres; yang tersedia adalah state
+ * run-nya. Alur state:
+ *   - "requested": dispatch workflow_dispatch diterima GitHub (diset di
+ *     requestSiteDeploy). run_id belum dikenal.
+ *   - "running":   step "Report deploy started" di deploy.yml melapor
+ *     balik ke Worker (membawa github.run_id).
+ *   - "success":   callback deploy-complete (step terakhir saat sukses).
+ *   - "failed":    step "Report deploy failed" (if: failure()).
+ *
+ * Disimpan di KV yang sama sebagai JSON {state, runId, startedAt,
+ * updatedAt}. Semua fungsi TIDAK PERNAH melempar (fail-safe seperti
+ * dirty flag): KV bermasalah = status "idle", banner tetap berjalan
+ * dengan perilaku lama (tanpa status live).
+ * =====================================================================
+ */
+const DEPLOY_STATUS_KEY = "deploy:status";
+
+export type DeployRunState = "idle" | "requested" | "running" | "success" | "failed";
+
+export interface DeployRunStatus {
+  state: DeployRunState;
+  /** GitHub Actions run id (null bila belum dikenal, mis. fase requested). */
+  runId: string | null;
+  startedAt: number;
+  updatedAt: number;
+}
+
+const DEPLOY_STATUS_IDLE: DeployRunStatus = {
+  state: "idle",
+  runId: null,
+  startedAt: 0,
+  updatedAt: 0,
+};
+
+function isDeployRunState(v: unknown): v is DeployRunState {
+  return (
+    v === "idle" ||
+    v === "requested" ||
+    v === "running" ||
+    v === "success" ||
+    v === "failed"
+  );
+}
+
+/** Tulis status run deploy. Tidak pernah throw. */
+export async function setDeployStatus(
+  state: Exclude<DeployRunState, "idle">,
+  runId?: string | null
+): Promise<void> {
+  try {
+    const kv = env.RATE_LIMIT_KV;
+    if (!kv) return;
+    const prev = await getDeployStatus();
+    const now = Date.now();
+    // startedAt dipertahankan selama run yang sama (runId cocok) agar
+    // durasi yang tampil di banner akurat.
+    const sameRun = !!runId && !!prev.runId && runId === prev.runId;
+    const next: DeployRunStatus = {
+      state,
+      runId: runId ?? prev.runId,
+      startedAt: sameRun && prev.startedAt ? prev.startedAt : now,
+      updatedAt: now,
+    };
+    await kv.put(DEPLOY_STATUS_KEY, JSON.stringify(next));
+  } catch (err) {
+    console.error("[deploy-status] setDeployStatus gagal:", err);
+  }
+}
+
+/** Baca status run deploy untuk banner admin. Tidak pernah throw. */
+export async function getDeployStatus(): Promise<DeployRunStatus> {
+  try {
+    const kv = env.RATE_LIMIT_KV;
+    if (!kv) return DEPLOY_STATUS_IDLE;
+    const raw = await kv.get(DEPLOY_STATUS_KEY);
+    if (!raw) return DEPLOY_STATUS_IDLE;
+    const parsed = JSON.parse(raw) as Partial<DeployRunStatus>;
+    if (!isDeployRunState(parsed.state)) return DEPLOY_STATUS_IDLE;
+    return {
+      state: parsed.state,
+      runId: typeof parsed.runId === "string" ? parsed.runId : null,
+      startedAt: Number(parsed.startedAt) || 0,
+      updatedAt: Number(parsed.updatedAt) || 0,
+    };
+  } catch (err) {
+    console.error("[deploy-status] getDeployStatus gagal:", err);
+    return DEPLOY_STATUS_IDLE;
+  }
+}
+
+/** URL halaman Actions untuk run tertentu (atau daftar run workflow). */
+export function deployActionsUrl(runId: string | null): string {
+  const repo = "indyadirak/website-portofolio";
+  return runId
+    ? `https://github.com/${repo}/actions/runs/${runId}`
+    : `https://github.com/${repo}/actions/workflows/deploy.yml`;
+}
+
 export interface DeployTriggerResult {
   status: DeployTriggerStatus;
   /** Sisa detik cooldown (hanya saat status = "cooldown"). */
@@ -221,6 +323,9 @@ export async function requestSiteDeploy(source: string): Promise<DeployTriggerRe
     }
 
     console.log(`[deploy-trigger] (${source}) workflow Deploy diminta — rebuild berjalan ~3 menit.`);
+    // Lapor status "requested" agar banner bisa polling progres live.
+    // Fail-safe (tidak pernah throw): tidak boleh menggagalkan trigger.
+    await setDeployStatus("requested");
     return { status: "triggered" };
   } catch (err) {
     console.error(`[deploy-trigger] (${source}) exception:`, err);

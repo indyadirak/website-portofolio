@@ -709,6 +709,13 @@ export interface Dictionary {
     unavailable: string;
     failed: string;
     networkError: string;
+    /** Status live run deploy (banner polling). */
+    statusRequested: string;
+    /** Placeholder {elapsed} diganti durasi ("3m 12s"). */
+    statusRunning: string;
+    statusFailed: string;
+    statusSuccess: string;
+    viewProgress: string;
   };
   /** Halaman list project (admin/projects) — FASE 2. */
   adminProjects: {
