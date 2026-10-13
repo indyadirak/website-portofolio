@@ -29,6 +29,16 @@ const { data: rawSettings } = await supabase
 
 const settings = (rawSettings ?? []) as SiteSettingRow[];
 const byKey = new Map(settings.map((s) => [s.key, s.value]));
+
+/** Isi textarea specializations (satu baris per item) — dipakai 2x di bawah. */
+let specializationsText = "";
+try {
+  specializationsText = (
+    JSON.parse(byKey.get("about_specializations") ?? "[]") as string[]
+  ).join("\n");
+} catch {
+  specializationsText = "";
+}
 ---
 
 <AdminLayout title="Site Settings — Admin" description={t.adminSettings.description} current="settings">
@@ -76,17 +86,20 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
       <label class="block">
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSettings.heroTitle} *</span>
         <TerminalInput id="s-hero-title" type="text" maxlength={120} value={byKey.get("hero_title") ?? ""} />
+        <span class="mt-1 block text-right font-mono text-xs text-cyber-muted" data-count-for="s-hero-title">{(byKey.get("hero_title") ?? "").length} / 120</span>
       </label>
 
       <label class="block">
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSettings.heroTagline} *</span>
         <TerminalInput id="s-hero-tagline" type="text" maxlength={120} value={byKey.get("hero_tagline") ?? ""} />
+        <span class="mt-1 block text-right font-mono text-xs text-cyber-muted" data-count-for="s-hero-tagline">{(byKey.get("hero_tagline") ?? "").length} / 120</span>
       </label>
 
       <label class="block">
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSettings.shortBio} *</span>
         <textarea id="s-short-bio" rows={4} maxlength={500}
           class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">{byKey.get("short_bio") ?? ""}</textarea>
+        <span class="mt-1 block text-right font-mono text-xs text-cyber-muted" data-count-for="s-short-bio">{(byKey.get("short_bio") ?? "").length} / 500</span>
       </label>
 
       <label class="block">
@@ -94,6 +107,7 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
         <textarea id="s-about-bio" rows={4} maxlength={1000}
           placeholder={t.adminSettings.aboutBioPlaceholder}
           class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">{byKey.get("about_bio") ?? ""}</textarea>
+        <span class="mt-1 block text-right font-mono text-xs text-cyber-muted" data-count-for="s-about-bio">{(byKey.get("about_bio") ?? "").length} / 1000</span>
       </label>
       </fieldset>
 
@@ -130,7 +144,8 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
         <span class="mb-2 block font-mono text-xs uppercase tracking-wider text-cyber-accent">{t.adminSettings.specializations}</span>
         <textarea id="s-about-specializations" rows={5} maxlength={1000}
           placeholder={t.adminSettings.specializationsPlaceholder}
-          class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">{(() => { try { return (JSON.parse(byKey.get("about_specializations") ?? "[]") as string[]).join("\n"); } catch { return ""; } })()}</textarea>
+          class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">{specializationsText}</textarea>
+        <span class="mt-1 block text-right font-mono text-xs text-cyber-muted" data-count-for="s-about-specializations">{specializationsText.length} / 1000</span>
       </label>
 
       <label class="block">
@@ -138,6 +153,7 @@ const byKey = new Map(settings.map((s) => [s.key, s.value]));
         <textarea id="s-about-contact-info" rows={3} maxlength={500}
           placeholder={t.adminSettings.contactInfoPlaceholder}
           class="w-full resize-y rounded border border-cyber-border bg-cyber-panel px-4 py-2.5 font-mono text-sm text-slate-200 outline-none focus:border-cyber-primary">{byKey.get("about_contact_info") ?? ""}</textarea>
+        <span class="mt-1 block text-right font-mono text-xs text-cyber-muted" data-count-for="s-about-contact-info">{(byKey.get("about_contact_info") ?? "").length} / 500</span>
       </label>
 
       <label class="block">
