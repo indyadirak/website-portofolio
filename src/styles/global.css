@@ -218,15 +218,15 @@
   }
 
   /* ---- CSS-only animations (zero-JS) ---- */
-  /* Typing effect: aktif md+ (mobile: judul panjang tetap wrap normal,
-     karena animasi satu-baris 34 char mono tidak muat di viewport <768px).
-     Wrapper harus .w-fit + max-w-full agar lebar animasi = lebar teks. */
-  @keyframes type-width {
+  /* Typing effect: aktif md+ (mobile: judul tampil normal tanpa animasi).
+     Reveal memakai clip-path (bukan width) agar judul panjang tetap bisa
+     wrap ke baris berikutnya tanpa terpotong — white-space: nowrap dihapus. */
+  @keyframes type-reveal {
     from {
-      width: 0;
+      clip-path: inset(0 100% 0 0);
     }
     to {
-      width: 100%;
+      clip-path: inset(0 0 0 0);
     }
   }
   @keyframes type-caret {
@@ -243,9 +243,7 @@
   }
   @media (min-width: 768px) {
     .type-effect {
-      overflow: hidden;
-      white-space: nowrap;
-      animation: type-width var(--type-duration, 2.4s) steps(var(--type-steps, 30), end) forwards;
+      animation: type-reveal var(--type-duration, 2.4s) steps(var(--type-steps, 30), end) forwards;
     }
   }
   .type-caret {
@@ -476,9 +474,8 @@
 
   /* Tanpa animasi, efek typing tidak boleh memotong teks. */
   .type-effect {
-    overflow: visible !important;
-    white-space: normal !important;
-    width: auto !important;
+    animation: none !important;
+    clip-path: none !important;
   }
 
   .zoom-img,
