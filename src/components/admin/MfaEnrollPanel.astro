@@ -37,7 +37,7 @@ const t = getDictionary(locale);
     id="enroll-loading"
     class="rounded border border-cyber-border/70 bg-cyber-card/60 p-4 font-mono text-sm text-cyber-muted"
   >
-    {t.adminMfa.loadingText}
+    <span id="enroll-loading-text">{t.adminMfa.loadingText}</span>
     <button
       id="enroll-retry"
       type="button"
@@ -110,7 +110,10 @@ const t = getDictionary(locale);
   let enrollStarted = false;
 
   // Elemen dijamin ada (didefinisikan di komponen ini).
+  // Teks status isolated di <span> sendiri: menulis textContent ke container
+  // akan menghapus tombol retry dari DOM (bug: retry tidak pernah muncul).
   const loading = document.getElementById("enroll-loading") as HTMLDivElement;
+  const loadingTextEl = document.getElementById("enroll-loading-text") as HTMLSpanElement;
   const retryBtn = document.getElementById("enroll-retry") as HTMLButtonElement;
   const content = document.getElementById("enroll-content") as HTMLDivElement;
   const qrImg = document.getElementById("enroll-qr") as HTMLImageElement;
@@ -144,7 +147,7 @@ const t = getDictionary(locale);
     loading.hidden = false;
     content.hidden = true;
     retryBtn.hidden = true;
-    loading.textContent = loadingText;
+    loadingTextEl.textContent = loadingText;
 
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), ENROLL_TIMEOUT_MS);
@@ -158,7 +161,7 @@ const t = getDictionary(locale);
     } catch (err) {
       window.clearTimeout(timeoutId);
       const aborted = err instanceof DOMException && err.name === "AbortError";
-      loading.textContent = `${errPrefix} ${FAIL_MESSAGES[aborted ? "timeout" : "unauthorized"] ?? errGeneric}`;
+      loadingTextEl.textContent = `${errPrefix} ${FAIL_MESSAGES[aborted ? "timeout" : "unauthorized"] ?? errGeneric}`;
       loading.hidden = false;
       retryBtn.hidden = false;
       return;
@@ -174,13 +177,13 @@ const t = getDictionary(locale);
 
     if (!res.ok || !data.ok) {
       const code = data.error ?? "unknown";
-      loading.textContent = `${errPrefix} ${FAIL_MESSAGES[code] ?? errGeneric}`;
+      loadingTextEl.textContent = `${errPrefix} ${FAIL_MESSAGES[code] ?? errGeneric}`;
       retryBtn.hidden = false;
       return;
     }
 
     if (!data.factorId || !data.qrDataUrl || !data.secret) {
-      loading.textContent = `${errPrefix} ${FAIL_MESSAGES.invalid_response}`;
+      loadingTextEl.textContent = `${errPrefix} ${FAIL_MESSAGES.invalid_response}`;
       retryBtn.hidden = false;
       return;
     }
