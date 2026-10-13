@@ -1300,6 +1300,18 @@ insert into public.project_categories (name, slug, description, sort_order, is_a
 on conflict (name) do nothing;
 
 -- ============================================================
+-- SEED 5 KATEGORI PILAR TEMA (batch-3 A3 — mirror file
+-- project-category-pillars.sql; idempotent, hanya untuk setup baru)
+-- ============================================================
+insert into public.project_categories (name, slug, description, sort_order, is_active) values
+  ('Cyber Security',        'cyber-security',        'Penetration testing, vulnerability assessment, dan hardening.', 1, true),
+  ('Network Engineering',   'network-engineering',   'Routing, switching, dan network security.',                   2, true),
+  ('System Administration', 'system-administration', 'Server Linux/Windows, scripting, dan monitoring.',             3, true),
+  ('Cloud Computing',       'cloud-computing',       'Arsitektur cloud, deployment, dan high availability.',        4, true),
+  ('IT Support',            'it-support',            'Helpdesk dan troubleshooting hardware/software.',             5, true)
+on conflict (name) do nothing;
+
+-- ============================================================
 -- 3) MODIFIKASI TABEL PROJECTS
 -- ============================================================
 -- Kolom FK baru (nullable — proyek lama tanpa kategori_id tetap valid,
@@ -1420,10 +1432,14 @@ alter table public.site_settings
 
 insert into public.site_settings (key, value) values
   ('hero_title',          'IT Infrastructure & Security Specialist'),
+  ('hero_title_en',       ''),
   ('hero_tagline',        'Cloud · Network · Security Portfolio'),
+  ('hero_tagline_en',     ''),
   ('short_bio',           'Cloud computing, network infrastructure, keamanan siber, dan IT support — membangun sistem yang andal dan aman sejak awal.'),
+  ('short_bio_en',        ''),
   ('availability_status', 'open-to-work'),
   ('about_bio',            ''),
+  ('about_bio_en',         ''),
   ('about_specializations', '[]'),
   ('about_contact_info',   '')
 on conflict (key) do nothing;

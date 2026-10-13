@@ -33,3 +33,34 @@ export async function getSiteSettingValue(key: SiteSettingKey): Promise<string |
   const settings = await getSiteSettings();
   return settings.find((s) => s.key === key)?.value ?? null;
 }
+
+/**
+ * Pilih nilai setting sesuai locale (bilingual ID/EN — batch-3 A1).
+ * Key existing = Bahasa Indonesia; varian Inggris `{key}_en`.
+ * EN non-kosong menang; EN kosong/absen -> fallback nilai ID.
+ * Mengembalikan string sudah di-trim, atau null bila keduanya kosong.
+ */
+export function localizedSetting(
+  settingMap: Map<string, string>,
+  key: string,
+  locale: string,
+): string | null {
+  if (locale === "en") {
+    const en = settingMap.get(`${key}_en`)?.trim();
+    if (en) return en;
+  }
+  return settingMap.get(key)?.trim() || null;
+}
+
+/** Varian async: muat semua settings sekali lalu pilih sesuai locale. */
+export async function getLocalizedSettingValue(
+  key: SiteSettingKey,
+  locale: string,
+): Promise<string | null> {
+  const settings = await getSiteSettings();
+  return localizedSetting(
+    new Map(settings.map((s) => [s.key, s.value])),
+    key,
+    locale,
+  );
+}

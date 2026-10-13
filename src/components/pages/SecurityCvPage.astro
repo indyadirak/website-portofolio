@@ -10,7 +10,7 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import EmailLink from "../EmailLink.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
 import { siteConfig } from "../../lib/config";
-import { getSiteSettingValue } from "../../lib/data/site-settings";
+import { getSiteSettingValue, getLocalizedSettingValue } from "../../lib/data/site-settings";
 import { getCertificates } from "../../lib/data/certificates";
 import { getSkills } from "../../lib/data/skills";
 import { getExperiences } from "../../lib/data/experiences";
@@ -21,8 +21,8 @@ const t = getDictionary(locale);
 const cv = t.cv.securityCv;
 
 const { author, contact } = siteConfig;
-const role = (await getSiteSettingValue("hero_tagline"))?.trim() || t.hero.role;
-const summary = (await getSiteSettingValue("short_bio"))?.trim() || t.about.paragraphs[0];
+const role = (await getLocalizedSettingValue("hero_tagline", locale)) || t.hero.role;
+const summary = (await getLocalizedSettingValue("short_bio", locale)) || t.about.paragraphs[0];
 const availabilityStatus =
   (await getSiteSettingValue("availability_status")) ?? contact.availabilityStatus;
 const available = availabilityStatus !== "not-available";

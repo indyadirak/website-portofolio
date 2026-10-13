@@ -306,8 +306,12 @@ export const demoSkills: Skill[] = demoSiteSkills;
  */
 export const demoSiteSettings: SiteSettingRow[] = [
   { id: "ss-hero-title", key: "hero_title", value: "IT Infrastructure & Security Specialist", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-hero-title-en", key: "hero_title_en", value: "", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
   { id: "ss-hero-tagline", key: "hero_tagline", value: "Cloud · Network · Security Portfolio", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-hero-tagline-en", key: "hero_tagline_en", value: "", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
   { id: "ss-short-bio", key: "short_bio", value: "Cloud computing, network infrastructure, keamanan siber, dan IT support — membangun sistem yang andal dan aman sejak awal.", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-short-bio-en", key: "short_bio_en", value: "", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
+  { id: "ss-about-bio-en", key: "about_bio_en", value: "", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
   { id: "ss-availability", key: "availability_status", value: "open-to-work", created_at: "2025-01-01T00:00:00.000Z", updated_at: "2025-01-01T00:00:00.000Z" },
 ];
 

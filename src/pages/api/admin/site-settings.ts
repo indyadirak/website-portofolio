@@ -13,6 +13,23 @@ export const prerender = false;
 
 const AVAILABILITY_VALUES: AvailabilityStatus[] = ["open-to-work", "not-available"];
 
+/** Batas panjang per key — cermin atribut maxlength form admin settings. */
+const VALUE_MAX_LENGTH: Record<string, number> = {
+  hero_title: 120,
+  hero_title_en: 120,
+  hero_tagline: 120,
+  hero_tagline_en: 120,
+  short_bio: 500,
+  short_bio_en: 500,
+  about_bio: 1000,
+  about_bio_en: 1000,
+  about_contact_info: 500,
+  // Client mengirim JSON.stringify(array) — overhead kurung/koma/petik
+  // diberi headroom agar textarea 1000 char yang valid tidak ditolak.
+  about_specializations: 1100,
+  availability_status: 20,
+};
+
 type GuardResult =
   | { error: Response }
   | {
@@ -86,7 +103,8 @@ export async function PUT({ request, locals }: APIContext) {
   }
 
   const value = typeof body.value === "string" ? body.value.trim() : "";
-  if (value.length > 1000) return json({ ok: false, error: "value_too_long" }, 400);
+  const maxLen = VALUE_MAX_LENGTH[settingKey] ?? 1000;
+  if (value.length > maxLen) return json({ ok: false, error: "value_too_long" }, 400);
 
   if (key === "availability_status" && !(AVAILABILITY_VALUES as string[]).includes(value)) {
     return json({ ok: false, error: "availability_invalid" }, 400);

@@ -37,10 +37,14 @@ alter table public.site_settings
 -- ============================================================
 insert into public.site_settings (key, value) values
   ('hero_title',          'IT Infrastructure & Security Specialist'),
+  ('hero_title_en',       ''),
   ('hero_tagline',        'Cloud · Network · Security Portfolio'),
+  ('hero_tagline_en',     ''),
   ('short_bio',           'Cloud computing, network infrastructure, keamanan siber, dan IT support — membangun sistem yang andal dan aman sejak awal.'),
+  ('short_bio_en',        ''),
   ('availability_status', 'open-to-work'),
   ('about_bio',           ''),
+  ('about_bio_en',        ''),
   ('about_specializations', '[]'),
   ('about_contact_info',  '')
 on conflict (key) do nothing;
