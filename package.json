@@ -17,7 +17,7 @@
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.2",
     "@tailwindcss/vite": "^4.3.3",
-    "astro": "^7.2.0",
+    "astro": "^7.4.2",
     "nanoid": "3.3.18",
     "qrcode": "^1.5.4",
     "tailwindcss": "^4.3.3"
