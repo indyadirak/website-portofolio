@@ -23,7 +23,7 @@ jobs:
       # deprecated, default sekarang Node 24). Dipakai: npm install googleapis
       # + script gdrive-backup.mjs. Sama dengan deploy.yml.
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: 24
 
