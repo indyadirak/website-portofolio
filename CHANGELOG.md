@@ -5,6 +5,21 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
 
 ## Unreleased — Final QA & Fase 3
 
+### CI & Keamanan (Nov 2026)
+- Deploy Cloudflare pulih: lockfile bebas advisory `undici`; gate
+  `npm audit --audit-level=high` kembali hijau.
+- `db-backup.yml` memasang `postgresql-client-17` (PGDG) — memperbaiki
+  kegagalan `pg_dump: server version mismatch` sejak Agustus 2026.
+- `supabase-keep-alive.yml` memakai UA browser + retry; 403 dari Cloudflare
+  WAF diperlakukan sebagai warning, bukan kegagalan DB.
+- Callback status deploy kini non-fatal, retry, dan `--fail-with-body`;
+  Worker merekonsiliasi status lewat GitHub Actions API sehingga banner
+  tidak nyangkut "running" bila callback diblokir WAF.
+- RLS `contact_messages` SELECT dibatasi ke role admin/editor — akun
+  viewer tidak lagi bisa membaca PII pesan kontak (halaman + nav ikut
+  digating).
+- `.nvmrc` Node 24 + `engines.node >= 22.23.4` (syarat Astro 7.4+).
+
 ### Public UX dan Admin Workspace
 - Homepage dipadatkan menjadi alur positioning → featured projects → skills →
   contact CTA; Operations Log/System Status tidak lagi menginterupsi alur utama.

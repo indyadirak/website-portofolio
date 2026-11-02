@@ -288,3 +288,72 @@ Dua temuan LOW dari scanner eksternal dan statusnya:
       Respons statis prerender memakai `cf-ray` sebagai ID edge.
       Korelasikan keduanya saat menelusuri log (Workers Logs / invocation
       logs aktif via `wrangler.toml` observability).
+
+## 12. Troubleshooting CI (workflow merah)
+
+Bagian ini merangkum penyebab kegagalan workflow yang pernah terjadi dan
+perbaikannya, supaya tidak di-debug ulang dari nol.
+
+### 12.1 Deploy gagal di `npm audit (high/critical gate)`
+
+`npm audit --audit-level=high` juga memeriksa dependency build tooling
+(`wrangler` → `miniflare` → `undici`). Advisory baru pada `undici` membuat
+deploy gagal **sebelum** `wrangler deploy` dijalankan — bukan masalah
+Cloudflare. Perbaikan: perbarui lockfile (`npm update wrangler`, atau
+`npm audit fix`) lalu commit `package-lock.json`. Cek lokal:
+`npm audit --audit-level=high` harus `found 0 vulnerabilities`.
+
+### 12.2 Database Backup gagal: `server version mismatch`
+
+Supabase Postgres berjalan di 17.x, sedangkan image runner membawa
+`pg_dump` 16.x. `pg_dump` menolak dump dari server yang lebih baru.
+Workflow `db-backup.yml` memasang `postgresql-client-17` dari repo PGDG.
+Jika kelak Supabase upgrade mayor lagi, naikkan paket client-nya juga
+(`pg_dump --version` di-log oleh step install).
+
+### 12.3 Keep-Alive dapat HTTP 403
+
+403 berasal dari Cloudflare Bot Fight Mode / Managed Challenge yang
+memblokir runner GitHub — bukan database ter-pause. Workflow sekarang
+memakai UA browser + retry dan menganggap 403 sebagai warning (bukan
+kegagalan). Agar ping benar-benar sampai ke Worker (dan DB tetap aktif):
+
+Cloudflare dashboard → domain → **Security → WAF → Custom rules** →
+Create rule:
+
+- Expression: `(http.request.uri.path eq "/api/health")`
+- Action: **Skip** → centang **Managed Challenge**, **Bot Fight Mode**
+  (bila tersedia di plan), dan **Security Level**.
+
+Catatan: pada plan Free, Bot Fight Mode tidak selalu bisa di-skip lewat
+custom rule. Alternatif yang pasti: matikan Bot Fight Mode untuk zona ini,
+atau jalankan keep-alive lewat Supabase Scheduled Function/`pg_cron`
+(`select 1`) yang tidak melewati edge Cloudflare.
+
+### 12.4 Status deploy nyangkut "running" di banner admin
+
+Callback `deploy.yml` → `/api/admin/deploy-status` bisa diblokir WAF
+sebelum sampai ke Worker. Sejak perbaikan ini:
+
+- Step callback bersifat `continue-on-error` + retry + `--fail-with-body`
+  (HTML challenge tidak lagi dianggap sukses).
+- Worker merekonsiliasi status lewat GitHub Actions API
+  (`syncDeployStatusFromGitHub` di `src/lib/deploy.ts`) saat banner
+  polling, lalu clear dirty flag hanya untuk generasi yang di-dispatch.
+- Opsional (lebih cepat, tidak wajib): WAF **Skip** rule untuk
+  `/api/admin/deploy-status` dan `/api/admin/deploy-complete` — keduanya
+  sudah dilindungi `Authorization: Bearer <CMS_DEPLOY_TOKEN>`.
+
+### 12.5 Check "Supabase Preview" gagal (IPv6 timeout)
+
+Check ini berasal dari integrasi Supabase (bukan file workflow) dan
+mencoba connect ke database lewat alamat IPv6 yang tidak bisa dijangkau
+runner. Migrasi repo ini dijalankan manual lewat SQL Editor, jadi check
+preview tidak diperlukan — matikan integrasi preview di dashboard
+Supabase, atau aktifkan IPv4 add-on / gunakan host pooler.
+
+### 12.6 `npm run check` gagal: Node terlalu lama
+
+Astro 7.4+ membutuhkan **Node >= 22.23.4** (CI memakai Node 24). Repo
+menyediakan `.nvmrc` (`24`) dan `engines.node >= 22.23.4`. Jalankan
+`nvm install && nvm use` sebelum `npm run check`.

@@ -137,12 +137,19 @@ create policy "contact_messages_public_insert" on public.contact_messages
   for insert to anon, authenticated
   with check (true);
 
--- Dibaca oleh semua role login (dashboard admin): viewer, editor, admin.
+-- Dibaca HANYA oleh admin/editor (pesan berisi PII pengunjung; viewer
+-- read-only tidak boleh membaca). Role dari public.profiles, bukan JWT.
 drop policy if exists "contact_messages_auth_select" on public.contact_messages;
 
 create policy "contact_messages_auth_select" on public.contact_messages
   for select to authenticated
-  using (true);
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
 
 -- Tulis (tandai dibaca) & hapus: HANYA aal2 + role admin/editor.
 -- Role via subquery public.profiles — JANGAN auth.jwt() ->> 'role'

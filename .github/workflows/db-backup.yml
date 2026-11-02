@@ -27,10 +27,22 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install PostgreSQL client & GPG
+      # Supabase Postgres berjalan di versi 17.x. pg_dump REFUSED bila versi
+      # client lebih lama dari server ("aborting because of server version
+      # mismatch") — ini penyebab 10 backup gagal berturut-turut sejak
+      # 2026-08-30 (runner membawa client 16). Pasang client 17 dari repo
+      # resmi PGDG, jangan mengandalkan paket bawaan image runner.
+      - name: Install PostgreSQL client 17 & GPG
         run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends postgresql-client gpg
+          sudo apt-get install -y --no-install-recommends postgresql-client-17 gpg
+          pg_dump --version
 
       # Hanya skema public (tabel aplikasi: projects, skills, contact_messages,
       # certificates, profiles, login_attempts). Skema auth MILIK SUPABASE

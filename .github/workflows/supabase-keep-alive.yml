@@ -32,11 +32,34 @@ jobs:
         env:
           PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
         run: |
-          RESPONSE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
-            -A "supabase-keep-alive" "${PROD_URL}/api/health")
-          echo "GET /api/health -> HTTP ${RESPONSE}"
-          if [ "$RESPONSE" != "200" ]; then
-            echo "::warning::Diharapkan 200, dapat HTTP ${RESPONSE}. Jika database sudah ter-pause, bangunkan lewat query ringan di Supabase SQL Editor (mis. select 1), lalu jalankan ulang workflow ini."
-            exit 1
+          # UA browser + retry: Cloudflare Bot Fight Mode / Managed Challenge
+          # kadang membalas 403 ke runner GitHub (UA "supabase-keep-alive"
+          # dianggap bot). Retry bertahap + UA browser mengurangi false alarm.
+          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+          RESPONSE="000"
+          for i in 1 2 3 4 5; do
+            RESPONSE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
+              --retry 3 --retry-delay 5 --retry-all-errors \
+              -A "$UA" "${PROD_URL}/api/health")
+            echo "attempt ${i}: GET /api/health -> HTTP ${RESPONSE}"
+            [ "$RESPONSE" = "200" ] && break
+            [ "$i" -lt 5 ] && sleep 20
+          done
+
+          if [ "$RESPONSE" = "200" ]; then
+            echo "Supabase project aktif."
+            exit 0
           fi
-          echo "Supabase project aktif."
+
+          # 403 bertanda tangan Cloudflare (WAF/Bot Fight), BUKAN DB ter-pause.
+          # Jangan gagalkan workflow (yang tadinya memicu alarm palsu berulang);
+          # ping tidak sampai ke Worker, jadi tambahkan WAF Skip rule atau
+          # matikan Bot Fight untuk path /api/health (dokumentasi:
+          # docs/DEPLOYMENT.md § Troubleshooting CI).
+          if [ "$RESPONSE" = "403" ]; then
+            echo "::warning::GET /api/health dibalas 403 oleh Cloudflare (WAF/Bot Fight). Ping tidak sampai ke database — tambahkan WAF Skip rule untuk /api/health. Bukan kegagalan DB."
+            exit 0
+          fi
+
+          echo "::error::Diharapkan HTTP 200, dapat ${RESPONSE}. Jika database sudah ter-pause, bangunkan lewat query ringan di Supabase SQL Editor (mis. select 1), lalu jalankan ulang workflow ini."
+          exit 1
