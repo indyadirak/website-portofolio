@@ -11,6 +11,7 @@ export const id: Dictionary = {
     security: "Keamanan",
     contact: "Kontak",
     blog: "Blog",
+    wiki: "Wiki",
     downloadCv: "Unduh CV",
     menu: "menu",
   },

@@ -13,6 +13,7 @@ export interface Dictionary {
     security: string;
     contact: string;
     blog: string;
+    wiki: string;
     downloadCv: string;
     menu: string;
   };
