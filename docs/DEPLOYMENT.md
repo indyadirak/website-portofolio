@@ -103,11 +103,18 @@ Generate nilai acak (PowerShell):
 > sisanya *secret* sejati yang hanya boleh hidup sebagai runtime secret Worker.
 > Penjelasan lengkap & tabel padanan: **README.md → 🗝️ Filosofi Keamanan Kunci API**.
 
-### Variables (1)
+### Variables (2)
 
 | Variable | Nilai |
 |---|---|
-| `BACKUP_CONFIG_URL` | URL worker, mis. `https://website-portofolio.<subdomain>.workers.dev` (atau custom domain) — dipakai workflow untuk mengambil konfigurasi Drive dari GUI |
+| `BACKUP_CONFIG_URL` | URL worker, mis. `https://website-portofolio.<subdomain>.workers.dev` — dipakai workflow untuk mengambil konfigurasi Drive dari GUI |
+| `WORKER_ORIGIN_URL` | Origin `workers.dev` Worker (mis. `https://website-portofolio.<subdomain>.workers.dev`). Dipakai callback status deploy & ping keep-alive karena **tidak melewati WAF custom domain**. Bila kosong, workflow memakai URL workers.dev yang di-hardcode. |
+
+> Di repo ini `PROD_URL` dan `BACKUP_CONFIG_URL` juga ada sebagai **secret**.
+> Workflow membaca variable lebih dulu lalu fallback ke secret
+> (`vars.X || secrets.X`), jadi keduanya berfungsi. Untuk callback mesin-ke-mesin
+> selalu pakai origin `workers.dev` — custom domain bisa membalas 403
+> (managed challenge) ke runner GitHub.
 
 ### Legacy (opsional — hanya bila tidak memakai GUI admin)
 - [ ] `GDRIVE_SERVICE_ACCOUNT_KEY` (JSON key SA, base64 satu baris) + `GDRIVE_BACKUP_FOLDER_ID` — masih didukung sebagai fallback, tapi GUI admin adalah jalur utama
@@ -315,11 +322,14 @@ Jika kelak Supabase upgrade mayor lagi, naikkan paket client-nya juga
 
 403 berasal dari Cloudflare Bot Fight Mode / Managed Challenge yang
 memblokir runner GitHub — bukan database ter-pause. Workflow sekarang
-memakai UA browser + retry dan menganggap 403 sebagai warning (bukan
-kegagalan). Agar ping benar-benar sampai ke Worker (dan DB tetap aktif):
+memakai UA browser + retry, mencoba **origin `workers.dev` lebih dulu**
+(`WORKER_ORIGIN_URL`, tidak melewati WAF custom domain), lalu fallback ke
+custom domain. Dengan begitu ping benar-benar sampai ke Worker dan query
+`/api/health` menyentuh database.
 
-Cloudflare dashboard → domain → **Security → WAF → Custom rules** →
-Create rule:
+Bila keduanya tetap 403, workflow hanya memberi warning (bukan gagal).
+Opsi tambahan: WAF **Skip** rule untuk `/api/health` di Cloudflare
+dashboard → domain → **Security → WAF → Custom rules** → Create rule:
 
 - Expression: `(http.request.uri.path eq "/api/health")`
 - Action: **Skip** → centang **Managed Challenge**, **Bot Fight Mode**
@@ -332,17 +342,30 @@ atau jalankan keep-alive lewat Supabase Scheduled Function/`pg_cron`
 
 ### 12.4 Status deploy nyangkut "running" di banner admin
 
-Callback `deploy.yml` → `/api/admin/deploy-status` bisa diblokir WAF
+Callback `deploy.yml` → `/api/admin/deploy-status` dulu diblokir WAF
 sebelum sampai ke Worker. Sejak perbaikan ini:
 
-- Step callback bersifat `continue-on-error` + retry + `--fail-with-body`
-  (HTML challenge tidak lagi dianggap sukses).
+- Callback memakai origin `workers.dev` (`WORKER_ORIGIN_URL`) yang tidak
+  melewati WAF custom domain, sehingga status benar-benar sampai.
+- Step callback tetap `continue-on-error` + retry + `--fail-with-body`
+  (HTML challenge tidak dianggap sukses).
 - Worker merekonsiliasi status lewat GitHub Actions API
   (`syncDeployStatusFromGitHub` di `src/lib/deploy.ts`) saat banner
-  polling, lalu clear dirty flag hanya untuk generasi yang di-dispatch.
-- Opsional (lebih cepat, tidak wajib): WAF **Skip** rule untuk
-  `/api/admin/deploy-status` dan `/api/admin/deploy-complete` — keduanya
-  sudah dilindungi `Authorization: Bearer <CMS_DEPLOY_TOKEN>`.
+  polling — jaring pengaman bila callback tetap gagal — lalu clear dirty
+  flag hanya untuk generasi yang di-dispatch.
+- Verifikasi security header juga fallback ke `workers.dev` bila custom
+  domain membalas 403 ke runner (Worker & header yang sama).
+- Opsional: WAF **Skip** rule untuk `/api/admin/deploy-status` dan
+  `/api/admin/deploy-complete` — keduanya sudah dilindungi
+  `Authorization: Bearer <CMS_DEPLOY_TOKEN>`.
+
+### 12.4b Backup Drive selalu ter-skip
+
+Penyebab: workflow membaca `vars.BACKUP_CONFIG_URL`, sedangkan di repo ini
+nilainya disimpan sebagai **secret** — `vars.*` kosong, sehingga
+`BACKUP_FETCH_URL` kosong dan `gdrive-backup.mjs` skip tanpa error. Workflow
+kini membaca `vars.BACKUP_CONFIG_URL || secrets.BACKUP_CONFIG_URL`. Pastikan
+URL-nya memakai origin `workers.dev` agar tidak diblokir WAF.
 
 ### 12.5 Check "Supabase Preview" gagal (IPv6 timeout)
 

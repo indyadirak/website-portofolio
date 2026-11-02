@@ -30,34 +30,41 @@ jobs:
     steps:
       - name: Ping /api/health (memicu query DB nyata)
         env:
-          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
+          # Origin workers.dev dipakai lebih dulu: domain custom bisa diblokir
+          # WAF/Bot Fight untuk runner GitHub (403 managed challenge), sehingga
+          # ping tidak pernah sampai ke Worker dan database tidak "tersentuh".
+          WORKER_ORIGIN_URL: ${{ vars.WORKER_ORIGIN_URL || 'https://website-portofolio.indyadirak.workers.dev' }}
+          PROD_URL: ${{ vars.PROD_URL || secrets.PROD_URL || 'https://portofolio.indyadirak.com' }}
         run: |
           # UA browser + retry: Cloudflare Bot Fight Mode / Managed Challenge
           # kadang membalas 403 ke runner GitHub (UA "supabase-keep-alive"
-          # dianggap bot). Retry bertahap + UA browser mengurangi false alarm.
+          # dianggap bot).
+          WORKER_ORIGIN_URL="${WORKER_ORIGIN_URL%/}"
+          PROD_URL="${PROD_URL%/}"
           UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
           RESPONSE="000"
-          for i in 1 2 3 4 5; do
-            RESPONSE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
-              --retry 3 --retry-delay 5 --retry-all-errors \
-              -A "$UA" "${PROD_URL}/api/health")
-            echo "attempt ${i}: GET /api/health -> HTTP ${RESPONSE}"
+          USED="none"
+          for base in "$WORKER_ORIGIN_URL" "$PROD_URL"; do
+            for i in 1 2 3; do
+              RESPONSE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
+                --retry 2 --retry-delay 5 --retry-all-errors \
+                -A "$UA" "${base}/api/health")
+              echo "attempt ${i} via ${base}: GET /api/health -> HTTP ${RESPONSE}"
+              if [ "$RESPONSE" = "200" ]; then USED="$base"; break; fi
+              [ "$i" -lt 3 ] && sleep 10
+            done
             [ "$RESPONSE" = "200" ] && break
-            [ "$i" -lt 5 ] && sleep 20
           done
 
           if [ "$RESPONSE" = "200" ]; then
-            echo "Supabase project aktif."
+            echo "Supabase project aktif (via ${USED})."
             exit 0
           fi
 
           # 403 bertanda tangan Cloudflare (WAF/Bot Fight), BUKAN DB ter-pause.
-          # Jangan gagalkan workflow (yang tadinya memicu alarm palsu berulang);
-          # ping tidak sampai ke Worker, jadi tambahkan WAF Skip rule atau
-          # matikan Bot Fight untuk path /api/health (dokumentasi:
-          # docs/DEPLOYMENT.md § Troubleshooting CI).
+          # Jangan gagalkan workflow (yang tadinya memicu alarm palsu berulang).
           if [ "$RESPONSE" = "403" ]; then
-            echo "::warning::GET /api/health dibalas 403 oleh Cloudflare (WAF/Bot Fight). Ping tidak sampai ke database — tambahkan WAF Skip rule untuk /api/health. Bukan kegagalan DB."
+            echo "::warning::GET /api/health dibalas 403 oleh Cloudflare (WAF/Bot Fight) di kedua origin. Ping tidak sampai ke database — tambahkan WAF Skip rule untuk /api/health bila memakai custom domain. Bukan kegagalan DB."
             exit 0
           fi
 

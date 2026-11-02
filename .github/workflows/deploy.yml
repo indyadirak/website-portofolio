@@ -26,9 +26,16 @@ jobs:
     # petakan ke job-level env dulu, lalu `if: env.X != ''` (job env
     # tersedia di konteks `if`; step-level env TIDAK).
     env:
-      # URL produksi dipakai step callback status & verifikasi header.
-      # Bisa dioverride lewat repo variable PROD_URL.
-      PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
+      # URL publik (custom domain) untuk verifikasi header.
+      # Dukung variable maupun secret (repo ini menyimpan PROD_URL sebagai
+      # secret, sehingga `vars.PROD_URL` selalu kosong).
+      PROD_URL: ${{ vars.PROD_URL || secrets.PROD_URL || 'https://portofolio.indyadirak.com' }}
+      # Origin workers.dev LANGSUNG. Domain custom di belakang Cloudflare
+      # WAF/Bot Fight bisa membalas 403 ke runner GitHub (managed challenge),
+      # sehingga callback status & ping tidak pernah sampai ke Worker.
+      # workers.dev tidak melewati WAF zona custom domain → reliabel untuk
+      # callback mesin-ke-mesin. Bisa dioverride via repo variable.
+      WORKER_ORIGIN_URL: ${{ vars.WORKER_ORIGIN_URL || 'https://website-portofolio.indyadirak.workers.dev' }}
       TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
       PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -65,7 +72,7 @@ jobs:
           curl -sS --fail-with-body --max-time 20 \
             --retry 5 --retry-delay 5 --retry-all-errors \
             -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
-            -X POST "$PROD_URL/api/admin/deploy-status" \
+            -X POST "${WORKER_ORIGIN_URL%/}/api/admin/deploy-status" \
             -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"state\": \"running\", \"run_id\": \"${{ github.run_id }}\"}"
@@ -175,23 +182,34 @@ jobs:
       # mengikuti redirect dan `-D -` untuk menangkap header respons final,
       # lalu periksa status dengan pola toleran versi HTTP.
       - name: Verify security headers (production)
-        env:
-          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
+        # Verifikasi ke custom domain; bila Cloudflare WAF memblokir runner
+        # (403 managed challenge), ulangi ke origin workers.dev — Worker yang
+        # sama, kode & header yang sama, tanpa WAF zona custom domain.
         run: |
+          PROD_URL="${PROD_URL%/}"
+          WORKER_ORIGIN_URL="${WORKER_ORIGIN_URL%/}"
           for path in "/" "/certificates"; do
             ok=0
             last="none"
-            for i in 1 2 3 4 5 6 7 8; do
-              # || true + --max-time: curl error sesaat (TLS reset, edge
-              # propagation) tidak membunuh step lewat bash -e sebelum
-              # kesempatan retry habis.
-              # UA browser biasa (bukan "header-check"): Bot Fight Mode /
-              # WAF Cloudflare sering memblokir UA non-browser dengan 403.
-              H="$(curl -sSL -o /dev/null -D - --max-time 20 -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" "${PROD_URL}${path}" || true)"
-              last="$(printf '%s' "$H" | tr -d '\r' | grep -oiE '^HTTP/[0-9.]+ [0-9]+' | tail -1)"
-              echo "attempt ${i} untuk ${path}: ${last:-no-response}"
-              if printf '%s' "$H" | tr -d '\r' | grep -qiE "^HTTP/[12] 200"; then ok=1; break; fi
-              if [ "$i" -lt 8 ]; then sleep 15; fi
+            used="none"
+            for base in "$PROD_URL" "$WORKER_ORIGIN_URL"; do
+              # Custom domain cukup 2 percobaan (WAF biasanya menolak
+              # konsisten); workers.dev 3 percobaan untuk gangguan sesaat.
+              if [ "$base" = "$PROD_URL" ]; then tries=2; else tries=3; fi
+              for i in 1 2 3; do
+                [ "$i" -le "$tries" ] || break
+                # || true + --max-time: curl error sesaat (TLS reset, edge
+                # propagation) tidak membunuh step lewat bash -e sebelum
+                # kesempatan retry habis.
+                # UA browser biasa (bukan "header-check"): Bot Fight Mode /
+                # WAF Cloudflare sering memblokir UA non-browser dengan 403.
+                H="$(curl -sSL -o /dev/null -D - --max-time 20 -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" "${base}${path}" || true)"
+                last="$(printf '%s' "$H" | tr -d '\r' | grep -oiE '^HTTP/[0-9.]+ [0-9]+' | tail -1)"
+                echo "attempt ${i}/${tries} untuk ${path} via ${base}: ${last:-no-response}"
+                if printf '%s' "$H" | tr -d '\r' | grep -qiE "^HTTP/[12] 200"; then ok=1; used="$base"; break; fi
+                if [ "$i" -lt "$tries" ]; then sleep 5; fi
+              done
+              [ "$ok" = "1" ] && break
             done
             if [ "$ok" != "1" ]; then
               # 403 dari domain publik hampir selalu berarti Bot Fight Mode /
@@ -199,13 +217,16 @@ jobs:
               # Worker di atas sudah sukses). Jangan gagalkan workflow;
               # verifikasi header manual di browser sebagai gantinya.
               if [ "$last" = "HTTP/2 403" ] || [ "$last" = "HTTP/1.1 403" ]; then
-                echo "::warning::${path} membalas 403 — kemungkinan proteksi bot/WAF memblokir runner GitHub. Deploy Worker tetap sukses; cek Security Events di Cloudflare dan verifikasi header manual."
+                echo "::warning::${path} membalas 403 di kedua origin — kemungkinan proteksi bot/WAF memblokir runner GitHub. Deploy Worker tetap sukses; cek Security Events di Cloudflare dan verifikasi header manual."
                 continue
               fi
               echo "::error::fetch gagal untuk ${path} (status terakhir: ${last})"
               exit 1
             fi
-            echo "=== ${path} (HTTP OK) ==="
+            if [ "$used" = "$WORKER_ORIGIN_URL" ]; then
+              echo "::warning::${path} diverifikasi lewat origin workers.dev karena custom domain diblokir WAF untuk runner GitHub."
+            fi
+            echo "=== ${path} (HTTP OK via ${used}) ==="
             for h in "content-security-policy" "strict-transport-security" "x-content-type-options: nosniff" "x-frame-options: deny"; do
               if printf '%s' "$H" | grep -qi "$h"; then
                 echo "OK: $h"
@@ -287,7 +308,7 @@ jobs:
           curl -sS --fail-with-body --max-time 20 \
             --retry 5 --retry-delay 5 --retry-all-errors \
             -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
-            -X POST "$PROD_URL/api/admin/deploy-complete" \
+            -X POST "${WORKER_ORIGIN_URL%/}/api/admin/deploy-complete" \
             -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"gen\": \"${{ inputs.gen }}\", \"run_id\": \"${{ github.run_id }}\"}"
@@ -309,7 +330,7 @@ jobs:
           curl -sS --fail-with-body --max-time 20 \
             --retry 5 --retry-delay 5 --retry-all-errors \
             -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
-            -X POST "$PROD_URL/api/admin/deploy-status" \
+            -X POST "${WORKER_ORIGIN_URL%/}/api/admin/deploy-status" \
             -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"state\": \"failed\", \"run_id\": \"${{ github.run_id }}\"}"
