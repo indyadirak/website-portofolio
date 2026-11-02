@@ -150,6 +150,14 @@ export type DeployTriggerStatus = "triggered" | "cooldown" | "unavailable";
  */
 const DEPLOY_STATUS_KEY = "deploy:status";
 
+/**
+ * Generasi dirty-flag yang ikut di-dispatch (disimpan saat trigger manual).
+ * Dipakai rekonsiliasi status: saat GitHub melaporkan run sukses, Worker
+ * clear dirty flag HANYA untuk generasi ini — mutasi baru selama deploy
+ * (gen berbeda) tetap ditandai "belum di-publish".
+ */
+const DEPLOY_DISPATCH_GEN_KEY = "deploy:dispatch-gen";
+
 export type DeployRunState = "idle" | "requested" | "running" | "success" | "failed";
 
 export interface DeployRunStatus {
@@ -221,6 +229,131 @@ export async function getDeployStatus(): Promise<DeployRunStatus> {
     console.error("[deploy-status] getDeployStatus gagal:", err);
     return DEPLOY_STATUS_IDLE;
   }
+}
+
+// =====================================================================
+// REKONSILIASI STATUS DENGAN GITHUB ACTIONS
+//
+// Callback dari workflow (deploy-status / deploy-complete) bisa diblokir
+// Cloudflare Bot Fight / WAF sebelum sampai ke Worker — dulu akibatnya
+// status nyangkut "running" selamanya dan dirty flag tidak ter-clear.
+// Sebagai sumber kebenaran cadangan, Worker membaca status run langsung
+// dari GitHub Actions API (token yang sama dipakai untuk dispatch).
+//
+// Hanya berjalan selama state "requested"/"running" (banner sedang
+// polling) sehingga tidak menambah panggilan API saat idle.
+// =====================================================================
+
+interface GitHubWorkflowRun {
+  id: number;
+  /** queued | in_progress | completed | waiting | requested | pending */
+  status: string;
+  /** success | failure | cancelled | skipped | timed_out | ... (null saat belum selesai) */
+  conclusion: string | null;
+  created_at: string;
+}
+
+const GITHUB_STATUS_UA = "website-portofolio-deploy-status";
+
+async function githubJson<T>(token: string, url: string): Promise<T | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "User-Agent": GITHUB_STATUS_UA,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    if (!res.ok) {
+      console.warn(`[deploy-status] GitHub API HTTP ${res.status}`);
+      return null;
+    }
+    return (await res.json()) as T;
+  } catch (err) {
+    console.warn("[deploy-status] GitHub API gagal:", err);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function readDispatchedGen(): Promise<string | undefined> {
+  try {
+    const kv = env.RATE_LIMIT_KV;
+    if (!kv) return undefined;
+    return (await kv.get(DEPLOY_DISPATCH_GEN_KEY)) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function clearDispatchedGen(): Promise<void> {
+  try {
+    await env.RATE_LIMIT_KV?.delete(DEPLOY_DISPATCH_GEN_KEY);
+  } catch {
+    // best-effort
+  }
+}
+
+/**
+ * Sinkronkan status deploy dari GitHub Actions. Tidak pernah throw.
+ * Mengembalikan status terbaru (atau status lama bila tidak bisa sync).
+ */
+export async function syncDeployStatusFromGitHub(): Promise<DeployRunStatus> {
+  const current = await getDeployStatus();
+  if (current.state !== "requested" && current.state !== "running") return current;
+
+  const token = env.CMS_DEPLOY_TOKEN;
+  if (!token) return current;
+
+  const base = `https://api.github.com/repos/${repoFullName()}/actions`;
+  let run: GitHubWorkflowRun | null = null;
+
+  if (current.runId) {
+    run = await githubJson<GitHubWorkflowRun>(token, `${base}/runs/${current.runId}`);
+  }
+
+  if (!run) {
+    // run_id belum dikenal (baru "requested") atau API run tunggal gagal —
+    // ambil run terbaru, tapi hanya yang dibuat dekat waktu trigger agar
+    // tidak salah membaca run lama.
+    const list = await githubJson<{ workflow_runs?: GitHubWorkflowRun[] }>(
+      token,
+      `${base}/workflows/deploy.yml/runs?branch=main&per_page=5`
+    );
+    const runs = list?.workflow_runs ?? [];
+    const since = current.startedAt ? current.startedAt - 2 * 60 * 1000 : 0;
+    run = runs.find((r) => Date.parse(r.created_at) >= since) ?? null;
+  }
+
+  if (!run) return current;
+
+  const runId = String(run.id);
+
+  if (run.status === "completed") {
+    if (run.conclusion === "success") {
+      await setDeployStatus("success", runId);
+      // Clear hanya generasi yang ikut di-dispatch (mutasi baru di sela
+      // deploy tetap ditandai). Sama seperti callback deploy-complete.
+      const gen = await readDispatchedGen();
+      await clearDeployDirty(gen);
+      await clearDispatchedGen();
+    } else {
+      await setDeployStatus("failed", runId);
+      await clearDispatchedGen();
+    }
+    return getDeployStatus();
+  }
+
+  // queued/in_progress — pastikan banner punya run_id untuk link Actions.
+  // Hindari tulis KV berulang bila status tidak berubah.
+  if (current.runId === runId && current.state === "running") return current;
+  await setDeployStatus("running", runId);
+  return getDeployStatus();
 }
 
 /** URL halaman Actions untuk run tertentu (atau daftar run workflow). */
@@ -316,6 +449,11 @@ export async function requestSiteDeploy(source: string): Promise<DeployTriggerRe
       try {
         await kv.put(DEPLOY_LAST_KEY, String(now), {
           expirationTtl: Math.ceil(DEPLOY_TRIGGER_COOLDOWN_MS / 1000) + 60,
+        });
+        // Simpan gen yang di-dispatch agar rekonsiliasi status (polling
+        // GitHub) bisa clear dirty flag secara aman saat run sukses.
+        await kv.put(DEPLOY_DISPATCH_GEN_KEY, dispatchGen, {
+          expirationTtl: 6 * 60 * 60,
         });
       } catch (err) {
         console.error("[deploy-trigger] KV write gagal (deploy tetap jalan):", err);

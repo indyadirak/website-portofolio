@@ -26,6 +26,9 @@ jobs:
     # petakan ke job-level env dulu, lalu `if: env.X != ''` (job env
     # tersedia di konteks `if`; step-level env TIDAK).
     env:
+      # URL produksi dipakai step callback status & verifikasi header.
+      # Bisa dioverride lewat repo variable PROD_URL.
+      PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
       TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
       PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -43,12 +46,26 @@ jobs:
       # LAPOR STATUS: tandai deploy "running" di Worker agar banner admin
       # bisa menampilkan progres live (polling /api/admin/deploy-status).
       # run_id dikirim agar banner bisa link langsung ke run tersebut.
+      #
+      # NON-FATAL + anti-WAF-challenge: Cloudflare Bot Fight Mode / Managed
+      # Challenge kadang membalas 403 ke runner GitHub. Karena Worker juga
+      # merekonsiliasi status lewat GitHub Actions API
+      # (syncDeployStatusFromGitHub), kegagalan callback di sini TIDAK boleh
+      # menggagalkan deploy. Retry + UA browser + --fail-with-body dipakai
+      # supaya kegagalan terdeteksi (bukan HTML challenge yang dianggap sukses).
       - name: Report deploy started
+        continue-on-error: true
         env:
-          WORKER_URL: https://portofolio.indyadirak.com
           DEPLOY_CALLBACK_TOKEN: ${{ secrets.CMS_DEPLOY_TOKEN }}
         run: |
-          curl -sS -X POST "$WORKER_URL/api/admin/deploy-status" \
+          if [ -z "$DEPLOY_CALLBACK_TOKEN" ]; then
+            echo "::warning::CMS_DEPLOY_TOKEN kosong — report status dilewati."
+            exit 0
+          fi
+          curl -sS --fail-with-body --max-time 20 \
+            --retry 5 --retry-delay 5 --retry-all-errors \
+            -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+            -X POST "$PROD_URL/api/admin/deploy-status" \
             -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"state\": \"running\", \"run_id\": \"${{ github.run_id }}\"}"
@@ -259,24 +276,40 @@ jobs:
       # dari HEAD terbaru, jadi konten sela itu ikut ter-deploy.
       - name: Clear dirty flag (deploy sukses)
         if: success()
+        continue-on-error: true
         env:
-          WORKER_URL: https://portofolio.indyadirak.com
           DEPLOY_CALLBACK_TOKEN: ${{ secrets.CMS_DEPLOY_TOKEN }}
         run: |
-          curl -sS -X POST "$WORKER_URL/api/admin/deploy-complete" \
+          if [ -z "$DEPLOY_CALLBACK_TOKEN" ]; then
+            echo "::warning::CMS_DEPLOY_TOKEN kosong — clear dirty flag dilewati."
+            exit 0
+          fi
+          curl -sS --fail-with-body --max-time 20 \
+            --retry 5 --retry-delay 5 --retry-all-errors \
+            -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+            -X POST "$PROD_URL/api/admin/deploy-complete" \
             -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"gen\": \"${{ inputs.gen }}\", \"run_id\": \"${{ github.run_id }}\"}"
 
       # LAPOR STATUS: bila ada step yang gagal, tandai "failed" agar banner
       # menampilkannya — tanpa ini status macet di "running".
+      # NON-FATAL: bila callback diblokir WAF, Worker merekonsiliasi status
+      # dari GitHub Actions API saat banner polling.
       - name: Report deploy failed
         if: failure()
+        continue-on-error: true
         env:
-          WORKER_URL: https://portofolio.indyadirak.com
           DEPLOY_CALLBACK_TOKEN: ${{ secrets.CMS_DEPLOY_TOKEN }}
         run: |
-          curl -sS -X POST "$WORKER_URL/api/admin/deploy-status" \
+          if [ -z "$DEPLOY_CALLBACK_TOKEN" ]; then
+            echo "::warning::CMS_DEPLOY_TOKEN kosong — report status dilewati."
+            exit 0
+          fi
+          curl -sS --fail-with-body --max-time 20 \
+            --retry 5 --retry-delay 5 --retry-all-errors \
+            -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+            -X POST "$PROD_URL/api/admin/deploy-status" \
             -H "Authorization: Bearer $DEPLOY_CALLBACK_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"state\": \"failed\", \"run_id\": \"${{ github.run_id }}\"}"

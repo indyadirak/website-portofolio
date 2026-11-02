@@ -17,9 +17,13 @@ if (!user) {
 const locale = localeFromPathname(Astro.url.pathname) ?? "id";
 const t = getDictionary(locale);
 
-// Bisa dilihat semua role login (selaras policy RLS select-all-roles);
-// tombol aksi hanya untuk admin/editor (selaras policy RLS update/delete).
+// HANYA admin/editor — selaras policy RLS contact_messages SELECT
+// (pesan berisi PII pengunjung; role viewer tidak boleh membaca).
+// Defense-in-depth: RLS tetap menolak di level database.
 const canManage = canManageMessages(profile);
+if (!canManage) {
+  return Astro.redirect("/403");
+}
 
 // Anti-500: gagal baca DB tidak boleh meruntuhkan halaman admin.
 let messages: ContactMessagesRow[] = [];

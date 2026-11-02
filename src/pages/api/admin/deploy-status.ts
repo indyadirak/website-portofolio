@@ -5,8 +5,8 @@ import { getSupabaseFromLocals, json } from "../../../lib/api";
 import { hasRole } from "../../../lib/auth";
 import {
   deployActionsUrl,
-  getDeployStatus,
   setDeployStatus,
+  syncDeployStatusFromGitHub,
 } from "../../../lib/deploy";
 
 export const prerender = false;
@@ -23,6 +23,10 @@ function tokenMatches(expected: string | undefined, provided: string | null): bo
  * GET /api/admin/deploy-status — baca status run deploy terakhir.
  * HANYA admin (read-only). Dipakai polling oleh DirtyBanner.
  *
+ * Status direkonsiliasi dengan GitHub Actions API bila masih
+ * "requested"/"running" — callback dari workflow bisa diblokir
+ * Cloudflare WAF, dan banner tidak boleh nyangkut di "running".
+ *
  *   -> { ok: true, status: { state, runId, startedAt, updatedAt, actionsUrl } }
  */
 export async function GET({ locals }: APIContext) {
@@ -35,7 +39,7 @@ export async function GET({ locals }: APIContext) {
   if (!hasRole(profile, "admin")) {
     return json({ ok: false, error: "forbidden_role" }, 403);
   }
-  const status = await getDeployStatus();
+  const status = await syncDeployStatusFromGitHub();
   return json({
     ok: true,
     status: { ...status, actionsUrl: deployActionsUrl(status.runId) },

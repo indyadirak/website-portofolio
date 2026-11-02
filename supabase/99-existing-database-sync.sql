@@ -185,14 +185,22 @@ create policy "contact_messages_public_insert"
   to anon, authenticated
   with check (true);
 
--- Read access follows the current single-owner CMS model. Review this policy
--- before granting viewer accounts to external users because messages contain PII.
+-- Read access follows the current single-owner CMS model. HANYA admin/editor:
+-- messages contain visitor PII, so the read-only "viewer" role must not see
+-- them. Role is read from public.profiles (never from an untrusted JWT claim).
 drop policy if exists "contact_messages_auth_select" on public.contact_messages;
 create policy "contact_messages_auth_select"
   on public.contact_messages
   for select
   to authenticated
-  using (true);
+  using (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role in ('admin', 'editor')
+    )
+  );
 
 -- Mutations require an AAL2 session and an admin/editor profile. The role is
 -- deliberately read from public.profiles, never from an untrusted JWT role claim.

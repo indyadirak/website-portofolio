@@ -26,7 +26,7 @@ const contentItems = [
   { key: "writeups", label: t.adminLayout.navWriteups, href: "/admin/writeups", icon: "≡" },
   { key: "certificates", label: t.adminLayout.navViewCertificates, href: "/admin/certificates", icon: "✦" },
   { key: "messages", label: t.adminLayout.navMessages, href: "/admin/messages", icon: "@" },
-];
+].filter((item) => item.key !== "messages" || role === "admin" || role === "editor");
 const systemItems = [
   { key: "settings", label: t.adminLayout.navSettings, href: "/admin/settings", icon: "⚙" },
   { key: "experiences", label: t.adminLayout.navExperiences, href: "/admin/experiences", icon: "◷" },
