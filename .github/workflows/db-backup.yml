@@ -86,7 +86,9 @@ jobs:
       # Sumber kredensial (script gdrive-backup.mjs):
       #   1. PREFERENSI — GUI admin: config diambil dari endpoint
       #      /api/backup-config (worker). Butuh:
-      #        - vars.BACKUP_CONFIG_URL   = URL worker (mis. https://xxx.workers.dev)
+      #        - vars/secrets.BACKUP_CONFIG_URL = URL worker
+      #          (mis. https://xxx.workers.dev — pakai origin workers.dev
+      #          agar tidak diblokir WAF custom domain untuk runner)
       #        - secrets.BACKUP_FETCH_TOKEN (sama dengan runtime secret
       #          BACKUP_FETCH_TOKEN yang di-set deploy.yml ke Worker)
       #   2. FALLBACK lama — secrets.GDRIVE_SERVICE_ACCOUNT_KEY (base64 JSON)
@@ -96,7 +98,9 @@ jobs:
         if: env.BACKUP_FETCH_TOKEN != '' || env.GDRIVE_SERVICE_ACCOUNT_KEY != ''
         continue-on-error: true
         env:
-          BACKUP_FETCH_URL: ${{ vars.BACKUP_CONFIG_URL }}
+          # Repo ini menyimpan URL di secret, bukan variable — dukung
+          # keduanya supaya upload Drive tidak lagi ter-skip diam-diam.
+          BACKUP_FETCH_URL: ${{ vars.BACKUP_CONFIG_URL || secrets.BACKUP_CONFIG_URL }}
           BACKUP_FETCH_TOKEN: ${{ secrets.BACKUP_FETCH_TOKEN }}
           GDRIVE_SERVICE_ACCOUNT_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
           GDRIVE_BACKUP_FOLDER_ID: ${{ secrets.GDRIVE_BACKUP_FOLDER_ID }}

@@ -1,0 +1,69 @@
+# Terapkan migration RLS `contact_messages` ke database LIVE.
+#
+# Dibuat karena migrasi repo ini tidak memakai Supabase CLI/`db push`
+# (jalur manual SQL Editor). Workflow ini SEMPIT dengan sengaja:
+#   - hanya `workflow_dispatch` (manual, oleh maintainer),
+#   - hanya menjalankan SATU file tetap yang idempotent
+#     (supabase/contact-messages-rls-tighten.sql) — tidak ada input SQL
+#     bebas, sehingga tidak menjadi jalur eksekusi SQL arbitrer,
+#   - setelah mengaplikasikan, mencetak definisi policy sebagai bukti.
+#
+# Butuh secret `SUPABASE_DB_URL` (SESSION POOLER port 5432 + sslmode=require),
+# sama dengan db-backup.yml.
+name: Apply contact_messages RLS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apply-rls:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Supabase Postgres 17.x: client 17 dari PGDG (client bawaan runner
+      # terlalu tua untuk DDL/pg_dump ke server 17).
+      - name: Install PostgreSQL client 17
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+          psql --version
+
+      - name: Apply RLS migration
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::secret SUPABASE_DB_URL kosong — tidak bisa menerapkan migration."
+            exit 1
+          fi
+          # ON_ERROR_STOP: berhenti pada error pertama (jangan lanjut diam-diam).
+          # File bersifat idempotent (drop policy if exists + create policy).
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
+            -f supabase/contact-messages-rls-tighten.sql
+
+      - name: Verify policy
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          \echo === policy contact_messages ===
+          select polname,
+                 polcmd,
+                 pg_get_expr(polqual, polrelid) as using_expr
+          from pg_policy
+          where polrelid = 'public.contact_messages'::regclass
+          order by polname;
+          SQL

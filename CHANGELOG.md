@@ -14,7 +14,12 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
   WAF diperlakukan sebagai warning, bukan kegagalan DB.
 - Callback status deploy kini non-fatal, retry, dan `--fail-with-body`;
   Worker merekonsiliasi status lewat GitHub Actions API sehingga banner
-  tidak nyangkut "running" bila callback diblokir WAF.
+  tidak nyangkut "running" bila callback diblokir WAF. Callback & ping
+  memakai origin `workers.dev` (`WORKER_ORIGIN_URL`) yang tidak melewati
+  WAF custom domain; verifikasi header fallback ke origin yang sama.
+- `db-backup.yml` membaca `vars.BACKUP_CONFIG_URL || secrets.BACKUP_CONFIG_URL`
+  — sebelumnya URL tersimpan sebagai secret sehingga upload Drive selalu
+  ter-skip diam-diam.
 - RLS `contact_messages` SELECT dibatasi ke role admin/editor — akun
   viewer tidak lagi bisa membaca PII pesan kontak (halaman + nav ikut
   digating).
