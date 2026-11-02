@@ -11,6 +11,7 @@ export const en: Dictionary = {
     security: "Security",
     contact: "Contact",
     blog: "Blog",
+    wiki: "Wiki",
     downloadCv: "Download CV",
     menu: "menu",
   },
