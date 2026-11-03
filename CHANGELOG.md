@@ -26,6 +26,8 @@ Hanya perubahan struktural/keamanan/fitur besar yang dicatat di sini.
 - `.nvmrc` Node 24 + `engines.node >= 22.23.4` (syarat Astro 7.4+).
 
 ### Public UX dan Admin Workspace
+- Header: link Wiki eksternal dihapus dari nav desktop & menu mobile agar
+  tidak terlalu padat; akses Wiki tetap tersedia di footer.
 - Homepage dipadatkan menjadi alur positioning → featured projects → skills →
   contact CTA; Operations Log/System Status tidak lagi menginterupsi alur utama.
 - Header public dipangkas dengan memindahkan Security ke footer; footer sekarang
