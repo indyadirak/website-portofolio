@@ -39,7 +39,7 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends postgresql-client-17
-          psql --version
+          /usr/lib/postgresql/17/bin/psql --version
 
       - name: Apply RLS migration
         env:
@@ -51,14 +51,14 @@ jobs:
           fi
           # ON_ERROR_STOP: berhenti pada error pertama (jangan lanjut diam-diam).
           # File bersifat idempotent (drop policy if exists + create policy).
-          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
+          /usr/lib/postgresql/17/bin/psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \
             -f supabase/contact-messages-rls-tighten.sql
 
       - name: Verify policy
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          /usr/lib/postgresql/17/bin/psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
           \echo === policy contact_messages ===
           select polname,
                  polcmd,

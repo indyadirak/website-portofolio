@@ -314,9 +314,13 @@ Cloudflare. Perbaikan: perbarui lockfile (`npm update wrangler`, atau
 
 Supabase Postgres berjalan di 17.x, sedangkan image runner membawa
 `pg_dump` 16.x. `pg_dump` menolak dump dari server yang lebih baru.
-Workflow `db-backup.yml` memasang `postgresql-client-17` dari repo PGDG.
-Jika kelak Supabase upgrade mayor lagi, naikkan paket client-nya juga
-(`pg_dump --version` di-log oleh step install).
+Workflow `db-backup.yml` memasang `postgresql-client-17` dari repo PGDG
+**dan memanggil binary versi eksplisit**
+(`/usr/lib/postgresql/17/bin/pg_dump`). Ini penting: `/usr/bin/pg_dump`
+adalah `pg_wrapper` yang di image runner tetap memilih client 16 yang
+sudah terpasang lebih dulu — sekadar `apt-get install postgresql-client-17`
+tidak cukup. Jika kelak Supabase upgrade mayor lagi, naikkan paket client
+dan path binary-nya (`pg_dump --version` di-log oleh step install).
 
 ### 12.3 Keep-Alive dapat HTTP 403
 
@@ -366,6 +370,11 @@ nilainya disimpan sebagai **secret** — `vars.*` kosong, sehingga
 `BACKUP_FETCH_URL` kosong dan `gdrive-backup.mjs` skip tanpa error. Workflow
 kini membaca `vars.BACKUP_CONFIG_URL || secrets.BACKUP_CONFIG_URL`. Pastikan
 URL-nya memakai origin `workers.dev` agar tidak diblokir WAF.
+
+Setelah URL benar, endpoint `/api/backup-config` bisa saja menjawab
+"konfigurasi Drive belum diisi di GUI admin" — itu berarti pipeline sudah
+tersambung dan tinggal mengisi Service Account + folder Drive di
+**Admin → Backup** (lihat §6).
 
 ### 12.5 Check "Supabase Preview" gagal (IPv6 timeout)
 
