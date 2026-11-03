@@ -42,7 +42,10 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends postgresql-client-17 gpg
-          pg_dump --version
+          # /usr/bin/pg_dump adalah pg_wrapper dan di image runner tetap
+          # memilih client 16 yang sudah terpasang lebih dulu. Verifikasi
+          # binary versi eksplisit yang akan dipakai step dump.
+          /usr/lib/postgresql/17/bin/pg_dump --version
 
       # Hanya skema public (tabel aplikasi: projects, skills, contact_messages,
       # certificates, profiles, login_attempts). Skema auth MILIK SUPABASE
@@ -61,7 +64,15 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          pg_dump "$SUPABASE_DB_URL" \
+          # Pakai binary 17 eksplisit: `pg_dump` di PATH adalah pg_wrapper
+          # yang tetap memilih client 16 bawaan image runner → server 17.6
+          # menolak dump ("aborting because of server version mismatch").
+          PGBIN=/usr/lib/postgresql/17/bin
+          if [ ! -x "$PGBIN/pg_dump" ]; then
+            echo "::error::$PGBIN/pg_dump tidak ada — step install client 17 gagal."
+            exit 1
+          fi
+          "$PGBIN/pg_dump" "$SUPABASE_DB_URL" \
             --schema=public \
             --no-owner --no-privileges \
             -f backup.sql
