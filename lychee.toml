@@ -1,0 +1,28 @@
+# Konfigurasi lychee untuk pemeriksaan tautan berkala situs produksi.
+# Dijalankan oleh .github/workflows/link-check.yml (mingguan + manual).
+# Bukan gate deploy: hasilnya hanya menandai run merah bila ada tautan mati.
+
+# Batasi konkurensi agar tidak membebani domain eksternal (rate limit).
+max_concurrency = 4
+# Retry ringan untuk kegagalan jaringan sesaat (bukan tautan mati permanen).
+max_retries = 2
+retry_wait_time = 2
+# Batas waktu per request (detik).
+timeout = 30
+
+# Status yang dianggap sehat. Redirect (3xx) diikuti lychee secara default,
+# jadi yang diperiksa adalah status respons final.
+accept = [200, 204, 206]
+
+# Jangan periksa anchor-only (#...), email, dan host lokal.
+include_fragments = false
+exclude = [
+  "^mailto:",
+  "^#",
+  "localhost",
+  "^https?://127\\.0\\.0\\.1",
+  "^https?://\\[::1\\]",
+  # LinkedIn membalas 403 ke crawler (bot-walled). Tautannya tetap
+  # diverifikasi manual saat menambah/mengubah profil.
+  "^https?://([a-z0-9-]+\\.)?linkedin\\.com/",
+]
