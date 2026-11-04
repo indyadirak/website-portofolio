@@ -1,7 +1,9 @@
 import type { APIContext } from "astro";
 import { getSupabaseFromLocals, json } from "../../../lib/api";
 import { getUserProfile, resolveMfaStatus, canManageCertificates } from "../../../lib/auth";
+import { isLoginTurnstileDisabled } from "../../../lib/config";
 import { loginAttemptGuard } from "../../../lib/rateLimit";
+import { verifyTurnstileToken } from "../../../lib/turnstile";
 import { recordLoginAttempt } from "../../../lib/audit";
 
 export const prerender = false;
@@ -9,6 +11,8 @@ export const prerender = false;
 interface LoginBody {
   email?: string;
   password?: string;
+  /** Token Turnstile dari widget di /admin/login (opsional di dev). */
+  turnstileToken?: string;
 }
 
 /**
@@ -24,6 +28,13 @@ interface LoginBody {
  * Pesan 429/503 generik (tidak membocorkan validitas email).
  * Percobaan yang DITOLAK dicatat ke login_attempts sebagai status
  * "blocked" + blocked_reason, TANPA menyimpan kredensial (email NULL).
+ *
+ * Anti-bot Turnstile (lapisan tambahan, BUKAN pengganti rate limiter):
+ *   Urutan: rate-limit guard -> Turnstile -> kredensial.
+ *   Token diverifikasi lewat siteverify yang sama dengan /api/contact.
+ *   Bila gagal, respons disamakan dengan kredensial salah (generik) agar
+ *   tidak membocorkan alasan penolakan. Saklar darurat:
+ *   env LOGIN_TURNSTILE_DISABLED=true melewati verifikasi (rate limit tetap).
  */
 export async function POST({ request, locals }: APIContext) {
   const supabase = getSupabaseFromLocals(locals);
@@ -47,6 +58,8 @@ export async function POST({ request, locals }: APIContext) {
 
   const email = body.email?.trim().toLowerCase() ?? "";
   const password = typeof body.password === "string" ? body.password : "";
+  const turnstileToken =
+    typeof body.turnstileToken === "string" ? body.turnstileToken : "";
 
   if (!email || !password) {
     return json({ ok: false, error: "email_dan_password_wajib_diisi" }, 400);
@@ -79,6 +92,23 @@ export async function POST({ request, locals }: APIContext) {
       { ok: false, error: "too_many_attempts", retryAfterSec: decision.retryAfterSec ?? 0 },
       429
     );
+  }
+
+  // ===== Turnstile (setelah rate limit, SEBELUM kredensial) =====
+  // Bila widget dikonfigurasi (siteKey ada), token wajib valid. Respons
+  // gagal disamakan dengan kredensial salah supaya alasan tidak bocor.
+  if (!isLoginTurnstileDisabled()) {
+    const turnstileResult = await verifyTurnstileToken(turnstileToken, ip);
+    if (!turnstileResult.ok && turnstileResult.reason !== "not_configured") {
+      await recordLoginAttempt(locals.supabase, {
+        email: null,
+        ip,
+        userAgent,
+        status: "blocked",
+        blockedReason: "turnstile_failed",
+      });
+      return json({ ok: false, error: "kredensial_salah" }, 401);
+    }
   }
 
   const { data, error } = await locals.supabase.auth.signInWithPassword({ email, password });

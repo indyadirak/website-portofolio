@@ -98,3 +98,22 @@ export function getTurnstileSecretKey(): string {
   }
   return "";
 }
+
+/**
+ * Saklar darurat Turnstile khusus login admin.
+ * Default: tidak diset = Turnstile AKTIF. Set env/secret Worker
+ * `LOGIN_TURNSTILE_DISABLED=true` untuk melewati verifikasi bila layanan
+ * Turnstile bermasalah (agar pemilik tidak terkunci total).
+ * Ini hanya melompati Turnstile — rate limiter & lockout login tetap jalan.
+ */
+export function isLoginTurnstileDisabled(): boolean {
+  const runtime = env as unknown as Record<string, unknown>;
+  const raw = runtime.LOGIN_TURNSTILE_DISABLED;
+  if (typeof raw === "string") return raw.trim().toLowerCase() === "true";
+  if (import.meta.env.DEV) {
+    return (
+      String(import.meta.env.LOGIN_TURNSTILE_DISABLED ?? "").trim().toLowerCase() === "true"
+    );
+  }
+  return false;
+}

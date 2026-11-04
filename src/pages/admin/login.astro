@@ -1,6 +1,7 @@
 ---
 import AuthLayout from "../../layouts/AuthLayout.astro";
 import MfaEnrollPanel from "../../components/admin/MfaEnrollPanel.astro";
+import { turnstile } from "../../lib/config";
 
 export const prerender = false;
 
@@ -56,6 +57,16 @@ const errorParam = Astro.url.searchParams.get("error");
             placeholder="••••••••"
           />
         </label>
+        {
+          turnstile.siteKey && (
+            <div
+              id="login-turnstile"
+              class="cf-turnstile"
+              data-sitekey={turnstile.siteKey}
+              data-language="id"
+            ></div>
+          )
+        }
         <button
           type="submit"
           class="w-full rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50"
@@ -103,6 +114,8 @@ const errorParam = Astro.url.searchParams.get("error");
   </section>
 </AuthLayout>
 
+<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
+
 <script>
   const loginForm = document.getElementById("login-form") as HTMLFormElement;
   const emailInput = document.getElementById("login-email") as HTMLInputElement;
@@ -118,6 +131,86 @@ const errorParam = Astro.url.searchParams.get("error");
 
   let factorId: string | null = null;
 
+  // ===== Turnstile — pola sama dengan ContactForm.astro =====
+  // Widget dirender eksplisit (script api.js dimuat `is:inline src`, domain
+  // sudah di-allowlist CSP). Token dikirim bersama body JSON ke API login.
+  const widgetEl = document.getElementById("login-turnstile");
+  type TurnstileApi = {
+    render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+    getResponse: (id?: string) => string;
+    reset: (id: string) => void;
+  };
+
+  let widgetId: string | null = null;
+  let turnstileToken = "";
+  let renderStarted = false;
+
+  function turnstileApi(): TurnstileApi | undefined {
+    return (window as unknown as { turnstile?: TurnstileApi }).turnstile;
+  }
+
+  function setLoginEnabled(enabled: boolean): void {
+    loginBtn.disabled = !enabled;
+  }
+
+  function clearToken(): void {
+    turnstileToken = "";
+  }
+
+  /** Token Turnstile sekali pakai — reset setelah submit gagal. */
+  function resetWidget(): void {
+    if (widgetId) turnstileApi()?.reset(widgetId);
+    clearToken();
+    if (widgetEl) setLoginEnabled(false);
+  }
+
+  function renderTurnstile(): void {
+    if (renderStarted || !widgetEl) return;
+    const api = turnstileApi();
+    if (!api) return;
+    renderStarted = true;
+    try {
+      widgetId = api.render(widgetEl, {
+        sitekey: widgetEl.dataset.sitekey,
+        theme: "dark",
+        language: widgetEl.dataset.language,
+        callback: (token: string) => {
+          turnstileToken = token;
+          setLoginEnabled(true);
+        },
+        "expired-callback": () => {
+          clearToken();
+          setLoginEnabled(false);
+        },
+        "error-callback": () => {
+          clearToken();
+          setLoginEnabled(false);
+        },
+      });
+    } catch {
+      renderStarted = false;
+      setLoginEnabled(false);
+    }
+  }
+
+  if (widgetEl) {
+    // Belum ada token -> tombol terkunci sampai widget selesai.
+    setLoginEnabled(false);
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      if (turnstileApi()) {
+        renderTurnstile();
+        window.clearInterval(timer);
+      } else if (Date.now() - startedAt > 10_000) {
+        // API gagal dimuat: biarkan user mencoba, API server tetap menolak
+        // tanpa token (fail closed) dengan pesan generik.
+        window.clearInterval(timer);
+      }
+    }, 200);
+  } else {
+    setLoginEnabled(true);
+  }
+
   function showStatus(message: string, ok = false): void {
     statusEl.textContent = `$ ${message}`;
     statusEl.classList.toggle("text-cyber-primary", ok);
@@ -127,6 +220,13 @@ const errorParam = Astro.url.searchParams.get("error");
   // ===== Langkah 1: email + password -> /api/auth/login =====
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    // Widget ada tetapi token belum siap -> jangan kirim request.
+    if (widgetEl && !turnstileToken) {
+      showStatus("selesaikan verifikasi keamanan terlebih dahulu");
+      return;
+    }
+
     loginBtn.disabled = true;
     showStatus("verifying...");
 
@@ -139,6 +239,7 @@ const errorParam = Astro.url.searchParams.get("error");
         body: JSON.stringify({
           email: emailInput.value.trim(),
           password: passwordInput.value,
+          turnstileToken,
         }),
       });
       data = await res.json();
@@ -151,6 +252,9 @@ const errorParam = Astro.url.searchParams.get("error");
     loginBtn.disabled = false;
 
     if (!res.ok || !data.ok) {
+      // Token Turnstile sekali pakai; reset agar percobaan berikutnya
+      // memakai token baru (termasuk saat server menolak secara generik).
+      resetWidget();
       // Pesan GENERIK untuk penolakan rate limiter — tidak membocorkan
       // apakah email terdaftar atau tidak (anti enumerasi akun).
       const generic = {
