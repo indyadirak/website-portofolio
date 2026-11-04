@@ -2,6 +2,7 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import SectionHeading from "../SectionHeading.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
@@ -45,7 +46,11 @@ const panelClass = "rounded border border-cyber-border bg-cyber-card p-6 md:p-8"
 const panelTitleClass = "font-mono text-sm text-cyber-accent";
 ---
 
-<MainLayout title={t.security.title} description={t.security.description}>
+<MainLayout
+  title={t.security.title}
+  description={t.security.description}
+  image={ogImagePath(locale, "security")}
+>
   <div class="mx-auto max-w-4xl px-6 py-16">
     <SectionHeading
       eyebrow={t.security.eyebrow}

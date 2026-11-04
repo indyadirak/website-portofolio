@@ -3,6 +3,7 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { getProjects } from "../../lib/data/projects";
 import { getDictionary, localeFromUrl, type Locale } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 import type { Project } from "../../lib/types";
 
 interface Props {
@@ -23,6 +24,7 @@ const related = allProjects
 <MainLayout
   title={project.title}
   description={project.summary}
+  image={ogImagePath(locale, "project", project.slug)}
 >
   <article class="mx-auto max-w-3xl px-6 py-16">
     <p class="font-mono text-sm text-cyber-accent">$ cat ./projects/{project.slug}.md</p>

@@ -2,6 +2,7 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import CaseStudyContent from "../CaseStudyContent.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 import type { Writeup } from "../../lib/types";
 
 interface Props {
@@ -114,7 +115,11 @@ const fmt = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "id-ID", {
 });
 ---
 
-<MainLayout title={`${writeup.title} — Write-up`} description={writeup.findings.slice(0, 160)}>
+<MainLayout
+  title={`${writeup.title} — Write-up`}
+  description={writeup.findings.slice(0, 160)}
+  image={ogImagePath(locale, "writeup", writeup.slug)}
+>
   <div class="mx-auto max-w-3xl px-6 py-16">
     <a
       href={backHref}

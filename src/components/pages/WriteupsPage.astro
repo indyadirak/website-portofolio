@@ -3,6 +3,7 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import SectionHeading from "../SectionHeading.astro";
 import TerminalEmptyState from "../ui/TerminalEmptyState.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 import { getWriteups } from "../../lib/data/writeups";
 import type { Writeup } from "../../lib/types";
 
@@ -34,7 +35,11 @@ function formatDate(value: string): string {
 }
 ---
 
-<MainLayout title={t.writeups.title} description={t.writeups.subtitle}>
+<MainLayout
+  title={t.writeups.title}
+  description={t.writeups.subtitle}
+  image={ogImagePath(locale, "writeups")}
+>
   <div class="reveal mx-auto max-w-4xl px-6 py-16">
     <SectionHeading
       eyebrow={t.writeups.eyebrow}

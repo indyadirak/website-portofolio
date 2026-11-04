@@ -4,6 +4,7 @@ import SectionHeading from "../SectionHeading.astro";
 import EmailLink from "../EmailLink.astro";
 import CtaSection from "../CtaSection.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { siteConfig } from "../../lib/config";
 import { getExperiences } from "../../lib/data/experiences";
@@ -43,7 +44,11 @@ const fmtDate = (d: string) => (d ? d.slice(0, 7).replace("-", "/") : "????/??")
 const hostOf = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "");
 ---
 
-<MainLayout title={t.about.title} description={t.meta.about}>
+<MainLayout
+  title={t.about.title}
+  description={t.meta.about}
+  image={ogImagePath(locale, "about")}
+>
   <div class="reveal mx-auto max-w-3xl px-6 py-16">
     <SectionHeading eyebrow={t.about.eyebrow} title={t.about.title} />
 

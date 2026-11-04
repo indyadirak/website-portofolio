@@ -4,6 +4,7 @@ import SectionHeading from "../SectionHeading.astro";
 import ContactForm from "../ContactForm.astro";
 import EmailLink from "../EmailLink.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 import { siteConfig } from "../../lib/config";
 
 const locale = localeFromUrl(Astro.url);
@@ -13,6 +14,7 @@ const t = getDictionary(locale);
 <MainLayout
   title={t.contact.title}
   description={t.meta.contact}
+  image={ogImagePath(locale, "contact")}
 >
   <div class="reveal mx-auto max-w-3xl px-6 py-16">
     <SectionHeading

@@ -3,6 +3,7 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import SectionHeading from "../SectionHeading.astro";
 import CertificatesGrid from "../CertificatesGrid.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { siteConfig } from "../../lib/config";
 import { getCertificates } from "../../lib/data/certificates";
@@ -49,7 +50,11 @@ const collectionJsonLd = {
 const collectionJsonLdJson = JSON.stringify(collectionJsonLd).replace(/</g, "\\u003c");
 ---
 
-<MainLayout title={t.certificates.title} description={t.meta.certificates}>
+<MainLayout
+  title={t.certificates.title}
+  description={t.meta.certificates}
+  image={ogImagePath(locale, "certificates")}
+>
   <div class="reveal mx-auto max-w-5xl px-6 py-16">
     <SectionHeading
       eyebrow={t.certificates.eyebrow}

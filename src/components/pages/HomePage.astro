@@ -11,6 +11,7 @@ import { getSkills } from "../../lib/data/skills";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
 import { siteConfig } from "../../lib/config";
 import { getRelativeLocaleUrl } from "astro:i18n";
+import { ogImagePath } from "../../lib/og";
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
@@ -23,7 +24,7 @@ const termProjects = featuredProjects.map((p) => ({ title: p.title, slug: p.slug
 const termSkills = skills.map((s) => ({ name: s.name, category: s.category }));
 ---
 
-<MainLayout title={siteConfig.name} description={t.meta.home}>
+<MainLayout title={siteConfig.name} description={t.meta.home} image={ogImagePath(locale, "home")}>
   <Hero />
 
   <section id="expertise" class="reveal mx-auto max-w-6xl px-6 py-16">
