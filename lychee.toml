@@ -17,7 +17,8 @@ user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 accept = [200, 204, 206]
 
 # Jangan periksa anchor-only (#...), email, dan host lokal.
-include_fragments = false
+# lychee 0.24 mengubah tipe ini dari boolean menjadi enum string.
+include_fragments = "none"
 exclude = [
   "^mailto:",
   "^#",
