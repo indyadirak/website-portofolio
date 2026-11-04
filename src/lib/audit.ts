@@ -1,7 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { LoginBlockedReason } from "./rateLimit";
 
 export type LoginAttemptStatus = "success" | "failed" | "blocked";
+
+/**
+ * Alasan baris login_attempts berstatus "blocked".
+ * - lockout        : rate limiter / lockout progresif
+ * - kv_unavailable : KV rate limiter tidak tersedia (fail-closed)
+ * - turnstile_failed: token Turnstile tidak ada/tidak valid
+ */
+export type LoginBlockedReason = "lockout" | "kv_unavailable" | "turnstile_failed";
 
 export interface LoginAttempt {
   /** Kredensial yang dicoba — NULL untuk baris blocked (privacy: jangan

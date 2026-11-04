@@ -544,8 +544,9 @@ create table if not exists public.login_attempts (
   -- 'blocked' = ditolak rate limiter/lockout/KV-unavailable (email NULL,
   -- kredensial TIDAK disimpan untuk baris ini — privacy).
   status         text not null check (status in ('success', 'failed', 'blocked')),
-  -- Alasan penolakan untuk status 'blocked': 'lockout' | 'kv_unavailable'.
-  blocked_reason text check (blocked_reason in ('lockout', 'kv_unavailable')),
+  -- Alasan penolakan untuk status 'blocked':
+  -- 'lockout' | 'kv_unavailable' | 'turnstile_failed'.
+  blocked_reason text check (blocked_reason in ('lockout', 'kv_unavailable', 'turnstile_failed')),
   attempted_at   timestamptz not null default now()
 );
 
