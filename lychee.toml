@@ -9,6 +9,8 @@ max_retries = 2
 retry_wait_time = 2
 # Batas waktu per request (detik).
 timeout = 30
+# UA browser: sebagian situs eksternal menolak UA non-browser (403).
+user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 
 # Status yang dianggap sehat. Redirect (3xx) diikuti lychee secara default,
 # jadi yang diperiksa adalah status respons final.
