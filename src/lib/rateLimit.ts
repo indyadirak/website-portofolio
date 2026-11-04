@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * =====================================================================
@@ -676,6 +677,106 @@ export const ADMIN_MUTATION_LIMITS = {
   TTL_BUFFER_SEC: 60,
 } as const;
 
+/**
+ * =====================================================================
+ * KEBIJAKAN UMUR SESI ADMIN
+ * =====================================================================
+ * - SESSION_MAX_AGE_SECONDS: umur maksimum cookie sesi Supabase (7 hari).
+ *   Diterapkan di createServerSupabase() (src/lib/auth.ts) dan dipaksa
+ *   ulang saat setAll agar tidak ada jalur yang memperpanjang ke 400 hari.
+ * - STEP_UP_MAX_AGE_MS: mutasi admin hanya boleh bila TOTP terverifikasi
+ *   dalam 24 jam terakhir. Dibaca dari klaim JWT (amr / auth_time).
+ */
+export const ADMIN_SESSION_POLICY = {
+  SESSION_MAX_AGE_SECONDS: 7 * 24 * 60 * 60,
+  STEP_UP_MAX_AGE_MS: 24 * 60 * 60 * 1000,
+} as const;
+
+/** Ringkasan keamanan sesi yang dibaca dari klaim JWT (bukan dari cookie mentah). */
+export interface AdminSessionSecurity {
+  aal: "aal1" | "aal2";
+  /** Waktu verifikasi TOTP terakhir (epoch ms), null bila tidak tercatat. */
+  mfaVerifiedAtMs: number | null;
+  /** Waktu autentikasi awal (epoch ms), null bila klaim tidak tersedia. */
+  authTimeMs: number | null;
+}
+
+/** Metode AMR yang dihitung sebagai verifikasi TOTP (Supabase: totp / mfa/totp). */
+const TOTP_AMR_METHODS = new Set(["totp", "mfa/totp"]);
+
+/**
+ * Baca klaim sesi via getClaims() — token DIVERIFIKASI (lokal untuk kunci
+ * asimetris, atau ke server Auth untuk secret simetris), bukan sekadar
+ * decode base64. Mengembalikan null bila klaim tidak bisa dibaca.
+ *
+ * Catatan: `amr` dapat berupa string[] (RFC 8176) atau objek
+ * {method,timestamp}. Hanya bentuk objek yang punya timestamp — bila project
+ * hanya mengirim string[], step-up tidak bisa dihitung dan guard menolak
+ * dengan step_up_required (pemilik cukup verifikasi TOTP ulang).
+ */
+export async function readAdminSessionSecurity(
+  supabase: SupabaseClient
+): Promise<AdminSessionSecurity | null> {
+  try {
+    const { data, error } = await supabase.auth.getClaims();
+    if (error || !data?.claims) return null;
+
+    const claims = data.claims as Record<string, unknown>;
+    const aal: "aal1" | "aal2" = claims.aal === "aal2" ? "aal2" : "aal1";
+
+    let mfaVerifiedAtMs: number | null = null;
+    const amr = claims.amr;
+    if (Array.isArray(amr)) {
+      for (const entry of amr) {
+        if (!entry || typeof entry !== "object") continue;
+        const method = (entry as { method?: unknown }).method;
+        const timestamp = (entry as { timestamp?: unknown }).timestamp;
+        if (typeof method !== "string" || typeof timestamp !== "number") continue;
+        if (!TOTP_AMR_METHODS.has(method)) continue;
+        mfaVerifiedAtMs = Math.max(mfaVerifiedAtMs ?? 0, timestamp * 1000);
+      }
+    }
+
+    const authTimeMs =
+      typeof claims.auth_time === "number" ? claims.auth_time * 1000 : null;
+
+    return { aal, mfaVerifiedAtMs, authTimeMs };
+  } catch (err) {
+    console.error("[adminmut-guard] Gagal membaca klaim sesi:", err);
+    return null;
+  }
+}
+
+/**
+ * Saklar darurat step-up: set env/secret Worker `STEP_UP_MFA_DISABLED=true`
+ * untuk mematikan syarat TOTP 24 jam (mis. pemilik terkunci dari dashboard).
+ * Default tidak diset = step-up AKTIF. Rate limiter mutasi tetap berjalan.
+ */
+function isStepUpDisabled(): boolean {
+  const runtime = env as unknown as Record<string, unknown>;
+  const raw = runtime.STEP_UP_MFA_DISABLED;
+  if (typeof raw === "string") return raw.trim().toLowerCase() === "true";
+  if (import.meta.env.DEV) {
+    return (
+      String(import.meta.env.STEP_UP_MFA_DISABLED ?? "").trim().toLowerCase() === "true"
+    );
+  }
+  return false;
+}
+
+/** Apakah step-up 24 jam terpenuhi? */
+function isStepUpFresh(security: AdminSessionSecurity | null): boolean {
+  if (isStepUpDisabled()) return true;
+  if (!security || security.aal !== "aal2") return false;
+
+  const verifiedAtMs = security.mfaVerifiedAtMs ?? security.authTimeMs;
+  if (verifiedAtMs === null) return false;
+
+  const age = Date.now() - verifiedAtMs;
+  // Toleransi kecil untuk clock skew; umur negatif (klaim masa depan) ditolak.
+  return age >= -60_000 && age <= ADMIN_SESSION_POLICY.STEP_UP_MAX_AGE_MS;
+}
+
 const ADMIN_MUTATION_WINDOW_SEC = Math.max(
   1,
   Math.ceil(ADMIN_MUTATION_LIMITS.WINDOW_MS / 1000)
@@ -684,7 +785,7 @@ const ADMIN_MUTATION_WINDOW_SEC = Math.max(
 export interface AdminMutationDecision {
   allowed: boolean;
   /** Alasan penolakan saat !allowed (konsisten dengan guard login). */
-  reason?: "kv_unavailable";
+  reason?: "kv_unavailable" | "step_up_required";
   /** Estimasi detik hingga boleh mutasi lagi (hanya saat ditolak). */
   retryAfterSec?: number;
 }
@@ -693,8 +794,32 @@ export const adminMutationGuard = {
   // Fallback dev-only in-memory (identik behavior, tanpa KV).
   _dev: new Map<string, Entry>(),
 
+  /**
+   * Varian utama untuk endpoint: baca klaim sesi (TOTP 24 jam) lalu hitung
+   * rate limit. Step-up diperiksa SEBELUM limiter supaya sesi basi tidak
+   * menghabiskan kuota mutasi.
+   */
+  async checkWithSession(
+    supabase: SupabaseClient,
+    identifier: string
+  ): Promise<AdminMutationDecision> {
+    // Saat saklar darurat aktif, jangan buang latensi ke getClaims().
+    if (isStepUpDisabled()) return this.check(identifier, null);
+
+    const security = await readAdminSessionSecurity(supabase);
+    return this.check(identifier, security);
+  },
+
   /** Cek + hitung setiap mutasi (increment per panggilan). FAIL-CLOSED. */
-  async check(identifier: string): Promise<AdminMutationDecision> {
+  async check(
+    identifier: string,
+    security: AdminSessionSecurity | null
+  ): Promise<AdminMutationDecision> {
+    // ===== Step-up MFA: wajib aal2 + TOTP <= 24 jam =====
+    if (!isStepUpFresh(security)) {
+      return { allowed: false, reason: "step_up_required" };
+    }
+
     const kv = env.RATE_LIMIT_KV;
     const now = Date.now();
     const storageKey = `ratelimit:adminmut:${identifier}`;

@@ -41,9 +41,12 @@ async function guard(
   if (write && !(await isAal2Session(supabase))) {
     return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
-  const decision = await adminMutationGuard.check(user.id);
+  const decision = await adminMutationGuard.checkWithSession(supabase, user.id);
   if (decision.reason === "kv_unavailable") {
     return { error: json({ ok: false, error: "service_unavailable" }, 503) };
+  }
+  if (decision.reason === "step_up_required") {
+    return { error: json({ ok: false, error: "step_up_required" }, 403) };
   }
   if (!decision.allowed) {
     return { error: json({ ok: false, error: "too_many_requests" }, 429) };
@@ -66,9 +69,12 @@ async function guardAdminOnly(
   if (write && !(await isAal2Session(supabase))) {
     return { error: json({ ok: false, error: "mfa_required" }, 403) };
   }
-  const decision = await adminMutationGuard.check(user.id);
+  const decision = await adminMutationGuard.checkWithSession(supabase, user.id);
   if (decision.reason === "kv_unavailable") {
     return { error: json({ ok: false, error: "service_unavailable" }, 503) };
+  }
+  if (decision.reason === "step_up_required") {
+    return { error: json({ ok: false, error: "step_up_required" }, 403) };
   }
   if (!decision.allowed) {
     return { error: json({ ok: false, error: "too_many_requests" }, 429) };

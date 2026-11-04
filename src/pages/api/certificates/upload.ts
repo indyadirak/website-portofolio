@@ -122,10 +122,13 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "mfa_required" }, 403);
   }
 
-  const mutationDecision = await adminMutationGuard.check(user.id);
+  const mutationDecision = await adminMutationGuard.checkWithSession(supabase, user.id);
   if (mutationDecision.reason === "kv_unavailable") {
     // FAIL-CLOSED: KV limiter tidak terjangkau -> tolak, jangan proses tanpa proteksi.
     return json({ ok: false, error: "service_unavailable" }, 503);
+  }
+  if (mutationDecision.reason === "step_up_required") {
+    return json({ ok: false, error: "step_up_required" }, 403);
   }
   if (!mutationDecision.allowed) {
     return json({ ok: false, error: "too_many_requests" }, 429);
@@ -229,10 +232,13 @@ export async function PUT({ request, locals }: APIContext) {
     return json({ ok: false, error: "mfa_required" }, 403);
   }
 
-  const mutationDecision = await adminMutationGuard.check(user.id);
+  const mutationDecision = await adminMutationGuard.checkWithSession(supabase, user.id);
   if (mutationDecision.reason === "kv_unavailable") {
     // FAIL-CLOSED: KV limiter tidak terjangkau -> tolak, jangan proses tanpa proteksi.
     return json({ ok: false, error: "service_unavailable" }, 503);
+  }
+  if (mutationDecision.reason === "step_up_required") {
+    return json({ ok: false, error: "step_up_required" }, 403);
   }
   if (!mutationDecision.allowed) {
     return json({ ok: false, error: "too_many_requests" }, 429);
