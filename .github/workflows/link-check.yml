@@ -1,0 +1,75 @@
+# Pemeriksaan tautan berkala (lychee) terhadap SITUS PRODUKSI.
+#
+# Kenapa terpisah dari deploy:
+#   - Crawl ratusan URL eksternal lambat dan rawan flaky (403 bot-wall,
+#     timeout sesaat). Karena itu BUKAN gate deploy dan TIDAK jalan di PR.
+#   - Sumber kebenaran adalah sitemap produksi — yang benar-benar dilihat
+#     pengunjung, bukan file lokal.
+#
+# Jadwal: mingguan (Senin 03:00 UTC) + workflow_dispatch.
+# Bila ada tautan mati, lychee mengembalikan exit code != 0 sehingga run
+# tampil merah. Ringkasan ditulis ke job summary + artefak laporan.
+#
+# Aksi di-pin ke commit SHA (sama seperti workflow lain) agar build
+# deterministik dan tidak terkena tag yang bergerak.
+name: Link Check
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Ambil daftar URL dari sitemap produksi. Sitemap memuat semua halaman
+      # publik (statis + detail project) dalam kedua locale.
+      - name: Fetch sitemap URLs
+        env:
+          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
+        run: |
+          curl -fsSL --max-time 30 "${PROD_URL}/sitemap.xml" -o sitemap.xml
+          # Ekstrak nilai <loc>…</loc> menjadi satu URL per baris.
+          grep -oE '<loc>[^<]+</loc>' sitemap.xml | sed -E 's#</?loc>##g' > urls.txt
+          echo "Jumlah URL dari sitemap: $(wc -l < urls.txt)"
+          cat urls.txt
+          # Gagal cepat bila sitemap kosong — lebih jelas daripada lychee
+          # "no links found".
+          test -s urls.txt
+
+      - name: Lychee link check
+        id: lychee
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
+        with:
+          args: >-
+            --config lychee.toml
+            --no-progress
+            --verbose
+            --format markdown
+            --output lychee/results.md
+            urls.txt
+          # Run merah bila ada tautan mati (terlihat di tab Actions).
+          fail: true
+          # Ringkasan langsung di halaman run.
+          jobSummary: true
+          format: markdown
+          output: lychee/results.md
+
+      - name: Upload laporan
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: lychee-report
+          path: lychee/results.md
+          if-no-files-found: warn
+          retention-days: 30
