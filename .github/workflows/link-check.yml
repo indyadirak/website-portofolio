@@ -83,7 +83,6 @@ jobs:
             --no-progress
             --verbose
             --format markdown
-            --output lychee/results.md
             urls.txt
           # Run merah bila ada tautan mati (terlihat di tab Actions).
           fail: true
