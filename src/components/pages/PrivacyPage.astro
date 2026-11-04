@@ -2,6 +2,7 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import SectionHeading from "../SectionHeading.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
@@ -21,6 +22,7 @@ const sections = [
 <MainLayout
   title={t.privacy.title}
   description={t.privacy.description}
+  image={ogImagePath(locale, "privacy")}
 >
   <div class="mx-auto max-w-3xl px-6 py-16">
     <SectionHeading

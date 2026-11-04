@@ -5,6 +5,7 @@ import ProjectGrid from "../ProjectGrid.astro";
 import TerminalEmptyState from "../ui/TerminalEmptyState.astro";
 import { getProjects, getProjectCategories } from "../../lib/data/projects";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 
 const locale = localeFromUrl(Astro.url);
 const t = getDictionary(locale);
@@ -33,7 +34,11 @@ const featuredProjects = projects.filter((p) => p.featured);
 const secondaryProjects = projects.filter((p) => !p.featured);
 ---
 
-<MainLayout title={t.projects.title} description={t.meta.projects}>
+<MainLayout
+  title={t.projects.title}
+  description={t.meta.projects}
+  image={ogImagePath(locale, "projects")}
+>
   <div class="mx-auto max-w-6xl px-6 py-16">
     <SectionHeading
       eyebrow={t.projects.eyebrow}

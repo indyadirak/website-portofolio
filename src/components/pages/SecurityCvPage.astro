@@ -9,6 +9,7 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import EmailLink from "../EmailLink.astro";
 import { getDictionary, localeFromUrl } from "../../lib/i18n";
+import { ogImagePath } from "../../lib/og";
 import { siteConfig } from "../../lib/config";
 import { getSiteSettingValue, getLocalizedSettingValue } from "../../lib/data/site-settings";
 import { getCertificates } from "../../lib/data/certificates";
@@ -70,7 +71,11 @@ function renderDiagramLine(line: string): string {
 }
 ---
 
-<MainLayout title={cv.title} description={cv.description}>
+<MainLayout
+  title={cv.title}
+  description={cv.description}
+  image={ogImagePath(locale, "security-cv")}
+>
   <div class="mx-auto max-w-3xl px-6 py-16">
     <!-- Action bar — tersembunyi saat cetak -->
     <div class="mb-8 flex flex-wrap items-center gap-4 print:hidden">

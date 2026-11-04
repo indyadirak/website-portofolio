@@ -72,6 +72,7 @@ const personJsonLdJson = JSON.stringify(personJsonLd).replace(/</g, "\\u003c");
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description ?? t.meta.home} />
     <meta name="theme-color" content="#0b0c10" />
+    <meta name="application-name" content={siteConfig.name} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
     <link rel="canonical" href={canonical} />
