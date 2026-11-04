@@ -178,6 +178,34 @@ npx wrangler secret put GDRIVE_CONFIG_ENCRYPTION_SECRET
 - [ ] `/admin/dashboard` → `[ cv ]` → upload CV/Resume PDF per bahasa (id & en) — tombol unduh di navbar/hero otomatis menunjuk ke file terbaru di bucket publik `cv`; fallback ke `public/cv-*.pdf` bila belum di-upload
 - [ ] (Opsional) Cek status key SA: `https://www.googleapis.com/auth/drive.file` aktif di IAM
 
+### 6a. Umur sesi, step-up TOTP, dan pemulihan
+
+- Cookie sesi Supabase dibatasi **7 hari** (rolling) oleh `createServerSupabase`
+  — bukan default 400 hari. Mutasi admin (POST/PUT/DELETE) juga mensyaratkan
+  **verifikasi TOTP dalam 24 jam terakhir**. Bila verifikasi sudah basi,
+  endpoint membalas `403 { "error": "step_up_required" }`; UI admin otomatis
+  membuka `/admin/step-up` **tanpa logout**, lalu pengguna memasukkan kode
+  TOTP 6 digit dan mengulang aksinya.
+- **Bukan pengganti login MFA**: bila perangkat TOTP hilang sebelum bisa
+  login, `STEP_UP_MFA_DISABLED` TIDAK membantu. Pulihkan lewat Supabase
+  Dashboard → Authentication → Users → hapus faktor TOTP lama (atau pakai
+  recovery code), lalu login dan enroll ulang.
+- **Pemulihan bila sudah login tetapi mutasi terus ditolak**
+  (`step_up_required`, mis. jam perangkat meleset atau klaim `amr` tidak
+  membawa timestamp):
+  1. Pasang saklar darurat (runtime secret Worker):
+     `npx wrangler secret put STEP_UP_MFA_DISABLED` → isi `true`.
+     Deploy ulang bila wrangler tidak otomatis menerbitkan versi baru.
+  2. Lakukan mutasi darurat yang diperlukan, lalu perbaiki faktor TOTP
+     (enroll ulang dengan aplikasi authenticator yang jamnya benar).
+  3. Kembalikan saklar: `npx wrangler secret delete STEP_UP_MFA_DISABLED`
+     (atau isi `false`) dan deploy ulang.
+  4. Verifikasi: dengan TOTP basi, mutasi harus kembali `403 step_up_required`;
+     dengan TOTP baru, mutasi berhasil.
+- **Jangan biarkan `STEP_UP_MFA_DISABLED=true` permanen** — itu mematikan
+  syarat step-up 24 jam (rate limiter mutasi tetap aktif). Saklar ini tidak
+  pernah menjadi bagian dari 5 runtime secret wajib.
+
 ## 7. Verifikasi end-to-end
 
 - [ ] `curl -I https://<worker-url>/` → 200 + header `Content-Security-Policy`, `Strict-Transport-Security` ada

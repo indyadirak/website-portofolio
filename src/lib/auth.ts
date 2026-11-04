@@ -1,6 +1,7 @@
 import { createServerClient, parseCookieHeader } from "@supabase/ssr";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { AstroCookies } from "astro";
+import { ADMIN_SESSION_POLICY } from "./rateLimit";
 import type { Database, Profile, ProfilesRow, UserRole } from "./types";
 
 export const isSupabaseConfigured = Boolean(
@@ -33,6 +34,13 @@ export function createServerSupabase(
         autoRefreshToken: true,
         detectSessionInUrl: false,
       },
+      // Batasi umur cookie sesi menjadi 7 hari (default @supabase/ssr 400
+      // hari). cookieOptions diset untuk jalur yang menghormatinya, TETAPI
+      // jalur chunked storage @supabase/ssr menulis ulang maxAge ke default
+      // 400 hari — karena itu setAll() di bawah memaksa ulang batas 7 hari.
+      cookieOptions: {
+        maxAge: ADMIN_SESSION_POLICY.SESSION_MAX_AGE_SECONDS,
+      },
       cookies: {
         getAll() {
           const header = request.headers.get("cookie");
@@ -41,7 +49,21 @@ export function createServerSupabase(
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookies.set(name, value, options);
+            // Jangan pernah memperpanjang cookie sesi melebihi batas 7 hari.
+            // Penghapusan cookie (maxAge 0 / expires lampau) dipertahankan
+            // agar sign-out tetap berfungsi.
+            const expiresAt = options.expires
+              ? new Date(options.expires).getTime()
+              : Number.POSITIVE_INFINITY;
+            const isRemoval = options.maxAge === 0 || expiresAt <= Date.now();
+            const maxAge = isRemoval
+              ? options.maxAge
+              : Math.min(
+                  options.maxAge ?? ADMIN_SESSION_POLICY.SESSION_MAX_AGE_SECONDS,
+                  ADMIN_SESSION_POLICY.SESSION_MAX_AGE_SECONDS
+                );
+
+            cookies.set(name, value, { ...options, maxAge });
           });
         },
       },

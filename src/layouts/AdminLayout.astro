@@ -126,6 +126,31 @@ const initialsLabel = `${t.adminLayout.profile}: ${displayName}`;
       const profileMenu = document.getElementById("admin-profile-menu");
       const logoutBtn = document.getElementById("admin-logout") as HTMLButtonElement | null;
 
+      // ===== Step-up MFA (TOTP <= 24 jam) =====
+      // Semua endpoint mutasi admin membalas 403 { error: "step_up_required" }
+      // bila verifikasi TOTP sudah terlalu tua. Intersep DI SATU TEMPAT agar
+      // setiap form (yang memakai fetch) otomatis diarahkan ke halaman
+      // verifikasi ulang — tanpa logout paksa dan tanpa edit per form.
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
+        const response = await nativeFetch(...args);
+        if (response.status === 403) {
+          const contentType = response.headers.get("content-type") ?? "";
+          if (contentType.includes("application/json")) {
+            try {
+              const data = (await response.clone().json()) as { error?: unknown };
+              if (data?.error === "step_up_required") {
+                const next = `${window.location.pathname}${window.location.search}`;
+                window.location.assign(`/admin/step-up?next=${encodeURIComponent(next)}`);
+              }
+            } catch {
+              // Bukan JSON / body kosong — biarkan pemanggil menangani.
+            }
+          }
+        }
+        return response;
+      };
+
       const closeSidebar = () => {
         sidebar?.classList.add("-translate-x-full");
         backdrop?.classList.add("hidden");

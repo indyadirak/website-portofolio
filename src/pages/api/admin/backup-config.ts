@@ -3,6 +3,7 @@ import { createCipheriv, randomBytes } from "node:crypto";
 import { env } from "cloudflare:workers";
 import { json } from "../../../lib/api";
 import { hasRole, resolveMfaStatus } from "../../../lib/auth";
+import { adminMutationGuard } from "../../../lib/rateLimit";
 
 export const prerender = false;
 
@@ -89,6 +90,17 @@ export async function POST({ request, locals }: APIContext) {
     return json({ ok: false, error: "mfa_required" }, 403);
   }
 
+  const mutationDecision = await adminMutationGuard.checkWithSession(supabase, user.id);
+  if (mutationDecision.reason === "kv_unavailable") {
+    return json({ ok: false, error: "service_unavailable" }, 503);
+  }
+  if (mutationDecision.reason === "step_up_required") {
+    return json({ ok: false, error: "step_up_required" }, 403);
+  }
+  if (!mutationDecision.allowed) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
+  }
+
   let body: { gdriveServiceAccountKey?: string; gdriveFolderId?: string };
   try {
     body = (await request.json()) as typeof body;
@@ -159,6 +171,17 @@ export async function DELETE({ request, locals }: APIContext) {
   const { currentLevel } = await resolveMfaStatus(supabase, user.id);
   if (currentLevel !== "aal2") {
     return json({ ok: false, error: "mfa_required" }, 403);
+  }
+
+  const mutationDecision = await adminMutationGuard.checkWithSession(supabase, user.id);
+  if (mutationDecision.reason === "kv_unavailable") {
+    return json({ ok: false, error: "service_unavailable" }, 503);
+  }
+  if (mutationDecision.reason === "step_up_required") {
+    return json({ ok: false, error: "step_up_required" }, 403);
+  }
+  if (!mutationDecision.allowed) {
+    return json({ ok: false, error: "too_many_requests" }, 429);
   }
 
   const { error } = await supabase.from("backup_config").delete().eq("id", 1);

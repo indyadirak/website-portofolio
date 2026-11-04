@@ -1,0 +1,150 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { resolveMfaStatus } from "../../lib/auth";
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+const supabase = Astro.locals.supabase;
+
+// Middleware sudah menjamin sesi, tetapi tetap jaga agar halaman ini tidak
+// dipakai tanpa klien Supabase.
+if (!user || !supabase) {
+  return Astro.redirect("/admin/login");
+}
+
+const mfa = await resolveMfaStatus(supabase, user.id);
+if (!mfa.verifiedTotpFactorId) {
+  // Tidak ada faktor TOTP — step-up tidak mungkin; kembali ke dashboard.
+  return Astro.redirect("/admin/dashboard");
+}
+
+// Hanya izinkan kembali ke halaman admin internal (cegah open redirect).
+const rawNext = Astro.url.searchParams.get("next") ?? "";
+const next =
+  rawNext.startsWith("/admin/") && !rawNext.startsWith("//") && rawNext !== "/admin/step-up"
+    ? rawNext
+    : "/admin/dashboard";
+---
+
+<AdminLayout
+  title="Verifikasi TOTP"
+  description="Verifikasi ulang TOTP untuk melanjutkan mutasi admin."
+  current="step-up"
+>
+  <div class="mx-auto max-w-xl">
+    <section class="rounded-xl border border-cyber-border/80 bg-cyber-panel/95 p-5 shadow-2xl shadow-black/30 sm:p-7">
+      <div class="border-b border-cyber-border/60 pb-5">
+        <p class="font-mono text-xs text-cyber-accent">$ sudo verify --totp</p>
+        <h1 class="mt-2 font-mono text-2xl font-bold text-white">
+          Verifikasi Ulang TOTP<span class="text-cyber-primary">;</span>
+        </h1>
+        <p class="mt-2 text-sm leading-relaxed text-cyber-muted">
+          Mutasi admin memerlukan verifikasi TOTP dalam <strong class="text-slate-200">24 jam terakhir</strong>.
+          Sesi Anda masih aktif — masukkan kode 6 digit dari aplikasi authenticator untuk melanjutkan.
+          Anda tidak perlu logout.
+        </p>
+      </div>
+
+      <form id="step-up-form" data-next={next} class="mt-5 space-y-4" novalidate>
+        <label class="block">
+          <span class="mb-1 block font-mono text-xs uppercase tracking-wider text-cyber-muted">Kode TOTP</span>
+          <input
+            id="step-up-code"
+            name="code"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            required
+            class="w-full rounded border border-cyber-border bg-cyber-bg px-4 py-2.5 font-mono text-lg tracking-[0.35em] text-white outline-none transition-colors focus:border-cyber-primary"
+            placeholder="000000"
+          />
+        </label>
+
+        <button
+          id="step-up-submit"
+          type="submit"
+          class="w-full rounded border border-cyber-primary/60 bg-cyber-primary/10 px-6 py-2.5 font-mono text-sm text-cyber-primary transition-colors hover:bg-cyber-primary hover:text-cyber-bg disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          [ verifikasi ]
+        </button>
+      </form>
+
+      <p id="step-up-status" role="status" aria-live="polite" class="mt-4 min-h-5 font-mono text-xs text-cyber-muted"></p>
+
+      <a href="/admin/dashboard" class="mt-6 inline-block font-mono text-xs text-cyber-muted underline-offset-4 hover:text-cyber-primary hover:underline">
+        ← kembali ke dashboard
+      </a>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  const form = document.getElementById("step-up-form") as HTMLFormElement | null;
+  const codeInput = document.getElementById("step-up-code") as HTMLInputElement | null;
+  const submitBtn = document.getElementById("step-up-submit") as HTMLButtonElement | null;
+  const statusEl = document.getElementById("step-up-status");
+
+  function showStatus(message: string, ok = false): void {
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.className = ok
+      ? "mt-4 min-h-5 font-mono text-xs text-cyber-primary"
+      : "mt-4 min-h-5 font-mono text-xs text-cyber-danger";
+  }
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const code = codeInput?.value.trim() ?? "";
+
+    if (!/^\d{6}$/.test(code)) {
+      showStatus("kode wajib 6 digit");
+      codeInput?.focus();
+      return;
+    }
+
+    if (submitBtn) submitBtn.disabled = true;
+    showStatus("memverifikasi...", true);
+
+    const res = await fetch("/api/auth/mfa-step-up", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    }).catch(() => null);
+
+    if (!res) {
+      showStatus("tidak dapat menghubungi server — coba lagi");
+      if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
+
+    const data = (await res.json().catch(() => null)) as
+      | { ok?: boolean; error?: string; retryAfterSec?: number }
+      | null;
+
+    if (res.ok && data?.ok) {
+      showStatus("terverifikasi — mengalihkan...", true);
+      window.location.assign(form?.dataset.next || "/admin/dashboard");
+      return;
+    }
+
+    if (res.status === 429) {
+      const wait = data?.retryAfterSec ?? 0;
+      showStatus(wait > 0 ? `terlalu banyak percobaan — tunggu ${wait} detik` : "terlalu banyak percobaan");
+    } else if (res.status === 503) {
+      showStatus("layanan verifikasi tidak tersedia — coba lagi nanti");
+    } else if (data?.error === "kode_mfa_tidak_valid") {
+      showStatus("kode TOTP tidak valid");
+    } else if (data?.error === "kode_wajib_6_digit") {
+      showStatus("kode wajib 6 digit");
+    } else {
+      showStatus("verifikasi gagal — coba lagi");
+    }
+
+    if (codeInput) codeInput.value = "";
+    if (submitBtn) submitBtn.disabled = false;
+    codeInput?.focus();
+  });
+</script>

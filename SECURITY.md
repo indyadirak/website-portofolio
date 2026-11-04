@@ -39,6 +39,7 @@ Kami akan menghapus atau meminta izin sebelum mempublikasikan detail kerentanan 
 - **CODEOWNERS**: perubahan pada schema SQL, halaman admin, middleware, auth, workflow, dan `_headers` wajib di-review pemilik
 - **CSP ketat**: security headers diterapkan di middleware (runtime), tanpa `unsafe-inline` untuk script/style; `public/_headers` hanya fallback aset statis
 - **MFA wajib** untuk role admin/editor (`aal2`) via Supabase
+- **Umur sesi admin**: cookie sesi dibatasi 7 hari (bukan default 400 hari). Mutasi admin juga mensyaratkan verifikasi TOTP dalam 24 jam terakhir (step-up); bila basi, endpoint membalas `403 step_up_required` dan UI mengarahkan ke `/admin/step-up` tanpa logout paksa
 - **RBAC**: RLS di Supabase sebagai penegak utama izin data
 - **Validasi upload server-side**: magic bytes + limit 5 MB
 - **Request tracking**: `X-Request-ID` (UUID) di semua respons SSR via middleware; respons statis memakai `cf-ray` edge
