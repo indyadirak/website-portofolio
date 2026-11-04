@@ -6,6 +6,12 @@
 #   - Sumber kebenaran adalah sitemap produksi — yang benar-benar dilihat
 #     pengunjung, bukan file lokal.
 #
+# WAF: runner GitHub sering diblokir Cloudflare WAF/Bot Fight di domain
+# custom (403). Workflow mencoba domain publik dulu, lalu fallback ke
+# origin workers.dev dan me-remap URL internal ke origin tersebut. Konten
+# Worker-nya sama; proteksi WAF domain custom diverifikasi terpisah oleh
+# workflow deploy.
+#
 # Jadwal: mingguan (Senin 03:00 UTC) + workflow_dispatch.
 # Bila ada tautan mati, lychee mengembalikan exit code != 0 sehingga run
 # tampil merah. Ringkasan ditulis ke job summary + artefak laporan.
@@ -26,19 +32,39 @@ jobs:
   lychee:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Domain publik (yang dilihat pengunjung) dan origin workers.dev.
+      # Runner GitHub sering diblokir WAF/Bot Fight di domain custom (403),
+      # jadi origin workers.dev dipakai sebagai fallback + target remap.
+      PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
+      WORKER_ORIGIN_URL: ${{ vars.WORKER_ORIGIN_URL || 'https://website-portofolio.indyadirak.workers.dev' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      # Ambil daftar URL dari sitemap produksi. Sitemap memuat semua halaman
-      # publik (statis + detail project) dalam kedua locale.
+      # Ambil daftar URL dari sitemap. Coba domain publik dulu; bila WAF
+      # Cloudflare membalas 403 ke runner GitHub, fallback ke origin
+      # workers.dev (Worker yang sama, tanpa WAF zona custom domain).
       - name: Fetch sitemap URLs
-        env:
-          PROD_URL: ${{ vars.PROD_URL || 'https://portofolio.indyadirak.com' }}
         run: |
-          curl -fsSL --max-time 30 "${PROD_URL}/sitemap.xml" -o sitemap.xml
+          set -euo pipefail
+          PROD="${PROD_URL%/}"
+          ORIGIN="${WORKER_ORIGIN_URL%/}"
+          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+
+          # Normalisasi untuk dipakai lagi di langkah lychee (--remap).
+          echo "PROD_URL=${PROD}" >> "$GITHUB_ENV"
+          echo "WORKER_ORIGIN_URL=${ORIGIN}" >> "$GITHUB_ENV"
+
+          if curl -fsSL --max-time 30 -A "$UA" "${PROD}/sitemap.xml" -o sitemap.xml; then
+            echo "Sitemap diambil dari ${PROD}"
+          else
+            echo "::warning::Sitemap via ${PROD} gagal (kemungkinan WAF 403); fallback ke ${ORIGIN}"
+            curl -fsSL --max-time 30 -A "$UA" "${ORIGIN}/sitemap.xml" -o sitemap.xml
+          fi
+
           # Ekstrak nilai <loc>…</loc> menjadi satu URL per baris.
           grep -oE '<loc>[^<]+</loc>' sitemap.xml | sed -E 's#</?loc>##g' > urls.txt
           echo "Jumlah URL dari sitemap: $(wc -l < urls.txt)"
@@ -53,6 +79,7 @@ jobs:
         with:
           args: >-
             --config lychee.toml
+            --remap "${PROD_URL} ${WORKER_ORIGIN_URL}"
             --no-progress
             --verbose
             --format markdown
