@@ -119,6 +119,7 @@ const fmt = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "id-ID", {
   title={`${writeup.title} — Write-up`}
   description={writeup.findings.slice(0, 160)}
   image={ogImagePath(locale, "writeup", writeup.slug)}
+  ogImageDate={writeup.createdAt}
 >
   <div class="mx-auto max-w-3xl px-6 py-16">
     <a
