@@ -25,6 +25,7 @@ const related = allProjects
   title={project.title}
   description={project.summary}
   image={ogImagePath(locale, "project", project.slug)}
+  ogImageTags={project.tags}
 >
   <article class="mx-auto max-w-3xl px-6 py-16">
     <p class="font-mono text-sm text-cyber-accent">$ cat ./projects/{project.slug}.md</p>

@@ -13,9 +13,19 @@ export interface Props {
   description?: string;
   /** Path og:image relatif public/ (default: /og-image.png — sediakan manual). */
   image?: string;
+  /** Baris meta opsional di kartu OG (mis. tag teknologi). */
+  ogImageTags?: string[];
+  /** Tanggal terbit opsional di kartu OG (ISO/string tanggal). */
+  ogImageDate?: string;
 }
 
-const { title, description, image = "/og-image.png" } = Astro.props;
+const {
+  title,
+  description,
+  image = "/og-image.png",
+  ogImageTags,
+  ogImageDate,
+} = Astro.props;
 
 const pathname = Astro.url.pathname;
 const locale: Locale = localeFromPathname(pathname) ?? "id";
@@ -86,6 +96,10 @@ const personJsonLdJson = JSON.stringify(personJsonLd).replace(/</g, "\\u003c");
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImageUrl} />
+    {ogImageTags && ogImageTags.length > 0 && (
+      <meta property="ogimage:tags" content={ogImageTags.slice(0, 3).join(" · ")} />
+    )}
+    {ogImageDate && <meta property="ogimage:date" content={ogImageDate} />}
     <meta property="og:site_name" content={`${siteConfig.author.name} Portfolio`} />
     <meta property="og:locale" content={ogLocale} />
     <meta property="og:locale:alternate" content={ogAlternateLocale} />
