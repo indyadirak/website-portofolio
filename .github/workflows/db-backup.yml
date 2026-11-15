@@ -47,6 +47,14 @@ jobs:
           # binary versi eksplisit yang akan dipakai step dump.
           /usr/lib/postgresql/17/bin/pg_dump --version
 
+      # Guard: gagal cepat & jelas bila SUPABASE_DB_URL bukan Session Pooler
+      # (mencegah timeout IPv6 endpoint direct yang baru ketahuan berjam-jam
+      # kemudian — lihat run 43695696921). Script hanya mencetak host+port.
+      - name: Guard DB target (session pooler only)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: node .github/scripts/check-db-target.mjs
+
       # Hanya skema public (tabel aplikasi: projects, skills, contact_messages,
       # certificates, profiles, login_attempts). Skema auth MILIK SUPABASE
       # (users, hashed passwords) TIDAK ikut di-dump — sudah otomatis dikelola
